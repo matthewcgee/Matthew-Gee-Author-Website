@@ -1,3 +1,9 @@
+// Re-assert top-of-page once everything (including images) has finished
+// loading, in case late layout shifts nudge the scroll position.
+window.addEventListener('load', function () {
+  window.scrollTo(0, 0);
+});
+
 document.addEventListener('DOMContentLoaded', function () {
   // Footer year
   var yearEl = document.getElementById('year');

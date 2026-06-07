@@ -1,0 +1,54 @@
+<svg viewBox="0 0 900 620" fill="none" xmlns="http://www.w3.org/2000/svg" role="presentation" aria-hidden="true">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="46%" r="55%">
+      <stop offset="0%" stop-color="#e7c98a" stop-opacity="0.55"/>
+      <stop offset="45%" stop-color="#c9a868" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#c9a868" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="rootline" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e7c98a" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#c9a868" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="trunkline" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#c9a868" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#e7c98a" stop-opacity="0.85"/>
+    </linearGradient>
+  </defs>
+
+  <ellipse cx="450" cy="312" rx="320" ry="320" fill="url(#glow)"/>
+
+  <!-- horizon line -->
+  <line x1="40" y1="312" x2="860" y2="312" stroke="#2b2e34" stroke-width="1.5"/>
+
+  <!-- trunk + canopy (simple, quiet silhouette) -->
+  <path d="M450 312 C450 270 444 230 450 188" stroke="url(#trunkline)" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M450 232 C430 222 416 206 414 184" stroke="url(#trunkline)" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M450 232 C470 222 484 206 486 184" stroke="url(#trunkline)" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+  <path d="M450 268 C436 260 426 248 424 232" stroke="url(#trunkline)" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M450 268 C464 260 474 248 476 232" stroke="url(#trunkline)" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <ellipse cx="450" cy="176" rx="58" ry="54" fill="#0e0f12" stroke="#c9a868" stroke-opacity="0.35" stroke-width="1.4"/>
+
+  <!-- roots, mirrored fan beneath the horizon -->
+  <g stroke="url(#rootline)" stroke-width="2.2" stroke-linecap="round" fill="none" opacity="0.85">
+    <path d="M450 312 C448 340 430 356 404 366 C384 374 366 372 344 388"/>
+    <path d="M450 312 C452 344 470 360 498 368 C520 374 538 372 560 390"/>
+    <path d="M450 312 C446 350 420 372 388 392 C366 406 352 410 326 430"/>
+    <path d="M450 312 C454 352 482 374 516 392 C540 404 556 410 584 428"/>
+    <path d="M450 312 C448 360 410 392 366 414 C338 428 318 436 286 460"/>
+    <path d="M450 312 C452 360 492 392 538 414 C566 428 588 436 620 460"/>
+    <path d="M450 312 C449 372 400 404 348 430 C312 448 286 456 250 482"/>
+    <path d="M450 312 C451 372 502 404 556 430 C592 448 618 456 654 482"/>
+    <path d="M450 312 C449 386 388 414 326 438"/>
+    <path d="M450 312 C451 386 514 414 576 438"/>
+  </g>
+
+  <!-- fine root hairs -->
+  <g stroke="#c9a868" stroke-width="1" stroke-linecap="round" opacity="0.4">
+    <path d="M404 366 C396 376 388 382 376 392"/>
+    <path d="M498 368 C506 378 514 384 526 394"/>
+    <path d="M388 392 C378 400 368 406 354 414"/>
+    <path d="M516 392 C526 400 536 406 550 414"/>
+    <path d="M366 414 C354 422 344 428 328 438"/>
+    <path d="M538 414 C550 422 560 428 576 438"/>
+  </g>
+</svg>

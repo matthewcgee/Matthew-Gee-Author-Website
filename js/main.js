@@ -1,7 +1,8 @@
-// Re-assert top-of-page once everything (including images) has finished
-// loading, in case late layout shifts nudge the scroll position.
+// Snap to top after all images load (instant, bypassing CSS smooth-scroll).
 window.addEventListener('load', function () {
+  document.documentElement.style.scrollBehavior = 'auto';
   window.scrollTo(0, 0);
+  document.documentElement.style.scrollBehavior = '';
 });
 
 document.addEventListener('DOMContentLoaded', function () {

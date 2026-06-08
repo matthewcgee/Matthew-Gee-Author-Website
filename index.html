@@ -20,12 +20,19 @@
   <meta name="twitter:image" content="https://matthewcgee.github.io/Matthew-Gee-Author-Website/images/social-share.jpg">
 
   <script>
-    // Always open at the top of the page, regardless of the browser's
-    // remembered scroll position or any section anchor in the URL.
     if ('scrollRestoration' in history) {
       history.scrollRestoration = 'manual';
     }
-    window.scrollTo(0, 0);
+    // Bypass CSS scroll-behavior:smooth so we snap instantly rather than
+    // animating from mid-page. Also fires on back-forward cache restores
+    // (which skip the 'load' event entirely) via pageshow.
+    function snapToTop() {
+      document.documentElement.style.scrollBehavior = 'auto';
+      window.scrollTo(0, 0);
+      document.documentElement.style.scrollBehavior = '';
+    }
+    snapToTop();
+    window.addEventListener('pageshow', snapToTop);
   </script>
 
   <link rel="icon" href="images/tree-mark.svg" type="image/svg+xml">

@@ -1,11 +1,12 @@
 export const theme = {
-  bg: '#0b0e14',
-  panel: '#11151f',
-  panelAlt: '#161a24',
-  border: '#262b3a',
-  text: '#e8e6e1',
-  sub: '#9aa1b1',
-  gold: '#c9a35f',
+  bg: '#f4f8f7',
+  panel: '#ffffff',
+  panelAlt: '#eef5f3',
+  border: '#d9e6e2',
+  text: '#15302b',
+  sub: '#5e7972',
+  accent: '#00857C',
+  navy: '#0b2d4d',
   display: "'Georgia', 'Playfair Display', serif",
 }
 
@@ -56,9 +57,9 @@ export function Badge({ color, children }) {
 
 export function Button({ children, onClick, variant = 'primary', type = 'button', style, disabled }) {
   const styles = {
-    primary: { background: theme.gold, color: '#0b0e14', border: '1px solid ' + theme.gold },
+    primary: { background: theme.accent, color: '#ffffff', border: '1px solid ' + theme.accent },
     ghost: { background: 'transparent', color: theme.text, border: `1px solid ${theme.border}` },
-    danger: { background: 'transparent', color: '#e0584a', border: '1px solid #5a2d28' },
+    danger: { background: 'transparent', color: '#c0392b', border: '1px solid #e3b3ac' },
   }
   return (
     <button
@@ -100,14 +101,14 @@ export function Toast({ message }) {
         bottom: 18,
         left: '50%',
         transform: 'translateX(-50%)',
-        background: theme.gold,
-        color: '#0b0e14',
+        background: theme.navy,
+        color: '#ffffff',
         padding: '8px 18px',
         borderRadius: 999,
         fontSize: 13,
         fontWeight: 700,
         zIndex: 1000,
-        boxShadow: '0 6px 24px rgba(0,0,0,0.4)',
+        boxShadow: '0 6px 24px rgba(11,45,77,0.35)',
       }}
     >
       {message}

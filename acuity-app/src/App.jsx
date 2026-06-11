@@ -92,7 +92,8 @@ export default function App() {
     <div style={{ minHeight: '100%', background: theme.bg, color: theme.text }}>
       <header
         style={{
-          borderBottom: `1px solid ${theme.border}`,
+          background: theme.navy,
+          color: '#ffffff',
           padding: '18px 22px',
           display: 'flex',
           flexWrap: 'wrap',
@@ -102,8 +103,10 @@ export default function App() {
         }}
       >
         <div>
-          <div style={{ fontFamily: theme.display, fontSize: 22, fontWeight: 700 }}>BH Acuity Index</div>
-          <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 2 }}>Regional Command Center</div>
+          <div style={{ fontFamily: theme.display, fontSize: 22, fontWeight: 700 }}>
+            Atrium Health Behavioral Health Acuity Index Dashboard
+          </div>
+          <div style={{ fontSize: 12.5, color: '#bcd3cd', marginTop: 2 }}>Regional Command Center</div>
         </div>
         <nav style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {TABS.map((t) => (
@@ -111,6 +114,7 @@ export default function App() {
               key={t.id}
               variant={tab === t.id ? 'primary' : 'ghost'}
               onClick={() => setTab(t.id)}
+              style={tab === t.id ? {} : { color: '#ffffff', borderColor: 'rgba(255,255,255,0.35)' }}
             >
               {t.label}
             </Button>

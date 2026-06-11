@@ -161,7 +161,7 @@ export default function Reports({ locations, entries, deployments, thresholds, o
                 key={loc.id}
                 type="monotone"
                 dataKey={loc.name}
-                stroke={i % 2 === 0 ? theme.gold : '#5fa3e0'}
+                stroke={i % 2 === 0 ? theme.accent : theme.navy}
                 connectNulls
                 dot={false}
               />
@@ -180,7 +180,7 @@ export default function Reports({ locations, entries, deployments, thresholds, o
               <XAxis dataKey="name" stroke={theme.sub} fontSize={11} />
               <YAxis stroke={theme.sub} fontSize={11} />
               <Tooltip contentStyle={{ background: theme.panelAlt, border: `1px solid ${theme.border}` }} />
-              <Bar dataKey="hours" fill={theme.gold} />
+              <Bar dataKey="hours" fill={theme.accent} />
             </BarChart>
           </ResponsiveContainer>
         )}

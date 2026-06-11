@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { theme, Button, Toast } from './components/ui.jsx'
+import { theme, Icon, Toast } from './components/ui.jsx'
 import { KEYS, readStorage, writeStorage } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
 import StatusBoard from './components/StatusBoard.jsx'
@@ -7,14 +7,17 @@ import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
 import Reports from './components/Reports.jsx'
 import Settings from './components/Settings.jsx'
+import IntroVideo from './components/IntroVideo.jsx'
 
 const TABS = [
-  { id: 'status', label: 'Region Status Board' },
-  { id: 'entry', label: 'New Shift Entry' },
-  { id: 'deployments', label: 'Staff Deployments' },
-  { id: 'reports', label: 'Reports' },
-  { id: 'settings', label: 'Settings' },
+  { id: 'status', label: 'Region Status Board', icon: 'grid' },
+  { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
+  { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
+  { id: 'reports', label: 'Reports', icon: 'barChart' },
+  { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
+
+const INTRO_KEY = 'bhai:introSeen:v1'
 
 export default function App() {
   const [locations, setLocations] = useState(() => readStorage(KEYS.locations, null))
@@ -23,6 +26,7 @@ export default function App() {
   const [thresholds, setThresholds] = useState(() => readStorage(KEYS.thresholds, null) || DEFAULT_THRESHOLDS)
   const [tab, setTab] = useState('status')
   const [toast, setToast] = useState('')
+  const [showIntro, setShowIntro] = useState(false)
 
   // Seed / migrate on first load
   useEffect(() => {
@@ -61,6 +65,12 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (!readStorage(INTRO_KEY, false)) {
+      setShowIntro(true)
+    }
+  }, [])
+
+  useEffect(() => {
     if (locations != null) writeStorage(KEYS.locations, locations)
   }, [locations])
 
@@ -82,6 +92,11 @@ export default function App() {
     return () => clearTimeout(t)
   }, [toast])
 
+  const closeIntro = () => {
+    writeStorage(INTRO_KEY, true)
+    setShowIntro(false)
+  }
+
   if (locations == null || entries == null || deployments == null) {
     return (
       <div style={{ padding: 24, color: theme.sub, fontSize: 13 }}>Loading…</div>
@@ -89,107 +104,174 @@ export default function App() {
   }
 
   return (
-    <div style={{ minHeight: '100%', background: theme.bg, color: theme.text }}>
-      <header
+    <div className="app-shell" style={{ background: theme.bg, color: theme.text }}>
+      <aside
+        className="app-sidebar"
         style={{
           background: theme.navy,
           color: '#ffffff',
-          padding: '18px 22px',
+          padding: '22px 18px',
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
+          flexDirection: 'column',
+          gap: 22,
         }}
       >
-        <div>
-          <div style={{ fontFamily: theme.display, fontSize: 22, fontWeight: 700 }}>
-            Atrium Health Behavioral Health Acuity Index Dashboard
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 38,
+              height: 38,
+              borderRadius: 10,
+              background: 'rgba(255,255,255,0.12)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <Icon name="sparkle" size={20} />
           </div>
-          <div style={{ fontSize: 12.5, color: '#bcd3cd', marginTop: 2 }}>Regional Command Center</div>
+          <div>
+            <div style={{ fontFamily: theme.display, fontSize: 16, fontWeight: 800, lineHeight: 1.2 }}>
+              Atrium Health
+            </div>
+            <div style={{ fontSize: 11.5, color: '#9fc2bb', letterSpacing: 0.4 }}>
+              Behavioral Health Acuity Index
+            </div>
+          </div>
         </div>
-        <nav style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {TABS.map((t) => (
-            <Button
-              key={t.id}
-              variant={tab === t.id ? 'primary' : 'ghost'}
-              onClick={() => setTab(t.id)}
-              style={tab === t.id ? {} : { color: '#ffffff', borderColor: 'rgba(255,255,255,0.35)' }}
-            >
-              {t.label}
-            </Button>
-          ))}
+
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {TABS.map((t) => {
+            const active = tab === t.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className="nav-item btn-press"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  background: active ? theme.accent : 'transparent',
+                  color: active ? '#ffffff' : '#cfe3df',
+                }}
+              >
+                <Icon name={t.icon} size={17} />
+                {t.label}
+              </button>
+            )
+          })}
         </nav>
-      </header>
 
-      <main style={{ padding: 22, maxWidth: 1180, margin: '0 auto' }}>
-        {tab === 'status' && (
-          <StatusBoard locations={locations} entries={entries} thresholds={thresholds} />
-        )}
-        {tab === 'entry' && (
-          <ShiftEntryForm
-            locations={locations}
-            thresholds={thresholds}
-            onAdd={(entry) => {
-              setEntries((prev) => [entry, ...prev])
-              setToast('Shift entry saved')
+        <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+          <button
+            onClick={() => setShowIntro(true)}
+            className="btn-press"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: 10,
+              border: '1px solid rgba(255,255,255,0.25)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#ffffff',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
             }}
-          />
-        )}
-        {tab === 'deployments' && (
-          <Deployments
-            locations={locations}
-            deployments={deployments}
-            onChange={(next) => {
-              setDeployments(next)
-              setToast('Deployment log updated')
-            }}
-          />
-        )}
-        {tab === 'reports' && (
-          <Reports
-            locations={locations}
-            entries={entries}
-            deployments={deployments}
-            thresholds={thresholds}
-            onDeleteEntry={(id) => {
-              setEntries((prev) => prev.filter((e) => e.id !== id))
-              setToast('Entry removed')
-            }}
-          />
-        )}
-        {tab === 'settings' && (
-          <Settings
-            locations={locations}
-            thresholds={thresholds}
-            onChangeLocations={(next) => {
-              setLocations(next)
-              setToast('Locations updated')
-            }}
-            onChangeThresholds={(next) => {
-              setThresholds(next)
-              setToast('Thresholds updated')
-            }}
-            onImport={(data) => {
-              if (data.locations) setLocations(data.locations)
-              if (data.entries) setEntries(data.entries)
-              if (data.deployments) setDeployments(data.deployments)
-              if (data.thresholds) setThresholds(data.thresholds)
-              setToast('Data imported')
-            }}
-            onClear={() => {
-              const freshLocations = seedLocations()
-              setLocations(freshLocations)
-              setEntries([])
-              setDeployments([])
-              setThresholds(DEFAULT_THRESHOLDS)
-              setToast('All data cleared')
-            }}
-            getExportData={() => ({ locations, entries, deployments, thresholds })}
-          />
-        )}
-      </main>
+          >
+            <Icon name="play" size={15} />
+            Watch the Story
+          </button>
+          <div style={{ fontSize: 10.5, color: '#82a39c', marginTop: 10, textAlign: 'center' }}>
+            Patent Pending &mdash; &copy; Matthew C. Gee
+          </div>
+        </div>
+      </aside>
 
+      <div className="app-main">
+        <main style={{ padding: '24px 28px', maxWidth: 1240, margin: '0 auto' }}>
+          <div key={tab} className="fade-in">
+            {tab === 'status' && (
+              <StatusBoard locations={locations} entries={entries} thresholds={thresholds} />
+            )}
+            {tab === 'entry' && (
+              <ShiftEntryForm
+                locations={locations}
+                thresholds={thresholds}
+                onAdd={(entry) => {
+                  setEntries((prev) => [entry, ...prev])
+                  setToast('Shift entry saved')
+                }}
+              />
+            )}
+            {tab === 'deployments' && (
+              <Deployments
+                locations={locations}
+                deployments={deployments}
+                onChange={(next) => {
+                  setDeployments(next)
+                  setToast('Deployment log updated')
+                }}
+              />
+            )}
+            {tab === 'reports' && (
+              <Reports
+                locations={locations}
+                entries={entries}
+                deployments={deployments}
+                thresholds={thresholds}
+                onDeleteEntry={(id) => {
+                  setEntries((prev) => prev.filter((e) => e.id !== id))
+                  setToast('Entry removed')
+                }}
+              />
+            )}
+            {tab === 'settings' && (
+              <Settings
+                locations={locations}
+                thresholds={thresholds}
+                onChangeLocations={(next) => {
+                  setLocations(next)
+                  setToast('Locations updated')
+                }}
+                onChangeThresholds={(next) => {
+                  setThresholds(next)
+                  setToast('Thresholds updated')
+                }}
+                onImport={(data) => {
+                  if (data.locations) setLocations(data.locations)
+                  if (data.entries) setEntries(data.entries)
+                  if (data.deployments) setDeployments(data.deployments)
+                  if (data.thresholds) setThresholds(data.thresholds)
+                  setToast('Data imported')
+                }}
+                onClear={() => {
+                  const freshLocations = seedLocations()
+                  setLocations(freshLocations)
+                  setEntries([])
+                  setDeployments([])
+                  setThresholds(DEFAULT_THRESHOLDS)
+                  setToast('All data cleared')
+                }}
+                getExportData={() => ({ locations, entries, deployments, thresholds })}
+              />
+            )}
+          </div>
+        </main>
+      </div>
+
+      {showIntro && <IntroVideo onClose={closeIntro} />}
       <Toast message={toast} />
     </div>
   )

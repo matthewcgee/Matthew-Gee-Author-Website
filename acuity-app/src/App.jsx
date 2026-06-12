@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { theme, Icon, Toast } from './components/ui.jsx'
 import { KEYS, readStorage, writeStorage } from './lib/storage.js'
-import { DEFAULT_THRESHOLDS, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
+import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
 import StatusBoard from './components/StatusBoard.jsx'
 import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
 import Reports from './components/Reports.jsx'
 import Settings from './components/Settings.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
+import ErrorBoundary from './components/ErrorBoundary.jsx'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
@@ -23,7 +24,7 @@ export default function App() {
   const [locations, setLocations] = useState(() => readStorage(KEYS.locations, null))
   const [entries, setEntries] = useState(() => readStorage(KEYS.entries, null))
   const [deployments, setDeployments] = useState(() => readStorage(KEYS.deployments, null))
-  const [thresholds, setThresholds] = useState(() => readStorage(KEYS.thresholds, null) || DEFAULT_THRESHOLDS)
+  const [thresholds, setThresholds] = useState(() => normalizeThresholds(readStorage(KEYS.thresholds, null)))
   const [tab, setTab] = useState('status')
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
@@ -45,7 +46,7 @@ export default function App() {
 
     const finalLocations = oldLocations && oldLocations.length ? oldLocations : seedLocations()
     const finalEntries = oldEntries && oldEntries.length ? oldEntries : seedEntries()
-    const finalThresholds = oldThresholds || DEFAULT_THRESHOLDS
+    const finalThresholds = normalizeThresholds(oldThresholds)
     const finalDeployments = seedDeployments()
 
     // Make sure migrated locations have a censusCap field for the new feature
@@ -201,7 +202,8 @@ export default function App() {
 
       <div className="app-main">
         <main style={{ padding: '24px 28px', maxWidth: 1240, margin: '0 auto' }}>
-          <div key={tab} className="fade-in">
+          <ErrorBoundary key={tab}>
+          <div className="fade-in">
             {tab === 'status' && (
               <StatusBoard locations={locations} entries={entries} thresholds={thresholds} />
             )}
@@ -253,7 +255,7 @@ export default function App() {
                   if (data.locations) setLocations(data.locations)
                   if (data.entries) setEntries(data.entries)
                   if (data.deployments) setDeployments(data.deployments)
-                  if (data.thresholds) setThresholds(data.thresholds)
+                  if (data.thresholds) setThresholds(normalizeThresholds(data.thresholds))
                   setToast('Data imported')
                 }}
                 onClear={() => {
@@ -268,6 +270,7 @@ export default function App() {
               />
             )}
           </div>
+          </ErrorBoundary>
         </main>
       </div>
 

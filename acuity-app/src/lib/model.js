@@ -12,6 +12,13 @@ export const STAGE_COLORS = {
   NONE: '#6b7280',
 }
 
+export function normalizeThresholds(thresholds) {
+  return {
+    inpatient: { ...DEFAULT_THRESHOLDS.inpatient, ...(thresholds?.inpatient || {}) },
+    ed: { ...DEFAULT_THRESHOLDS.ed, ...(thresholds?.ed || {}) },
+  }
+}
+
 export function safeDiv(a, b) {
   if (!a || !b) return 0
   return a / b

@@ -2,6 +2,7 @@ import React from 'react'
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
 import { Card, Badge, ProgressBar, StatCard, theme, grid } from './ui.jsx'
 import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
+import { today } from '../lib/storage.js'
 
 const SHIFT_ORDER = { AM: 0, PM: 1 }
 
@@ -16,9 +17,12 @@ function sortedEntriesFor(locId, entries) {
 }
 
 export default function StatusBoard({ locations, entries, thresholds }) {
+  const todayStr = today()
   const summaries = locations.map((loc) => {
     const list = sortedEntriesFor(loc.id, entries)
-    const latest = list[list.length - 1] || null
+    const todaysEntries = list.filter((e) => e.date === todayStr)
+    const latest = todaysEntries[todaysEntries.length - 1] || null
+    const hasHistory = list.length > 0
     const value = latest ? computeEntryValue(latest, loc, thresholds) : null
     const stage = latest ? entryStage(latest, loc, thresholds) : 'NONE'
     const trend = list.slice(-8).map((e, i) => ({
@@ -26,7 +30,7 @@ export default function StatusBoard({ locations, entries, thresholds }) {
       value: computeEntryValue(e, loc, thresholds),
     }))
     const staffNeeds = latest ? staffNeededForThresholds(latest, loc, thresholds) : null
-    return { loc, latest, value, stage, trend, staffNeeds }
+    return { loc, latest, value, stage, trend, staffNeeds, hasHistory }
   })
 
   const greenCount = summaries.filter((s) => s.stage === 'GREEN').length
@@ -79,10 +83,11 @@ export default function StatusBoard({ locations, entries, thresholds }) {
       )}
 
       <div style={grid(3)}>
-        {summaries.map(({ loc, latest, value, stage, trend, staffNeeds }, idx) => {
+        {summaries.map(({ loc, latest, value, stage, trend, staffNeeds, hasHistory }, idx) => {
           const th = thresholdsFor(loc, thresholds)
           const isEd = loc.type === 'ed'
           const overCap = !isEd && loc.censusCap != null && latest?.census != null && latest.census > loc.censusCap
+          const awaiting = !latest
 
           return (
             <Card
@@ -92,7 +97,11 @@ export default function StatusBoard({ locations, entries, thresholds }) {
               style={{ animationDelay: `${idx * 60}ms` }}
               title={loc.name}
               sub={loc.facility}
-              right={<Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge>}
+              right={
+                awaiting
+                  ? <Badge color={STAGE_COLORS.NONE}>AWAITING REPORT</Badge>
+                  : <Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge>
+              }
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                 <div>
@@ -144,7 +153,18 @@ export default function StatusBoard({ locations, entries, thresholds }) {
                   {isEd && <> · {latest.points} points</>}
                 </div>
               ) : (
-                <div style={{ fontSize: 12, color: theme.sub }}>No shift entries yet.</div>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: theme.sub,
+                    background: theme.panelAlt,
+                    borderRadius: 8,
+                    padding: '8px 10px',
+                  }}
+                >
+                  {hasHistory ? 'Awaiting daily report for today' : 'No shift entries yet.'}
+                </div>
               )}
 
               {!isEd && latest && staffNeeds && (() => {

@@ -9,6 +9,7 @@ import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
 import Reports from './components/Reports.jsx'
 import Settings from './components/Settings.jsx'
+import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 
@@ -30,6 +31,7 @@ export default function App() {
   const [tab, setTab] = useState('status')
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
+  const [settingsUnlocked, setSettingsUnlocked] = useState(() => sessionStorage.getItem('bhai:settingsUnlocked') === 'true')
 
   const lastSynced = useRef({})
   const stateRef = useRef({})
@@ -311,7 +313,15 @@ export default function App() {
                 }}
               />
             )}
-            {tab === 'settings' && (
+            {tab === 'settings' && !settingsUnlocked && (
+              <SettingsLock
+                onUnlock={() => {
+                  sessionStorage.setItem('bhai:settingsUnlocked', 'true')
+                  setSettingsUnlocked(true)
+                }}
+              />
+            )}
+            {tab === 'settings' && settingsUnlocked && (
               <Settings
                 locations={locations}
                 thresholds={thresholds}

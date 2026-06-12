@@ -34,6 +34,7 @@ export default function App() {
   const [settingsUnlocked, setSettingsUnlocked] = useState(() => sessionStorage.getItem('bhai:settingsUnlocked') === 'true')
 
   const lastSynced = useRef({})
+  const remoteLoaded = useRef(false)
   const stateRef = useRef({})
   stateRef.current = { locations, entries, deployments, thresholds }
 
@@ -106,6 +107,7 @@ export default function App() {
             lastSynced.current = { locations, entries, deployments, thresholds }
             setDoc(doc(db, ...STATE_DOC), { locations, entries, deployments, thresholds })
           }
+          remoteLoaded.current = true
           return
         }
 
@@ -127,35 +129,39 @@ export default function App() {
           lastSynced.current.thresholds = normalized
           setThresholds(normalized)
         }
+        remoteLoaded.current = true
       },
-      (err) => console.error('Firestore sync error', err)
+      (err) => {
+        console.error('Firestore sync error', err)
+        remoteLoaded.current = true
+      }
     )
     return unsub
   }, [])
 
   useEffect(() => {
-    if (locations == null) return
+    if (locations == null || !remoteLoaded.current) return
     if (JSON.stringify(locations) === JSON.stringify(lastSynced.current.locations)) return
     lastSynced.current.locations = locations
     setDoc(doc(db, ...STATE_DOC), { locations }, { merge: true }).catch((e) => console.error('sync locations', e))
   }, [locations])
 
   useEffect(() => {
-    if (entries == null) return
+    if (entries == null || !remoteLoaded.current) return
     if (JSON.stringify(entries) === JSON.stringify(lastSynced.current.entries)) return
     lastSynced.current.entries = entries
     setDoc(doc(db, ...STATE_DOC), { entries }, { merge: true }).catch((e) => console.error('sync entries', e))
   }, [entries])
 
   useEffect(() => {
-    if (deployments == null) return
+    if (deployments == null || !remoteLoaded.current) return
     if (JSON.stringify(deployments) === JSON.stringify(lastSynced.current.deployments)) return
     lastSynced.current.deployments = deployments
     setDoc(doc(db, ...STATE_DOC), { deployments }, { merge: true }).catch((e) => console.error('sync deployments', e))
   }, [deployments])
 
   useEffect(() => {
-    if (thresholds == null) return
+    if (thresholds == null || !remoteLoaded.current) return
     if (JSON.stringify(thresholds) === JSON.stringify(lastSynced.current.thresholds)) return
     lastSynced.current.thresholds = thresholds
     setDoc(doc(db, ...STATE_DOC), { thresholds }, { merge: true }).catch((e) => console.error('sync thresholds', e))

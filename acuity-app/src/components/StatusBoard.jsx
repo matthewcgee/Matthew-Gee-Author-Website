@@ -1,7 +1,7 @@
 import React from 'react'
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
 import { Card, Badge, ProgressBar, StatCard, theme, grid } from './ui.jsx'
-import { computeEntryValue, entryStage, thresholdsFor, staffNeededForNextThreshold, STAGE_COLORS } from '../lib/model.js'
+import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
 
 const SHIFT_ORDER = { AM: 0, PM: 1 }
 
@@ -25,8 +25,8 @@ export default function StatusBoard({ locations, entries, thresholds }) {
       i,
       value: computeEntryValue(e, loc, thresholds),
     }))
-    const staffToAdd = latest ? staffNeededForNextThreshold(latest, loc, thresholds) : null
-    return { loc, latest, value, stage, trend, staffToAdd }
+    const staffNeeds = latest ? staffNeededForThresholds(latest, loc, thresholds) : null
+    return { loc, latest, value, stage, trend, staffNeeds }
   })
 
   const greenCount = summaries.filter((s) => s.stage === 'GREEN').length
@@ -79,7 +79,7 @@ export default function StatusBoard({ locations, entries, thresholds }) {
       )}
 
       <div style={grid(3)}>
-        {summaries.map(({ loc, latest, value, stage, trend, staffToAdd }, idx) => {
+        {summaries.map(({ loc, latest, value, stage, trend, staffNeeds }, idx) => {
           const th = thresholdsFor(loc, thresholds)
           const isEd = loc.type === 'ed'
           const overCap = !isEd && loc.censusCap != null && latest?.census != null && latest.census > loc.censusCap
@@ -147,23 +147,29 @@ export default function StatusBoard({ locations, entries, thresholds }) {
                 <div style={{ fontSize: 12, color: theme.sub }}>No shift entries yet.</div>
               )}
 
-              {!isEd && latest && (
-                <div
-                  style={{
-                    marginTop: 8,
-                    padding: '8px 10px',
-                    borderRadius: 8,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    background: staffToAdd > 0 ? `${STAGE_COLORS[stage]}1a` : theme.panelAlt,
-                    color: staffToAdd > 0 ? STAGE_COLORS[stage] : theme.sub,
-                  }}
-                >
-                  {staffToAdd > 0
-                    ? `Deploy ${staffToAdd} more staff to reach ${stage === 'RED' ? 'YELLOW' : 'GREEN'}`
-                    : 'Staffing is at target for current acuity'}
-                </div>
-              )}
+              {!isEd && latest && staffNeeds && (() => {
+                const parts = []
+                if (staffNeeds.toYellow > 0) parts.push(`${staffNeeds.toYellow} staff to YELLOW`)
+                if (staffNeeds.toGreen > 0) parts.push(`${staffNeeds.toGreen} staff to GREEN`)
+                const needsStaff = parts.length > 0
+                return (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      background: needsStaff ? `${STAGE_COLORS[stage]}1a` : theme.panelAlt,
+                      color: needsStaff ? STAGE_COLORS[stage] : theme.sub,
+                    }}
+                  >
+                    {needsStaff
+                      ? `Deploy ${parts.join(', ')}`
+                      : 'Staffing is at target for current acuity'}
+                  </div>
+                )
+              })()}
 
               <div style={{ fontSize: 11, color: theme.sub, marginTop: 10, opacity: 0.8 }}>
                 {loc.market} · {loc.region}

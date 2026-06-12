@@ -51,23 +51,26 @@ export function entryStage(entry, location, globalThresholds) {
   return computeStage(value, th)
 }
 
-// How many additional staff would move this IP unit to the next, better
-// acuity threshold (RED -> YELLOW, YELLOW -> GREEN). Never applies to ED.
-export function staffNeededForNextThreshold(entry, location, globalThresholds) {
+function staffNeededForTarget(entry, target) {
+  const points = entry.points || 0
+  const staff = entry.staff || 0
+  if (!points || target <= 0) return 0
+  return Math.max(0, Math.ceil(points / target - staff))
+}
+
+// How many additional staff would move this IP unit to YELLOW and to GREEN.
+// Never applies to ED. Returns null for ED or missing entries.
+export function staffNeededForThresholds(entry, location, globalThresholds) {
   if (!entry || location?.type === 'ed') return null
 
   const stage = entryStage(entry, location, globalThresholds)
-  if (stage === 'NONE' || stage === 'GREEN') return 0
-
   const th = thresholdsFor(location, globalThresholds)
-  const target = stage === 'RED' ? th.yellowMax : th.greenMax
-  const points = entry.points || 0
-  const staff = entry.staff || 0
 
-  if (!points || target <= 0) return 0
-
-  const staffNeeded = points / target
-  return Math.max(0, Math.ceil(staffNeeded - staff))
+  return {
+    stage,
+    toYellow: stage === 'RED' ? staffNeededForTarget(entry, th.yellowMax) : 0,
+    toGreen: stage === 'GREEN' || stage === 'NONE' ? 0 : staffNeededForTarget(entry, th.greenMax),
+  }
 }
 
 export function seedLocations() {

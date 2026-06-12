@@ -28,6 +28,7 @@ export default function App() {
   const [entries, setEntries] = useState(() => readStorage(KEYS.entries, null))
   const [deployments, setDeployments] = useState(() => readStorage(KEYS.deployments, null))
   const [thresholds, setThresholds] = useState(() => normalizeThresholds(readStorage(KEYS.thresholds, null)))
+  const [caps, setCaps] = useState({})
   const [tab, setTab] = useState('status')
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
@@ -202,6 +203,23 @@ export default function App() {
     return unsub
   }, [])
 
+  // Live sync of nursing-driven census caps — one document per location, so
+  // charge nurses on different units can update their cap independently
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, 'locationCaps'),
+      (snap) => {
+        const next = {}
+        snap.docs.forEach((d) => {
+          next[d.id] = d.data().censusCap
+        })
+        setCaps(next)
+      },
+      (err) => console.error('Firestore caps sync error', err)
+    )
+    return unsub
+  }, [])
+
   useEffect(() => {
     if (locations == null || !remoteLoaded.current) return
     if (JSON.stringify(locations) === JSON.stringify(lastSynced.current.locations)) return
@@ -226,6 +244,8 @@ export default function App() {
     writeStorage(INTRO_KEY, true)
     setShowIntro(false)
   }
+
+  const updateCap = (locId, censusCap) => setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('update cap', e))
 
   const addEntry = (entry) => setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
   const removeEntry = (id) => deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
@@ -347,7 +367,7 @@ export default function App() {
           <ErrorBoundary key={tab}>
           <div className="fade-in">
             {tab === 'status' && (
-              <StatusBoard locations={locations} entries={entries} thresholds={thresholds} />
+              <StatusBoard locations={locations} entries={entries} thresholds={thresholds} caps={caps} onUpdateCap={updateCap} />
             )}
             {tab === 'entry' && (
               <ShiftEntryForm

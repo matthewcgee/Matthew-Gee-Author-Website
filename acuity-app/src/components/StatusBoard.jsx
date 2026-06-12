@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
-import { Card, Badge, ProgressBar, StatCard, theme, grid } from './ui.jsx'
+import { Card, Badge, ProgressBar, StatCard, Icon, theme, grid } from './ui.jsx'
 import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
 import { today } from '../lib/storage.js'
 
@@ -16,7 +16,62 @@ function sortedEntriesFor(locId, entries) {
     })
 }
 
-export default function StatusBoard({ locations, entries, thresholds }) {
+function CapEditor({ value, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value ?? '')
+
+  useEffect(() => {
+    setDraft(value ?? '')
+  }, [value])
+
+  const commit = () => {
+    setEditing(false)
+    const num = draft === '' ? null : Number(draft)
+    if (num !== value) onSave(num)
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="number"
+        min="0"
+        autoFocus
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.target.blur()
+        }}
+        style={{ width: 52, padding: '2px 4px', fontSize: 12.5, fontWeight: 700 }}
+      />
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      title="Click to update the nursing-driven census cap"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        border: 'none',
+        background: 'transparent',
+        cursor: 'pointer',
+        padding: 0,
+        font: 'inherit',
+        fontWeight: 700,
+        color: 'inherit',
+      }}
+    >
+      {value != null ? value : 'set cap'}
+      <Icon name="settings" size={11} style={{ opacity: 0.5 }} />
+    </button>
+  )
+}
+
+export default function StatusBoard({ locations, entries, thresholds, caps, onUpdateCap }) {
   const todayStr = today()
   const summaries = locations.map((loc) => {
     const list = sortedEntriesFor(loc.id, entries)
@@ -30,17 +85,18 @@ export default function StatusBoard({ locations, entries, thresholds }) {
       value: computeEntryValue(e, loc, thresholds),
     }))
     const staffNeeds = latest ? staffNeededForThresholds(latest, loc, thresholds) : null
-    return { loc, latest, value, stage, trend, staffNeeds, hasHistory }
+    const cap = caps[loc.id] !== undefined ? caps[loc.id] : loc.censusCap
+    return { loc, latest, value, stage, trend, staffNeeds, hasHistory, cap }
   })
 
   const greenCount = summaries.filter((s) => s.stage === 'GREEN').length
   const yellowCount = summaries.filter((s) => s.stage === 'YELLOW').length
   const redCount = summaries.filter((s) => s.stage === 'RED').length
 
-  const capLocations = summaries.filter((s) => s.loc.censusCap != null && s.latest)
+  const capLocations = summaries.filter((s) => s.cap != null && s.latest)
   const totalCensus = capLocations.reduce((sum, s) => sum + (s.latest.census || 0), 0)
-  const totalCap = capLocations.reduce((sum, s) => sum + s.loc.censusCap, 0)
-  const overCapCount = capLocations.filter((s) => s.latest.census > s.loc.censusCap).length
+  const totalCap = capLocations.reduce((sum, s) => sum + s.cap, 0)
+  const overCapCount = capLocations.filter((s) => s.latest.census > s.cap).length
 
   return (
     <div>
@@ -83,10 +139,10 @@ export default function StatusBoard({ locations, entries, thresholds }) {
       )}
 
       <div style={grid(3)}>
-        {summaries.map(({ loc, latest, value, stage, trend, staffNeeds, hasHistory }, idx) => {
+        {summaries.map(({ loc, latest, value, stage, trend, staffNeeds, hasHistory, cap }, idx) => {
           const th = thresholdsFor(loc, thresholds)
           const isEd = loc.type === 'ed'
-          const overCap = !isEd && loc.censusCap != null && latest?.census != null && latest.census > loc.censusCap
+          const overCap = !isEd && cap != null && latest?.census != null && latest.census > cap
           const awaiting = !latest
 
           return (
@@ -129,20 +185,22 @@ export default function StatusBoard({ locations, entries, thresholds }) {
                 )}
               </div>
 
-              {!isEd && loc.censusCap != null && latest && (
+              {!isEd && (
                 <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: theme.sub, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, color: theme.sub, marginBottom: 4 }}>
                     <span>Census vs. nursing cap</span>
-                    <span style={{ fontWeight: 700, color: overCap ? STAGE_COLORS.RED : theme.text }}>
-                      {latest.census ?? '—'} / {loc.censusCap}
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700, color: overCap ? STAGE_COLORS.RED : theme.text }}>
+                      {latest?.census ?? '—'} / <CapEditor value={cap} onSave={(v) => onUpdateCap(loc.id, v)} />
                       {overCap && ' · over cap'}
                     </span>
                   </div>
-                  <ProgressBar
-                    value={latest.census ?? 0}
-                    max={loc.censusCap}
-                    color={overCap ? STAGE_COLORS.RED : theme.accent}
-                  />
+                  {cap != null && latest && (
+                    <ProgressBar
+                      value={latest.census ?? 0}
+                      max={cap}
+                      color={overCap ? STAGE_COLORS.RED : theme.accent}
+                    />
+                  )}
                 </div>
               )}
 

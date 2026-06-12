@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { doc, onSnapshot, setDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc, writeBatch } from 'firebase/firestore'
 import { theme, Icon, Toast } from './components/ui.jsx'
 import { KEYS, readStorage, writeStorage } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
@@ -37,6 +37,29 @@ export default function App() {
   const remoteLoaded = useRef(false)
   const stateRef = useRef({})
   stateRef.current = { locations, entries, deployments, thresholds }
+
+  const migrationDone = useRef(false)
+  const entriesSnapRef = useRef(null)
+  const deploymentsSnapRef = useRef(null)
+  const legacyRef = useRef({ entries: null, deployments: null, loaded: false })
+
+  // One-time move of legacy array-based entries/deployments into their own
+  // per-document collections, where concurrent edits can't clobber each other
+  function tryMigrateCollections() {
+    if (migrationDone.current) return
+    if (entriesSnapRef.current == null || deploymentsSnapRef.current == null || !legacyRef.current.loaded) return
+    migrationDone.current = true
+
+    if (entriesSnapRef.current.length === 0) {
+      const source = (legacyRef.current.entries && legacyRef.current.entries.length)
+        ? legacyRef.current.entries
+        : seedEntries()
+      source.forEach((e) => setDoc(doc(db, 'entries', e.id), e).catch((err) => console.error('migrate entry', err)))
+    }
+    if (deploymentsSnapRef.current.length === 0 && legacyRef.current.deployments && legacyRef.current.deployments.length) {
+      legacyRef.current.deployments.forEach((d) => setDoc(doc(db, 'deployments', d.id), d).catch((err) => console.error('migrate deployment', err)))
+    }
+  }
 
   // Seed / migrate on first load
   useEffect(() => {
@@ -96,44 +119,84 @@ export default function App() {
     if (thresholds != null) writeStorage(KEYS.thresholds, thresholds)
   }, [thresholds])
 
-  // Live sync with Firestore so every device shares the same data
+  // Live sync of locations & thresholds via a single shared document
   useEffect(() => {
     const unsub = onSnapshot(
       doc(db, ...STATE_DOC),
       (snap) => {
         if (!snap.exists()) {
-          const { locations, entries, deployments, thresholds } = stateRef.current
-          if (locations != null && entries != null && deployments != null && thresholds != null) {
-            lastSynced.current = { locations, entries, deployments, thresholds }
-            setDoc(doc(db, ...STATE_DOC), { locations, entries, deployments, thresholds })
+          const { locations, thresholds } = stateRef.current
+          if (locations != null && thresholds != null) {
+            lastSynced.current.locations = locations
+            lastSynced.current.thresholds = thresholds
+            setDoc(doc(db, ...STATE_DOC), { locations, thresholds })
           }
-          remoteLoaded.current = true
-          return
-        }
-
-        const data = snap.data()
-        if (data.locations && JSON.stringify(data.locations) !== JSON.stringify(lastSynced.current.locations)) {
-          lastSynced.current.locations = data.locations
-          setLocations(data.locations)
-        }
-        if (data.entries && JSON.stringify(data.entries) !== JSON.stringify(lastSynced.current.entries)) {
-          lastSynced.current.entries = data.entries
-          setEntries(data.entries)
-        }
-        if (data.deployments && JSON.stringify(data.deployments) !== JSON.stringify(lastSynced.current.deployments)) {
-          lastSynced.current.deployments = data.deployments
-          setDeployments(data.deployments)
-        }
-        if (data.thresholds && JSON.stringify(data.thresholds) !== JSON.stringify(lastSynced.current.thresholds)) {
-          const normalized = normalizeThresholds(data.thresholds)
-          lastSynced.current.thresholds = normalized
-          setThresholds(normalized)
+          legacyRef.current.entries = null
+          legacyRef.current.deployments = null
+        } else {
+          const data = snap.data()
+          if (data.locations && JSON.stringify(data.locations) !== JSON.stringify(lastSynced.current.locations)) {
+            lastSynced.current.locations = data.locations
+            setLocations(data.locations)
+          }
+          if (data.thresholds && JSON.stringify(data.thresholds) !== JSON.stringify(lastSynced.current.thresholds)) {
+            const normalized = normalizeThresholds(data.thresholds)
+            lastSynced.current.thresholds = normalized
+            setThresholds(normalized)
+          }
+          // Older versions stored entries/deployments as arrays on this doc;
+          // hang onto them so they can be migrated into their own collections
+          legacyRef.current.entries = data.entries || null
+          legacyRef.current.deployments = data.deployments || null
         }
         remoteLoaded.current = true
+        legacyRef.current.loaded = true
+        tryMigrateCollections()
       },
       (err) => {
         console.error('Firestore sync error', err)
         remoteLoaded.current = true
+        legacyRef.current.loaded = true
+        tryMigrateCollections()
+      }
+    )
+    return unsub
+  }, [])
+
+  // Live sync of shift entries — each entry is its own document, so two
+  // units submitting at the same time never overwrite each other
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, 'entries'),
+      (snap) => {
+        const arr = snap.docs.map((d) => d.data())
+        entriesSnapRef.current = arr
+        setEntries(arr)
+        tryMigrateCollections()
+      },
+      (err) => {
+        console.error('Firestore entries sync error', err)
+        entriesSnapRef.current = []
+        tryMigrateCollections()
+      }
+    )
+    return unsub
+  }, [])
+
+  // Live sync of staff deployments, same per-document approach as entries
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, 'deployments'),
+      (snap) => {
+        const arr = snap.docs.map((d) => d.data())
+        deploymentsSnapRef.current = arr
+        setDeployments(arr)
+        tryMigrateCollections()
+      },
+      (err) => {
+        console.error('Firestore deployments sync error', err)
+        deploymentsSnapRef.current = []
+        tryMigrateCollections()
       }
     )
     return unsub
@@ -145,20 +208,6 @@ export default function App() {
     lastSynced.current.locations = locations
     setDoc(doc(db, ...STATE_DOC), { locations }, { merge: true }).catch((e) => console.error('sync locations', e))
   }, [locations])
-
-  useEffect(() => {
-    if (entries == null || !remoteLoaded.current) return
-    if (JSON.stringify(entries) === JSON.stringify(lastSynced.current.entries)) return
-    lastSynced.current.entries = entries
-    setDoc(doc(db, ...STATE_DOC), { entries }, { merge: true }).catch((e) => console.error('sync entries', e))
-  }, [entries])
-
-  useEffect(() => {
-    if (deployments == null || !remoteLoaded.current) return
-    if (JSON.stringify(deployments) === JSON.stringify(lastSynced.current.deployments)) return
-    lastSynced.current.deployments = deployments
-    setDoc(doc(db, ...STATE_DOC), { deployments }, { merge: true }).catch((e) => console.error('sync deployments', e))
-  }, [deployments])
 
   useEffect(() => {
     if (thresholds == null || !remoteLoaded.current) return
@@ -176,6 +225,19 @@ export default function App() {
   const closeIntro = () => {
     writeStorage(INTRO_KEY, true)
     setShowIntro(false)
+  }
+
+  const addEntry = (entry) => setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
+  const removeEntry = (id) => deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
+  const addDeployment = (dep) => setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
+  const removeDeployment = (id) => deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
+
+  async function replaceCollection(name, items) {
+    const snap = await getDocs(collection(db, name))
+    const batch = writeBatch(db)
+    snap.docs.forEach((d) => batch.delete(d.ref))
+    items.forEach((item) => batch.set(doc(db, name, item.id), item))
+    await batch.commit()
   }
 
   if (locations == null || entries == null || deployments == null) {
@@ -292,7 +354,7 @@ export default function App() {
                 locations={locations}
                 thresholds={thresholds}
                 onAdd={(entry) => {
-                  setEntries((prev) => [entry, ...prev])
+                  addEntry(entry)
                   setToast('Shift entry saved')
                 }}
               />
@@ -301,9 +363,13 @@ export default function App() {
               <Deployments
                 locations={locations}
                 deployments={deployments}
-                onChange={(next) => {
-                  setDeployments(next)
-                  setToast('Deployment log updated')
+                onAdd={(dep) => {
+                  addDeployment(dep)
+                  setToast('Deployment logged')
+                }}
+                onRemove={(id) => {
+                  removeDeployment(id)
+                  setToast('Deployment removed')
                 }}
               />
             )}
@@ -314,7 +380,7 @@ export default function App() {
                 deployments={deployments}
                 thresholds={thresholds}
                 onDeleteEntry={(id) => {
-                  setEntries((prev) => prev.filter((e) => e.id !== id))
+                  removeEntry(id)
                   setToast('Entry removed')
                 }}
               />
@@ -339,19 +405,19 @@ export default function App() {
                   setThresholds(next)
                   setToast('Thresholds updated')
                 }}
-                onImport={(data) => {
+                onImport={async (data) => {
                   if (data.locations) setLocations(data.locations)
-                  if (data.entries) setEntries(data.entries)
-                  if (data.deployments) setDeployments(data.deployments)
                   if (data.thresholds) setThresholds(normalizeThresholds(data.thresholds))
+                  if (data.entries) await replaceCollection('entries', data.entries)
+                  if (data.deployments) await replaceCollection('deployments', data.deployments)
                   setToast('Data imported')
                 }}
-                onClear={() => {
+                onClear={async () => {
                   const freshLocations = seedLocations()
                   setLocations(freshLocations)
-                  setEntries([])
-                  setDeployments([])
                   setThresholds(DEFAULT_THRESHOLDS)
+                  await replaceCollection('entries', [])
+                  await replaceCollection('deployments', [])
                   setToast('All data cleared')
                 }}
                 getExportData={() => ({ locations, entries, deployments, thresholds })}

@@ -19,7 +19,7 @@ function locName(locations, id) {
   return l ? l.name : (id ? '—' : 'Float pool / off-unit')
 }
 
-export default function Deployments({ locations, deployments, onChange }) {
+export default function Deployments({ locations, deployments, onAdd, onRemove }) {
   const [form, setForm] = useState(emptyForm)
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
@@ -40,12 +40,12 @@ export default function Deployments({ locations, deployments, onChange }) {
       notes: form.notes,
       createdAt: Date.now(),
     }
-    onChange([deployment, ...deployments])
+    onAdd(deployment)
     setForm((f) => emptyForm())
   }
 
   const remove = (id) => {
-    onChange(deployments.filter((d) => d.id !== id))
+    onRemove(id)
   }
 
   const sorted = deployments.slice().sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))

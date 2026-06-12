@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { doc, onSnapshot, setDoc } from 'firebase/firestore'
 import { theme, Icon, Toast } from './components/ui.jsx'
 import { KEYS, readStorage, writeStorage } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
+import { db, STATE_DOC } from './lib/firebase.js'
 import StatusBoard from './components/StatusBoard.jsx'
 import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
@@ -28,6 +30,10 @@ export default function App() {
   const [tab, setTab] = useState('status')
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
+
+  const lastSynced = useRef({})
+  const stateRef = useRef({})
+  stateRef.current = { locations, entries, deployments, thresholds }
 
   // Seed / migrate on first load
   useEffect(() => {
@@ -85,6 +91,72 @@ export default function App() {
 
   useEffect(() => {
     if (thresholds != null) writeStorage(KEYS.thresholds, thresholds)
+  }, [thresholds])
+
+  // Live sync with Firestore so every device shares the same data
+  useEffect(() => {
+    const unsub = onSnapshot(
+      doc(db, ...STATE_DOC),
+      (snap) => {
+        if (!snap.exists()) {
+          const { locations, entries, deployments, thresholds } = stateRef.current
+          if (locations != null && entries != null && deployments != null && thresholds != null) {
+            lastSynced.current = { locations, entries, deployments, thresholds }
+            setDoc(doc(db, ...STATE_DOC), { locations, entries, deployments, thresholds })
+          }
+          return
+        }
+
+        const data = snap.data()
+        if (data.locations && JSON.stringify(data.locations) !== JSON.stringify(lastSynced.current.locations)) {
+          lastSynced.current.locations = data.locations
+          setLocations(data.locations)
+        }
+        if (data.entries && JSON.stringify(data.entries) !== JSON.stringify(lastSynced.current.entries)) {
+          lastSynced.current.entries = data.entries
+          setEntries(data.entries)
+        }
+        if (data.deployments && JSON.stringify(data.deployments) !== JSON.stringify(lastSynced.current.deployments)) {
+          lastSynced.current.deployments = data.deployments
+          setDeployments(data.deployments)
+        }
+        if (data.thresholds && JSON.stringify(data.thresholds) !== JSON.stringify(lastSynced.current.thresholds)) {
+          const normalized = normalizeThresholds(data.thresholds)
+          lastSynced.current.thresholds = normalized
+          setThresholds(normalized)
+        }
+      },
+      (err) => console.error('Firestore sync error', err)
+    )
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    if (locations == null) return
+    if (JSON.stringify(locations) === JSON.stringify(lastSynced.current.locations)) return
+    lastSynced.current.locations = locations
+    setDoc(doc(db, ...STATE_DOC), { locations }, { merge: true }).catch((e) => console.error('sync locations', e))
+  }, [locations])
+
+  useEffect(() => {
+    if (entries == null) return
+    if (JSON.stringify(entries) === JSON.stringify(lastSynced.current.entries)) return
+    lastSynced.current.entries = entries
+    setDoc(doc(db, ...STATE_DOC), { entries }, { merge: true }).catch((e) => console.error('sync entries', e))
+  }, [entries])
+
+  useEffect(() => {
+    if (deployments == null) return
+    if (JSON.stringify(deployments) === JSON.stringify(lastSynced.current.deployments)) return
+    lastSynced.current.deployments = deployments
+    setDoc(doc(db, ...STATE_DOC), { deployments }, { merge: true }).catch((e) => console.error('sync deployments', e))
+  }, [deployments])
+
+  useEffect(() => {
+    if (thresholds == null) return
+    if (JSON.stringify(thresholds) === JSON.stringify(lastSynced.current.thresholds)) return
+    lastSynced.current.thresholds = thresholds
+    setDoc(doc(db, ...STATE_DOC), { thresholds }, { merge: true }).catch((e) => console.error('sync thresholds', e))
   }, [thresholds])
 
   useEffect(() => {

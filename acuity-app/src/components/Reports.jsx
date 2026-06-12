@@ -162,7 +162,6 @@ export default function Reports({ locations, entries, deployments, thresholds, o
           const loc = locations.find((l) => l.id === e.locId)
           return loc ? entryStage(e, loc, thresholds) : ''
         } },
-      { label: 'AddStaffNext', value: (e) => e.addStaffNext },
       { label: 'Notes', value: (e) => e.notes },
     ]
     download('acuity-entries.csv', toCSV(sortedEntries, cols), 'text/csv')

@@ -10,7 +10,6 @@ const emptyForm = (locId) => ({
   census: '',
   points: '',
   staff: '',
-  addStaffNext: '',
   notes: '',
 })
 
@@ -42,7 +41,6 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
       census: form.census === '' ? null : Number(form.census),
       points: Number(form.points) || 0,
       staff: isEd ? null : Number(form.staff) || 0,
-      addStaffNext: form.addStaffNext === '' ? null : Number(form.addStaffNext),
       notes: form.notes,
       pilot: false,
       createdAt: Date.now(),
@@ -98,9 +96,6 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
                   <input type="number" min="0" step="0.1" value={form.staff} onChange={set('staff')} required />
                 </Field>
               )}
-              <Field label="Recommended additional staff (next shift)" hint="Optional">
-                <input type="number" min="0" value={form.addStaffNext} onChange={set('addStaffNext')} />
-              </Field>
             </div>
 
             <Field label="Notes" hint="Optional">

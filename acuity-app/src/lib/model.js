@@ -73,6 +73,38 @@ export function staffNeededForThresholds(entry, location, globalThresholds) {
   }
 }
 
+export const ADULT_ACUITY_CRITERIA = [
+  {
+    group: 'Observation Status',
+    items: [
+      { id: 'obs_1to1', label: 'Constant Observation (1:1)', points: 5 },
+      { id: 'obs_q15', label: 'Q15 Observation', points: 3 },
+      { id: 'obs_los', label: 'Line-of-sight', points: 2 },
+    ],
+  },
+  {
+    group: 'Behavioral Risk (last 24 hours)',
+    items: [
+      { id: 'risk_aggression', label: 'Physical aggression toward staff/patient', points: 4 },
+      { id: 'risk_restraint', label: 'Restraint (physical or chemical)', points: 4 },
+      { id: 'risk_prn', label: 'Severe agitation requiring PRN sedation', points: 3 },
+      { id: 'risk_si', label: 'Active suicide attempt or self-injury in the ED <48 hrs', points: 4 },
+      { id: 'risk_hi', label: 'Active homicidal ideation with threat', points: 3 },
+    ],
+  },
+  {
+    group: 'Clinical Complexity',
+    items: [
+      { id: 'complex_psychosis', label: 'Severe psychosis with disorganization', points: 3 },
+      { id: 'complex_mania', label: 'Severe mania with impulsivity', points: 3 },
+      { id: 'complex_detox', label: 'Detox protocol (CIWA/COWS)', points: 2 },
+      { id: 'complex_elopement', label: 'Elopement risk', points: 2 },
+      { id: 'complex_forensic', label: 'Forensic/court hold', points: 2 },
+      { id: 'complex_pd', label: 'Severe personality disorder behavioral dysregulation', points: 2 },
+    ],
+  },
+]
+
 export function seedLocations() {
   return [
     {

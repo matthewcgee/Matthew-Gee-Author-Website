@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc, writeBatch } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDocs, increment, onSnapshot, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { theme, Icon, Toast } from './components/ui.jsx'
-import { KEYS, readStorage, writeStorage } from './lib/storage.js'
+import { KEYS, readStorage, writeStorage, today, uid } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
 import { db, STATE_DOC } from './lib/firebase.js'
 import StatusBoard from './components/StatusBoard.jsx'
 import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
 import Reports from './components/Reports.jsx'
+import AcuityCalculator from './components/AcuityCalculator.jsx'
 import Settings from './components/Settings.jsx'
 import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
@@ -252,6 +253,29 @@ export default function App() {
   const addDeployment = (dep) => setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
   const removeDeployment = (id) => deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
 
+  async function pushAcuityToED(locId, shift, points) {
+    const todayStr = today()
+    const list = entries.filter((e) => e.locId === locId && e.date === todayStr && e.shift === shift)
+    const existing = list[list.length - 1]
+    if (existing) {
+      await updateDoc(doc(db, 'entries', existing.id), { points: increment(points) }).catch((e) => console.error('push acuity', e))
+    } else {
+      const entry = {
+        id: uid(),
+        locId,
+        date: todayStr,
+        shift,
+        census: null,
+        points,
+        staff: null,
+        notes: 'Added via Patient Acuity Calculator',
+        pilot: false,
+        createdAt: Date.now(),
+      }
+      await setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('push acuity', e))
+    }
+  }
+
   async function replaceCollection(name, items) {
     const snap = await getDocs(collection(db, name))
     const batch = writeBatch(db)
@@ -394,16 +418,25 @@ export default function App() {
               />
             )}
             {tab === 'reports' && (
-              <Reports
-                locations={locations}
-                entries={entries}
-                deployments={deployments}
-                thresholds={thresholds}
-                onDeleteEntry={(id) => {
-                  removeEntry(id)
-                  setToast('Entry removed')
-                }}
-              />
+              <>
+                <Reports
+                  locations={locations}
+                  entries={entries}
+                  deployments={deployments}
+                  thresholds={thresholds}
+                  onDeleteEntry={(id) => {
+                    removeEntry(id)
+                    setToast('Entry removed')
+                  }}
+                />
+                <AcuityCalculator
+                  locations={locations}
+                  onPushToED={(locId, shift, points) => {
+                    pushAcuityToED(locId, shift, points)
+                    setToast('Pushed to ED acuity')
+                  }}
+                />
+              </>
             )}
             {tab === 'settings' && !settingsUnlocked && (
               <SettingsLock

@@ -9,6 +9,7 @@ import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
 import Reports from './components/Reports.jsx'
 import AcuityCalculator from './components/AcuityCalculator.jsx'
+import HelpGuide from './components/HelpGuide.jsx'
 import Settings from './components/Settings.jsx'
 import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
@@ -19,6 +20,7 @@ const TABS = [
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
+  { id: 'help', label: 'Help & Training', icon: 'help' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
 
@@ -438,6 +440,7 @@ export default function App() {
                 />
               </>
             )}
+            {tab === 'help' && <HelpGuide />}
             {tab === 'settings' && !settingsUnlocked && (
               <SettingsLock
                 onUnlock={() => {

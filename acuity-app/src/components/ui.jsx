@@ -78,6 +78,18 @@ const ICON_PATHS = {
       <path d="M9.5 12l1.8 1.8L14.5 10" />
     </>
   ),
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.2 9.2a2.8 2.8 0 1 1 4.4 2.3c-.9.6-1.6 1.1-1.6 2.2" />
+      <path d="M12 17.2h.01" />
+    </>
+  ),
+  cursor: (
+    <>
+      <path d="M5 3l5.5 14 2-6 6-2L5 3z" />
+    </>
+  ),
 }
 
 export function Icon({ name, size = 18, strokeWidth = 2, style }) {

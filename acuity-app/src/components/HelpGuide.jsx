@@ -430,10 +430,9 @@ export default function HelpGuide() {
             </div>
           </Illustration>
 
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Scoring a patient</div>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Scoring an adult patient</div>
           <Step n="1">
-            Make sure <b>Adult</b> is selected (the Peds calculator is coming soon and will use additional,
-            pediatric-specific criteria).
+            Select <b>Adult</b> at the top of the calculator.
           </Step>
           <Step n="2">
             Enter the patient's <b>initials</b> — this keeps the list readable without using full names.
@@ -453,6 +452,67 @@ export default function HelpGuide() {
             Click <b>Add to List</b>. The patient (initials + score) appears in the "Scored Patients" list
             below, and the form resets for the next patient.
           </Step>
+
+          <div style={{ fontSize: 13, fontWeight: 700, marginTop: 16, marginBottom: 6 }}>Scoring a pediatric patient</div>
+          <Illustration label="Peds scoring form">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 460 }}>
+              <div style={{ ...grid(2), gap: 8 }}>
+                <MockBar>Patient Initials: <b>R.S.</b></MockBar>
+                <MockBar>Base Acuity Score: <b>6</b></MockBar>
+              </div>
+              <div style={{ ...grid(3), gap: 10 }}>
+                {['Observation', 'Behavioral Safety', 'Medical Complexity'].map((g) => (
+                  <div key={g} style={{ background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 8, padding: 8 }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 700, marginBottom: 6 }}>{g}</div>
+                    <div style={{ fontSize: 11.5, color: theme.sub, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <span>☑ C# Item (+points)</span>
+                      <span>☐ C# Item (+points)</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <MockBar>
+                <span>Total Score</span>
+                <span style={{ textAlign: 'right' }}>
+                  <b style={{ fontSize: 18 }}>10</b>
+                  <div style={{ fontSize: 10.5, color: theme.sub }}>base 6 + modifiers 4</div>
+                </span>
+              </MockBar>
+            </div>
+          </Illustration>
+          <Step n="1">
+            Select <b>Peds</b> at the top of the calculator.
+          </Step>
+          <Step n="2">
+            Enter the patient's <b>initials</b>, then enter their <b>Base Acuity Score</b> from the standard
+            acuity rubric (the same scoring used for adult patients' Observation Status / Behavioral Risk /
+            Clinical Complexity totals, applied as a single starting number for the child or adolescent).
+          </Step>
+          <Step n="3">
+            Check any <b>Pediatric Modifiers</b> that apply, grouped into three categories:
+            <ul style={{ marginTop: 6, paddingLeft: 20, lineHeight: 1.7 }}>
+              <li><b>Observation</b> — continuous line-of-sight observation (C1), or an on-unit self-harm/suicide attempt this admission (C7).</li>
+              <li><b>Behavioral Safety</b> — prior restraint/seclusion on the unit (C4), or sexually inappropriate/boundary-risk behavior (C8).</li>
+              <li><b>Medical Complexity</b> — eating disorder protocol (C3), brittle Type 1 diabetes management (C5), or contact precautions/room isolation (C2).</li>
+            </ul>
+          </Step>
+          <Step n="4">
+            <b>Observation modifiers don't stack.</b> C1 and C7 are both "continuous observation" triggers —
+            if you check both, only the higher-value one (+4) counts toward the total. The other will show
+            struck-through with a note explaining it wasn't added.
+          </Step>
+          <Step n="5">
+            The <b>Total Score</b> updates live as <i>base score + modifier points</i>, shown with the
+            breakdown underneath.
+          </Step>
+          <Step n="6">
+            Click <b>Add to List</b>. The patient appears in "Scored Patients" with a <b>Peds</b> tag, alongside
+            any adult patients you've scored.
+          </Step>
+          <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 8 }}>
+            Note: C6 (documentation reminders for admits, discharges, and staffing changes) is a charting
+            checklist item, not a points modifier — it isn't part of this calculator.
+          </div>
 
           <div style={{ fontSize: 13, fontWeight: 700, marginTop: 16, marginBottom: 6 }}>Pushing a score to the ED</div>
           <Illustration label="Scored Patients list">

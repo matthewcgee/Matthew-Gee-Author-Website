@@ -105,6 +105,43 @@ export const ADULT_ACUITY_CRITERIA = [
   },
 ]
 
+export const PEDIATRIC_MODIFIERS = [
+  { id: 'C1', label: 'Line-of-sight / continuous visual observation', points: 4, group: 'Observation', cluster: true },
+  { id: 'C7', label: 'On-unit self-harm or suicide attempt (this admission)', points: 4, group: 'Observation', cluster: true },
+  { id: 'C4', label: 'Prior restraint / seclusion on unit', points: 3, group: 'Behavioral Safety' },
+  { id: 'C8', label: 'Sexually inappropriate / boundary-risk behavior', points: 3, group: 'Behavioral Safety' },
+  { id: 'C3', label: 'Eating disorder protocol', points: 3, group: 'Medical Complexity' },
+  { id: 'C5', label: 'Brittle Type 1 diabetes (off pump / frequent checks)', points: 3, group: 'Medical Complexity' },
+  { id: 'C2', label: 'Contact precautions / room isolation', points: 2, group: 'Medical Complexity' },
+]
+
+// Observation cluster (C1, C7) does not stack — the higher single value
+// governs and the rest of the cluster is dropped from the total.
+export const PEDIATRIC_OBSERVATION_GOVERNS = true
+
+export function scorePediatricModifiers(activeIds) {
+  const active = PEDIATRIC_MODIFIERS.filter((m) => activeIds.includes(m.id))
+  const cluster = active.filter((m) => m.cluster)
+  const others = active.filter((m) => !m.cluster)
+
+  let observationPts = 0
+  let governedOut = []
+  if (PEDIATRIC_OBSERVATION_GOVERNS && cluster.length) {
+    const top = cluster.reduce((a, b) => (b.points > a.points ? b : a))
+    observationPts = top.points
+    governedOut = cluster.filter((m) => m.id !== top.id)
+  } else {
+    observationPts = cluster.reduce((s, m) => s + m.points, 0)
+  }
+  const otherPts = others.reduce((s, m) => s + m.points, 0)
+  return { total: observationPts + otherPts, observationPts, otherPts, active, governedOut }
+}
+
+export const PEDIATRIC_MODIFIER_GROUPS = ['Observation', 'Behavioral Safety', 'Medical Complexity'].map((group) => ({
+  group,
+  items: PEDIATRIC_MODIFIERS.filter((m) => m.group === group),
+}))
+
 export function seedLocations() {
   return [
     {

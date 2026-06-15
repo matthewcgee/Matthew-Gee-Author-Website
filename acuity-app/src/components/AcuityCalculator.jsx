@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Card, Field, Button, Badge, theme, grid } from './ui.jsx'
-import { ADULT_ACUITY_CRITERIA } from '../lib/model.js'
+import { ADULT_ACUITY_CRITERIA, PEDIATRIC_MODIFIER_GROUPS, scorePediatricModifiers } from '../lib/model.js'
 import { uid } from '../lib/storage.js'
 
 const emptySelections = (criteria) => {
@@ -21,6 +21,8 @@ export default function AcuityCalculator({ locations, onPushToED }) {
   const [mode, setMode] = useState('adult')
   const [initials, setInitials] = useState('')
   const [selections, setSelections] = useState(() => emptySelections(ADULT_ACUITY_CRITERIA))
+  const [pedsBase, setPedsBase] = useState('')
+  const [pedsMods, setPedsMods] = useState([])
   const [patients, setPatients] = useState([])
 
   const edLocations = locations.filter((l) => l.type === 'ed')
@@ -29,13 +31,27 @@ export default function AcuityCalculator({ locations, onPushToED }) {
 
   const score = scoreFor(ADULT_ACUITY_CRITERIA, selections)
 
+  const pedsModScore = scorePediatricModifiers(pedsMods)
+  const pedsBaseNum = Number(pedsBase) || 0
+  const pedsTotal = pedsBaseNum + pedsModScore.total
+
   const toggle = (id) => setSelections((s) => ({ ...s, [id]: !s[id] }))
+  const togglePedsMod = (id) =>
+    setPedsMods((mods) => (mods.includes(id) ? mods.filter((m) => m !== id) : [...mods, id]))
 
   const addPatient = () => {
     if (!initials.trim()) return
-    setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score, mode }])
+    setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score, mode: 'adult' }])
     setInitials('')
     setSelections(emptySelections(ADULT_ACUITY_CRITERIA))
+  }
+
+  const addPedsPatient = () => {
+    if (!initials.trim()) return
+    setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score: pedsTotal, mode: 'peds' }])
+    setInitials('')
+    setPedsBase('')
+    setPedsMods([])
   }
 
   const removePatient = (id) => setPatients((list) => list.filter((p) => p.id !== id))
@@ -63,116 +79,191 @@ export default function AcuityCalculator({ locations, onPushToED }) {
       </div>
 
       {mode === 'peds' ? (
-        <Card>
-          <div style={{ fontSize: 13, color: theme.sub }}>
-            The Pediatric acuity calculator is coming soon — it will include the additional alterations for Peds scoring.
+        <Card title="Score a Pediatric Patient" sub="Base acuity score plus pediatric modifiers, then add to the list">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14, maxWidth: 420 }}>
+            <Field label="Patient Initials">
+              <input
+                type="text"
+                value={initials}
+                onChange={(e) => setInitials(e.target.value)}
+                placeholder="e.g. J.D."
+                maxLength={8}
+              />
+            </Field>
+            <Field label="Base Acuity Score" hint="From the standard acuity rubric">
+              <input
+                type="number"
+                min="0"
+                value={pedsBase}
+                onChange={(e) => setPedsBase(e.target.value)}
+                placeholder="0"
+              />
+            </Field>
           </div>
-        </Card>
-      ) : (
-        <>
-          <Card title="Score a Patient" sub="Check all that apply, then add to the list">
-            <div style={{ marginBottom: 14, maxWidth: 240 }}>
-              <Field label="Patient Initials">
-                <input
-                  type="text"
-                  value={initials}
-                  onChange={(e) => setInitials(e.target.value)}
-                  placeholder="e.g. J.D."
-                  maxLength={8}
-                />
-              </Field>
-            </div>
 
-            <div style={grid(3)}>
-              {ADULT_ACUITY_CRITERIA.map((group) => (
-                <div key={group.group}>
-                  <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8, color: theme.text }}>{group.group}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {group.items.map((item) => (
-                      <label key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: theme.sub, cursor: 'pointer' }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8, color: theme.text }}>Pediatric Modifiers</div>
+          <div style={grid(3)}>
+            {PEDIATRIC_MODIFIER_GROUPS.map((group) => (
+              <div key={group.group}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8, color: theme.text }}>{group.group}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {group.items.map((item) => {
+                    const checked = pedsMods.includes(item.id)
+                    const governed = checked && pedsModScore.governedOut.some((g) => g.id === item.id)
+                    return (
+                      <label
+                        key={item.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          fontSize: 12.5,
+                          color: governed ? theme.sub : theme.sub,
+                          cursor: 'pointer',
+                          opacity: governed ? 0.55 : 1,
+                        }}
+                        title={governed ? 'Observation cluster: highest single modifier governs — this one is not added.' : undefined}
+                      >
                         <input
                           type="checkbox"
-                          checked={!!selections[item.id]}
-                          onChange={() => toggle(item.id)}
+                          checked={checked}
+                          onChange={() => togglePedsMod(item.id)}
                           style={{ marginTop: 2 }}
                         />
-                        <span>
+                        <span style={{ textDecoration: governed ? 'line-through' : 'none' }}>
+                          <span style={{ fontFamily: 'monospace', fontSize: 11, color: theme.sub, marginRight: 4 }}>{item.id}</span>
                           {item.label} <span style={{ fontWeight: 700, color: theme.accent }}>(+{item.points})</span>
                         </span>
                       </label>
-                    ))}
-                  </div>
+                    )
+                  })}
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+
+          {pedsModScore.governedOut.length > 0 && (
+            <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 10 }}>
+              Observation cluster: {pedsModScore.governedOut.map((g) => g.id).join(', ')} not added — the
+              highest single observation modifier governs.
             </div>
+          )}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
-              <div>
-                <div style={{ fontSize: 11.5, color: theme.sub }}>Total Score</div>
-                <div style={{ fontSize: 28, fontWeight: 800, fontFamily: theme.display }}>{score}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
+            <div>
+              <div style={{ fontSize: 11.5, color: theme.sub }}>Total Score</div>
+              <div style={{ fontSize: 28, fontWeight: 800, fontFamily: theme.display }}>{pedsTotal}</div>
+              <div style={{ fontSize: 11, color: theme.sub }}>
+                base {pedsBaseNum} + modifiers {pedsModScore.total}
               </div>
-              <Button onClick={addPatient} disabled={!initials.trim()}>Add to List</Button>
             </div>
-          </Card>
+            <Button onClick={addPedsPatient} disabled={!initials.trim()}>Add to List</Button>
+          </div>
+        </Card>
+      ) : (
+        <Card title="Score a Patient" sub="Check all that apply, then add to the list">
+          <div style={{ marginBottom: 14, maxWidth: 240 }}>
+            <Field label="Patient Initials">
+              <input
+                type="text"
+                value={initials}
+                onChange={(e) => setInitials(e.target.value)}
+                placeholder="e.g. J.D."
+                maxLength={8}
+              />
+            </Field>
+          </div>
 
-          <Card title="Scored Patients" sub={`${patients.length} pending · ${totalPending} total point${totalPending === 1 ? '' : 's'}`}>
-            {edLocations.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
-                <Field label="Push to ED Location">
-                  <select value={edLocId} onChange={(e) => setEdLocId(e.target.value)}>
-                    <option value="">Select ED…</option>
-                    {edLocations.map((l) => (
-                      <option key={l.id} value={l.id}>{l.name} — {l.facility}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Shift">
-                  <select value={edShift} onChange={(e) => setEdShift(e.target.value)}>
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
-                </Field>
+          <div style={grid(3)}>
+            {ADULT_ACUITY_CRITERIA.map((group) => (
+              <div key={group.group}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8, color: theme.text }}>{group.group}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {group.items.map((item) => (
+                    <label key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: theme.sub, cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={!!selections[item.id]}
+                        onChange={() => toggle(item.id)}
+                        style={{ marginTop: 2 }}
+                      />
+                      <span>
+                        {item.label} <span style={{ fontWeight: 700, color: theme.accent }}>(+{item.points})</span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
               </div>
-            )}
+            ))}
+          </div>
 
-            {patients.length === 0 ? (
-              <div style={{ fontSize: 13, color: theme.sub }}>No patients scored yet.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {patients.map((p) => (
-                  <div
-                    key={p.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '8px 12px',
-                      borderRadius: 8,
-                      background: theme.panelAlt,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontWeight: 700 }}>{p.initials}</span>
-                      <Badge color={theme.accentSoft}>{p.score} pts</Badge>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <Button
-                        variant="primary"
-                        onClick={() => pushPatient(p)}
-                        disabled={!edLocId}
-                        style={{ fontSize: 12 }}
-                      >
-                        Push to ED Acuity
-                      </Button>
-                      <Button variant="danger" onClick={() => removePatient(p.id)} style={{ fontSize: 12 }}>Remove</Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
+            <div>
+              <div style={{ fontSize: 11.5, color: theme.sub }}>Total Score</div>
+              <div style={{ fontSize: 28, fontWeight: 800, fontFamily: theme.display }}>{score}</div>
+            </div>
+            <Button onClick={addPatient} disabled={!initials.trim()}>Add to List</Button>
+          </div>
+        </Card>
       )}
+
+      <Card title="Scored Patients" sub={`${patients.length} pending · ${totalPending} total point${totalPending === 1 ? '' : 's'}`}>
+        {edLocations.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14 }}>
+            <Field label="Push to ED Location">
+              <select value={edLocId} onChange={(e) => setEdLocId(e.target.value)}>
+                <option value="">Select ED…</option>
+                {edLocations.map((l) => (
+                  <option key={l.id} value={l.id}>{l.name} — {l.facility}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Shift">
+              <select value={edShift} onChange={(e) => setEdShift(e.target.value)}>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </Field>
+          </div>
+        )}
+
+        {patients.length === 0 ? (
+          <div style={{ fontSize: 13, color: theme.sub }}>No patients scored yet.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {patients.map((p) => (
+              <div
+                key={p.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '8px 12px',
+                  borderRadius: 8,
+                  background: theme.panelAlt,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontWeight: 700 }}>{p.initials}</span>
+                  <Badge color={theme.accentSoft}>{p.score} pts</Badge>
+                  {p.mode === 'peds' && <Badge color={theme.accentSoft}>Peds</Badge>}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <Button
+                    variant="primary"
+                    onClick={() => pushPatient(p)}
+                    disabled={!edLocId}
+                    style={{ fontSize: 12 }}
+                  >
+                    Push to ED Acuity
+                  </Button>
+                  <Button variant="danger" onClick={() => removePatient(p.id)} style={{ fontSize: 12 }}>Remove</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   )
 }

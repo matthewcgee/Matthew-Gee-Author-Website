@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import { Card, Badge, Button, Icon, theme, grid, ProgressBar } from './ui.jsx'
-import { STAGE_COLORS } from '../lib/model.js'
+import { STAGE_COLORS, PEDIATRIC_ED_THRESHOLDS } from '../lib/model.js'
 
 const SECTIONS = [
   { id: 'overview', label: 'Getting Around', icon: 'grid' },
@@ -592,9 +592,30 @@ export default function HelpGuide() {
             Inpatient units and the ED, used when a unit doesn't have its own custom thresholds.
           </Step>
           <Step n="4">
+            <b>Custom Green Max / Yellow Max</b> — each location row also has its own threshold override.
+            Fill in both fields to give that unit its own Green/Yellow cutoffs instead of the region default;
+            leave both blank to use the default.
+          </Step>
+          <Step n="5">
             <b>Data Management</b> — Export All Data (JSON) for backups, Import Data (JSON) to restore from a
             backup, or Clear All Data to reset everything (this cannot be undone, so use with care).
           </Step>
+
+          <div
+            style={{
+              marginTop: 12,
+              padding: '10px 12px',
+              borderRadius: 8,
+              background: theme.accentSoft,
+              fontSize: 12.5,
+              lineHeight: 1.6,
+            }}
+          >
+            <b>Recommended Pediatric ED thresholds:</b> for a Pediatric ED location, set{' '}
+            <b>Custom Green Max = {PEDIATRIC_ED_THRESHOLDS.greenMax}</b> and{' '}
+            <b>Custom Yellow Max = {PEDIATRIC_ED_THRESHOLDS.yellowMax}</b>. This makes the unit turn YELLOW at
+            54 total points and RED at 72 — 20% above the initial 45 / 60 pilot bands.
+          </div>
           <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 8 }}>
             Note: Census caps on the Status Board can be updated by any charge nurse directly on the unit's
             card — you don't need the Settings password for day-to-day cap changes.

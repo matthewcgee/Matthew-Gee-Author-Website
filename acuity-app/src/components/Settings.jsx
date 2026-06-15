@@ -46,6 +46,18 @@ export default function Settings({
     onChangeLocations(locations.filter((l) => l.id !== id))
   }
 
+  const updateLocationThreshold = (id, key, value) => {
+    onChangeLocations(locations.map((l) => {
+      if (l.id !== id) return l
+      const type = l.type === 'ed' ? 'ed' : 'inpatient'
+      const current = l.thresholds || {}
+      const num = value === '' ? null : Number(value)
+      const next = { ...current, [key]: num }
+      if (next.greenMax == null || next.yellowMax == null) return { ...l, thresholds: null }
+      return { ...l, thresholds: { unit: current.unit || thresholds[type].unit, greenMax: next.greenMax, yellowMax: next.yellowMax } }
+    }))
+  }
+
   const updateThreshold = (type, key, value) => {
     onChangeThresholds({
       ...thresholds,
@@ -139,6 +151,24 @@ export default function Settings({
                 onChange={(e) => updateLocation(loc.id, { censusCap: e.target.value === '' ? null : Number(e.target.value) })}
                 placeholder={loc.type === 'ed' ? 'N/A' : 'e.g. 18'}
                 disabled={loc.type === 'ed'}
+              />
+            </Field>
+            <Field label="Custom Green Max" hint="Blank = use default thresholds">
+              <input
+                type="number"
+                step="0.1"
+                value={loc.thresholds?.greenMax ?? ''}
+                onChange={(e) => updateLocationThreshold(loc.id, 'greenMax', e.target.value)}
+                placeholder="default"
+              />
+            </Field>
+            <Field label="Custom Yellow Max" hint="Both fields required to override">
+              <input
+                type="number"
+                step="0.1"
+                value={loc.thresholds?.yellowMax ?? ''}
+                onChange={(e) => updateLocationThreshold(loc.id, 'yellowMax', e.target.value)}
+                placeholder="default"
               />
             </Field>
             <div>

@@ -137,6 +137,15 @@ export function scorePediatricModifiers(activeIds) {
   return { total: observationPts + otherPts, observationPts, otherPts, active, governedOut }
 }
 
+// Recommended thresholds for a Pediatric ED location (raw point totals,
+// 20% above the initial 45/60 pilot bands): YELLOW starts at 54, RED at 72.
+// Expressed as greenMax/yellowMax for the <= comparisons in computeStage.
+export const PEDIATRIC_ED_THRESHOLDS = {
+  greenMax: 53,
+  yellowMax: 71,
+  unit: 'Total pediatric ED behavioral health points',
+}
+
 export const PEDIATRIC_MODIFIER_GROUPS = ['Observation', 'Behavioral Safety', 'Medical Complexity'].map((group) => ({
   group,
   items: PEDIATRIC_MODIFIERS.filter((m) => m.group === group),

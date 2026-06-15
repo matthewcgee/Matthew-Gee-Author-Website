@@ -23,6 +23,7 @@ export default function Settings({
   getExportData,
 }) {
   const [newLoc, setNewLoc] = useState(emptyLocation)
+  const [thresholdDrafts, setThresholdDrafts] = useState({})
   const fileInputRef = useRef(null)
 
   const setNew = (key) => (e) => setNewLoc((l) => ({ ...l, [key]: e.target.value }))
@@ -47,15 +48,30 @@ export default function Settings({
   }
 
   const updateLocationThreshold = (id, key, value) => {
-    onChangeLocations(locations.map((l) => {
-      if (l.id !== id) return l
-      const type = l.type === 'ed' ? 'ed' : 'inpatient'
-      const current = l.thresholds || {}
-      const num = value === '' ? null : Number(value)
-      const next = { ...current, [key]: num }
-      if (next.greenMax == null || next.yellowMax == null) return { ...l, thresholds: null }
-      return { ...l, thresholds: { unit: current.unit || thresholds[type].unit, greenMax: next.greenMax, yellowMax: next.yellowMax } }
-    }))
+    const loc = locations.find((l) => l.id === id)
+    const type = loc.type === 'ed' ? 'ed' : 'inpatient'
+    const draft = thresholdDrafts[id] || {
+      greenMax: loc.thresholds?.greenMax ?? '',
+      yellowMax: loc.thresholds?.yellowMax ?? '',
+    }
+    const nextDraft = { ...draft, [key]: value }
+    setThresholdDrafts((d) => ({ ...d, [id]: nextDraft }))
+
+    const g = nextDraft.greenMax === '' ? null : Number(nextDraft.greenMax)
+    const y = nextDraft.yellowMax === '' ? null : Number(nextDraft.yellowMax)
+    if (g == null && y == null) {
+      updateLocation(id, { thresholds: null })
+    } else if (g != null && y != null) {
+      updateLocation(id, { thresholds: { unit: loc.thresholds?.unit || thresholds[type].unit, greenMax: g, yellowMax: y } })
+    }
+    // If only one of the two fields has a value, leave thresholds as-is —
+    // the draft below keeps the typed value visible until both are filled.
+  }
+
+  const thresholdDraftValue = (loc, key) => {
+    const draft = thresholdDrafts[loc.id]
+    if (draft && key in draft) return draft[key]
+    return loc.thresholds?.[key] ?? ''
   }
 
   const updateThreshold = (type, key, value) => {
@@ -157,7 +173,7 @@ export default function Settings({
               <input
                 type="number"
                 step="0.1"
-                value={loc.thresholds?.greenMax ?? ''}
+                value={thresholdDraftValue(loc, 'greenMax')}
                 onChange={(e) => updateLocationThreshold(loc.id, 'greenMax', e.target.value)}
                 placeholder="default"
               />
@@ -166,7 +182,7 @@ export default function Settings({
               <input
                 type="number"
                 step="0.1"
-                value={loc.thresholds?.yellowMax ?? ''}
+                value={thresholdDraftValue(loc, 'yellowMax')}
                 onChange={(e) => updateLocationThreshold(loc.id, 'yellowMax', e.target.value)}
                 placeholder="default"
               />

@@ -3,7 +3,6 @@ import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
 import { Card, Badge, ProgressBar, StatCard, Icon, theme, grid } from './ui.jsx'
 import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
 import { today } from '../lib/storage.js'
-import { STATE_SHAPES } from '../lib/stateShapes.js'
 
 const SHIFT_ORDER = { AM: 0, PM: 1 }
 
@@ -17,40 +16,6 @@ function sortedEntriesFor(locId, entries) {
     })
 }
 
-function StateShape({ name, height = 52 }) {
-  const shape = STATE_SHAPES[name]
-  if (!shape) {
-    return (
-      <svg width={44} height={height} viewBox="0 0 44 52" fill="none">
-        <rect x="4" y="4" width="36" height="44" rx="8" stroke={theme.navy} strokeWidth="2.5" />
-        <text x="22" y="32" textAnchor="middle" fill={theme.navy} fontSize="13" fontWeight="800">
-          {name.slice(0, 2).toUpperCase()}
-        </text>
-      </svg>
-    )
-  }
-  const parts = shape.viewBox.split(' ').map(Number)
-  const vw = parts[2], vh = parts[3]
-  const scale = Math.min(130 / vw, height / vh)
-  const w = Math.round(vw * scale)
-  const h = Math.round(vh * scale)
-  const sw = +(3 / scale).toFixed(2)
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={shape.viewBox}
-      fill="none"
-      stroke={theme.navy}
-      strokeWidth={sw}
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    >
-      <path d={shape.path} />
-    </svg>
-  )
-}
-
 function StateHeader({ name, count, first }) {
   return (
     <div
@@ -58,23 +23,13 @@ function StateHeader({ name, count, first }) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 18,
+        gap: 14,
         marginTop: first ? 0 : 36,
         marginBottom: 16,
         paddingBottom: 14,
         borderBottom: `2px solid ${theme.border}`,
       }}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minWidth: 56,
-        }}
-      >
-        <StateShape name={name} height={52} />
-      </div>
       <div>
         <div style={{ fontFamily: theme.display, fontSize: 21, fontWeight: 800, color: theme.navy, lineHeight: 1.15 }}>
           {name}

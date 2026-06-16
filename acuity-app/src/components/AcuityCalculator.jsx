@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Card, Field, Button, Badge, theme, grid } from './ui.jsx'
 import { ADULT_ACUITY_CRITERIA, PEDIATRIC_MODIFIER_GROUPS, scorePediatricModifiers } from '../lib/model.js'
 import { uid } from '../lib/storage.js'
+import AcuitasLogo from './AcuitasLogo.jsx'
 
 const emptySelections = (criteria) => {
   const sel = {}
@@ -67,8 +68,11 @@ export default function AcuityCalculator({ locations, onPushToED }) {
   return (
     <div style={{ marginTop: 8 }}>
       <div className="fade-in-up" style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Patient Acuity Calculator</div>
-        <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <AcuitasLogo size={26} dark={false} showWordmark={false} />
+          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Patient Acuity Calculator</div>
+        </div>
+        <div style={{ fontSize: 12.5, color: theme.sub }}>
           Score an individual patient's acuity, then push the total directly to ED acuity points.
         </div>
       </div>

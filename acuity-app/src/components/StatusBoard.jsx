@@ -3,6 +3,7 @@ import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
 import { Card, Badge, ProgressBar, StatCard, Icon, theme, grid } from './ui.jsx'
 import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
 import { today } from '../lib/storage.js'
+import AcuitasLogo from './AcuitasLogo.jsx'
 
 const SHIFT_ORDER = { AM: 0, PM: 1 }
 
@@ -121,8 +122,11 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
   return (
     <div>
       <div className="fade-in-up" style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Region Status Board</div>
-        <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <AcuitasLogo size={26} dark={false} showWordmark={false} />
+          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Region Status Board</div>
+        </div>
+        <div style={{ fontSize: 12.5, color: theme.sub }}>
           Most recent acuity reading per location, with census vs. nursing-driven census caps.
         </div>
       </div>

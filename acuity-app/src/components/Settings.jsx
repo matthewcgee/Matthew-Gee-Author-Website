@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { Card, Field, Button, theme } from './ui.jsx'
 import { uid } from '../lib/storage.js'
+import AcuitasLogo from './AcuitasLogo.jsx'
 
 const emptyLocation = () => ({
   id: uid(),
@@ -119,8 +120,11 @@ export default function Settings({
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: theme.display, fontSize: 18, fontWeight: 700 }}>Settings</div>
-        <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <AcuitasLogo size={26} dark={false} showWordmark={false} />
+          <div style={{ fontFamily: theme.display, fontSize: 18, fontWeight: 700 }}>Settings</div>
+        </div>
+        <div style={{ fontSize: 12.5, color: theme.sub }}>
           Manage locations, census caps, thresholds, and data.
         </div>
       </div>

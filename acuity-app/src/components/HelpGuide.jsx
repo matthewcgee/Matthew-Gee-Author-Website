@@ -1,6 +1,7 @@
 import React, { useRef } from 'react'
 import { Card, Badge, Button, Icon, theme, grid, ProgressBar } from './ui.jsx'
 import { STAGE_COLORS, PEDIATRIC_ED_THRESHOLDS } from '../lib/model.js'
+import AcuitasLogo from './AcuitasLogo.jsx'
 
 const SECTIONS = [
   { id: 'overview', label: 'Getting Around', icon: 'grid' },
@@ -100,8 +101,11 @@ export default function HelpGuide() {
   return (
     <div>
       <div className="fade-in-up" style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Help &amp; Training Guide</div>
-        <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <AcuitasLogo size={26} dark={false} showWordmark={false} />
+          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Help &amp; Training Guide</div>
+        </div>
+        <div style={{ fontSize: 12.5, color: theme.sub }}>
           A step-by-step walkthrough of every screen in the Behavioral Health Acuity Index dashboard.
         </div>
       </div>

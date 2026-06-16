@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Card, Field, Button, Badge, theme } from './ui.jsx'
 import { uid, today } from '../lib/storage.js'
 import { computeEntryValue, computeStage, thresholdsFor, STAGE_COLORS } from '../lib/model.js'
+import AcuitasLogo from './AcuitasLogo.jsx'
 
 const emptyForm = (locId) => ({
   locId,
@@ -54,8 +55,11 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
   return (
     <div>
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: theme.display, fontSize: 18, fontWeight: 700 }}>New Shift Entry</div>
-        <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 2 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <AcuitasLogo size={26} dark={false} showWordmark={false} />
+          <div style={{ fontFamily: theme.display, fontSize: 18, fontWeight: 700 }}>New Shift Entry</div>
+        </div>
+        <div style={{ fontSize: 12.5, color: theme.sub }}>
           Log census, acuity points, and staffing for a shift.
         </div>
       </div>

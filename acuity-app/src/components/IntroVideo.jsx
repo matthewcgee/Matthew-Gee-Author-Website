@@ -7,9 +7,9 @@ const SCENE_DURATION = 5200
 const SCENES = [
   {
     logo: true,
-    eyebrow: 'Clarity in Acuity. Better Care.',
-    title: 'Acuitas — Behavioral Health Acuity Software',
-    body: 'Every shift. Every unit. Every region. One index that tells the real story of what your teams are facing — right now.',
+    eyebrow: 'Welcome to',
+    title: 'Behavioral Health Acuity Dashboard',
+    body: 'One index. Every unit. Every region. Real-time acuity that tells the story your teams are living — every single shift.',
   },
   {
     icon: 'shield',
@@ -130,8 +130,8 @@ export default function IntroVideo({ onClose }) {
 
         <div key={scene} className="fade-in-up" style={{ padding: '36px 32px 40px', minHeight: 280, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           {current.logo ? (
-            <div style={{ marginBottom: 18 }}>
-              <AcuitasLogo size={44} dark showWordmark={false} />
+            <div style={{ marginBottom: 22 }}>
+              <AcuitasLogo size={52} dark showWordmark />
             </div>
           ) : (
             <div

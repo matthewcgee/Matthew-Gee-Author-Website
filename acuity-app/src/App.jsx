@@ -27,6 +27,7 @@ const TABS = [
 ]
 
 const INTRO_KEY = 'bhai:introSeen:v1'
+const DATA_CLEAR_KEY = 'bhai:cleared:v1'
 
 export default function App() {
   const [locations, setLocations] = useState(() => readStorage(KEYS.locations, null))
@@ -107,6 +108,27 @@ export default function App() {
     if (!readStorage(INTRO_KEY, false)) {
       setShowIntro(true)
     }
+  }, [])
+
+  // One-time clear of all pilot/seed entries and deployments from Firestore
+  useEffect(() => {
+    if (readStorage(DATA_CLEAR_KEY, false)) return
+    Promise.all([
+      getDocs(collection(db, 'entries')).then((snap) => {
+        if (snap.empty) return
+        const batch = writeBatch(db)
+        snap.docs.forEach((d) => batch.delete(d.ref))
+        return batch.commit()
+      }),
+      getDocs(collection(db, 'deployments')).then((snap) => {
+        if (snap.empty) return
+        const batch = writeBatch(db)
+        snap.docs.forEach((d) => batch.delete(d.ref))
+        return batch.commit()
+      }),
+    ])
+      .then(() => writeStorage(DATA_CLEAR_KEY, true))
+      .catch((e) => console.error('data clear failed', e))
   }, [])
 
   useEffect(() => {

@@ -192,27 +192,7 @@ export function seedLocations() {
 }
 
 export function seedEntries() {
-  const rows = [
-    ['2026-05-04', 'AM', 16, 22, 9],
-    ['2026-05-04', 'PM', 17, 26, 9],
-    ['2026-05-05', 'AM', 15, 19, 9],
-    ['2026-05-05', 'PM', 18, 31, 9],
-    ['2026-05-06', 'AM', 16, 24, 9],
-    ['2026-05-06', 'PM', 18, 34, 8],
-    ['2026-05-07', 'AM', 17, 28, 9],
-  ]
-  return rows.map(([date, shift, census, points, staff]) => ({
-    id: uid(),
-    locId: 'loc_hpmc_1sa',
-    date,
-    shift,
-    census,
-    points,
-    staff,
-    notes: 'HPMC pilot data',
-    pilot: true,
-    createdAt: Date.now(),
-  }))
+  return []
 }
 
 export function seedDeployments() {

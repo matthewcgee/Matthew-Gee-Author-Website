@@ -19,10 +19,11 @@ function scoreFor(criteria, selections) {
 }
 
 export default function AcuityCalculator({ locations, onPushToED }) {
-  const [mode, setMode] = useState('adult')
+  const [mode, setMode] = useState('scoring')
   const [initials, setInitials] = useState('')
   const [selections, setSelections] = useState(() => emptySelections(ADULT_ACUITY_CRITERIA))
   const [pedsBase, setPedsBase] = useState('')
+  const [pedsBasePushed, setPedsBasePushed] = useState(false)
   const [pedsMods, setPedsMods] = useState([])
   const [patients, setPatients] = useState([])
 
@@ -47,11 +48,20 @@ export default function AcuityCalculator({ locations, onPushToED }) {
     setSelections(emptySelections(ADULT_ACUITY_CRITERIA))
   }
 
+  const pushToPeds = () => {
+    setPedsBase(String(score))
+    setPedsBasePushed(true)
+    setPedsMods([])
+    setSelections(emptySelections(ADULT_ACUITY_CRITERIA))
+    setMode('peds')
+  }
+
   const addPedsPatient = () => {
     if (!initials.trim()) return
     setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score: pedsTotal, mode: 'peds' }])
     setInitials('')
     setPedsBase('')
+    setPedsBasePushed(false)
     setPedsMods([])
   }
 
@@ -77,13 +87,16 @@ export default function AcuityCalculator({ locations, onPushToED }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-        <Button variant={mode === 'adult' ? 'primary' : 'ghost'} onClick={() => setMode('adult')}>Adult</Button>
-        <Button variant={mode === 'peds' ? 'primary' : 'ghost'} onClick={() => setMode('peds')}>Peds</Button>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+        <Button variant={mode === 'scoring' ? 'primary' : 'ghost'} onClick={() => setMode('scoring')}>Step 1 — Acuity Scoring</Button>
+        <Button variant={mode === 'peds' ? 'primary' : 'ghost'} onClick={() => setMode('peds')}>Step 2 — Peds Modifiers</Button>
+      </div>
+      <div style={{ fontSize: 11.5, color: theme.sub, marginBottom: 16 }}>
+        Step 1 for all patients. Adult patients stop here. Pediatric patients continue to Step 2.
       </div>
 
       {mode === 'peds' ? (
-        <Card title="Score a Pediatric Patient" sub="Base acuity score plus pediatric modifiers, then add to the list">
+        <Card title="Step 2 — Pediatric Modifiers" sub="Apply modifier points on top of the base acuity score from Step 1">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 14, maxWidth: 420 }}>
             <Field label="Patient Initials">
               <input
@@ -94,13 +107,14 @@ export default function AcuityCalculator({ locations, onPushToED }) {
                 maxLength={8}
               />
             </Field>
-            <Field label="Base Acuity Score" hint="From the standard acuity rubric">
+            <Field label="Base Acuity Score" hint={pedsBasePushed ? '✓ Carried from Step 1 — Acuity Scoring' : 'Score from Step 1, or enter manually'}>
               <input
                 type="number"
                 min="0"
                 value={pedsBase}
-                onChange={(e) => setPedsBase(e.target.value)}
+                onChange={(e) => { setPedsBase(e.target.value); setPedsBasePushed(false) }}
                 placeholder="0"
+                style={pedsBasePushed ? { borderColor: theme.accent } : undefined}
               />
             </Field>
           </div>
@@ -165,7 +179,7 @@ export default function AcuityCalculator({ locations, onPushToED }) {
           </div>
         </Card>
       ) : (
-        <Card title="Score a Patient" sub="Check all that apply, then add to the list">
+        <Card title="Step 1 — Acuity Scoring" sub="Check all criteria that apply. Add to list for adult patients, or push score to Peds Modifiers for pediatric patients.">
           <div style={{ marginBottom: 14, maxWidth: 240 }}>
             <Field label="Patient Initials">
               <input
@@ -206,7 +220,19 @@ export default function AcuityCalculator({ locations, onPushToED }) {
               <div style={{ fontSize: 11.5, color: theme.sub }}>Total Score</div>
               <div style={{ fontSize: 28, fontWeight: 800, fontFamily: theme.display }}>{score}</div>
             </div>
-            <Button onClick={addPatient} disabled={!initials.trim()}>Add to List</Button>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Button
+                variant="ghost"
+                onClick={pushToPeds}
+                disabled={!initials.trim()}
+                style={{ fontSize: 13 }}
+              >
+                Push to Peds →
+              </Button>
+              <Button onClick={addPatient} disabled={!initials.trim()}>
+                Add Adult to List
+              </Button>
+            </div>
           </div>
         </Card>
       )}

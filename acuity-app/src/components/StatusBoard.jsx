@@ -3,6 +3,7 @@ import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
 import { Card, Badge, ProgressBar, StatCard, Icon, theme, grid } from './ui.jsx'
 import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
 import { today } from '../lib/storage.js'
+import { STATE_SHAPES } from '../lib/stateShapes.js'
 
 const SHIFT_ORDER = { AM: 0, PM: 1 }
 
@@ -14,6 +15,77 @@ function sortedEntriesFor(locId, entries) {
       if (a.date !== b.date) return a.date < b.date ? -1 : 1
       return (SHIFT_ORDER[a.shift] || 0) - (SHIFT_ORDER[b.shift] || 0)
     })
+}
+
+function StateShape({ name, height = 52 }) {
+  const shape = STATE_SHAPES[name]
+  if (!shape) {
+    return (
+      <svg width={44} height={height} viewBox="0 0 44 52" fill="none">
+        <rect x="4" y="4" width="36" height="44" rx="8" stroke={theme.navy} strokeWidth="2.5" />
+        <text x="22" y="32" textAnchor="middle" fill={theme.navy} fontSize="13" fontWeight="800">
+          {name.slice(0, 2).toUpperCase()}
+        </text>
+      </svg>
+    )
+  }
+  const parts = shape.viewBox.split(' ').map(Number)
+  const vw = parts[2], vh = parts[3]
+  const scale = Math.min(130 / vw, height / vh)
+  const w = Math.round(vw * scale)
+  const h = Math.round(vh * scale)
+  const sw = +(3 / scale).toFixed(2)
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={shape.viewBox}
+      fill="none"
+      stroke={theme.navy}
+      strokeWidth={sw}
+      strokeLinejoin="round"
+      strokeLinecap="round"
+    >
+      <path d={shape.path} />
+    </svg>
+  )
+}
+
+function StateHeader({ name, count, first }) {
+  return (
+    <div
+      className="fade-in-up"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 18,
+        marginTop: first ? 0 : 36,
+        marginBottom: 16,
+        paddingBottom: 14,
+        borderBottom: `2px solid ${theme.border}`,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 56,
+        }}
+      >
+        <StateShape name={name} height={52} />
+      </div>
+      <div>
+        <div style={{ fontFamily: theme.display, fontSize: 21, fontWeight: 800, color: theme.navy, lineHeight: 1.15 }}>
+          {name}
+        </div>
+        <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 2 }}>
+          {count} unit{count !== 1 ? 's' : ''}
+        </div>
+      </div>
+      <div style={{ flex: 1, height: 1, background: theme.border }} />
+    </div>
+  )
 }
 
 function CapEditor({ value, onSave }) {
@@ -39,9 +111,7 @@ function CapEditor({ value, onSave }) {
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commit}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.target.blur()
-        }}
+        onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur() }}
         style={{ width: 52, padding: '2px 4px', fontSize: 12.5, fontWeight: 700 }}
       />
     )
@@ -53,16 +123,9 @@ function CapEditor({ value, onSave }) {
       onClick={() => setEditing(true)}
       title="Click to update the nursing-driven census cap"
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 3,
-        border: 'none',
-        background: 'transparent',
-        cursor: 'pointer',
-        padding: 0,
-        font: 'inherit',
-        fontWeight: 700,
-        color: 'inherit',
+        display: 'inline-flex', alignItems: 'center', gap: 3,
+        border: 'none', background: 'transparent', cursor: 'pointer',
+        padding: 0, font: 'inherit', fontWeight: 700, color: 'inherit',
       }}
     >
       {value != null ? value : 'set cap'}
@@ -80,10 +143,7 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
     const hasHistory = list.length > 0
     const value = latest ? computeEntryValue(latest, loc, thresholds) : null
     const stage = latest ? entryStage(latest, loc, thresholds) : 'NONE'
-    const trend = list.slice(-8).map((e, i) => ({
-      i,
-      value: computeEntryValue(e, loc, thresholds),
-    }))
+    const trend = list.slice(-8).map((e, i) => ({ i, value: computeEntryValue(e, loc, thresholds) }))
     const staffNeeds = latest ? staffNeededForThresholds(latest, loc, thresholds) : null
     const cap = caps[loc.id] !== undefined ? caps[loc.id] : loc.censusCap
     return { loc, latest, value, stage, trend, staffNeeds, hasHistory, cap }
@@ -97,6 +157,11 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
   const totalCensus = capLocations.reduce((sum, s) => sum + (s.latest.census || 0), 0)
   const totalCap = capLocations.reduce((sum, s) => sum + s.cap, 0)
   const overCapCount = capLocations.filter((s) => s.latest.census > s.cap).length
+
+  const regions = [...new Set(summaries.map((s) => s.loc.region || 'Other'))].sort()
+  const byRegion = Object.fromEntries(
+    regions.map((r) => [r, summaries.filter((s) => (s.loc.region || 'Other') === r)])
+  )
 
   return (
     <div>
@@ -138,129 +203,120 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
         </Card>
       )}
 
-      <div style={grid(3)}>
-        {summaries.map(({ loc, latest, value, stage, trend, staffNeeds, hasHistory, cap }, idx) => {
-          const th = thresholdsFor(loc, thresholds)
-          const isEd = loc.type === 'ed'
-          const overCap = !isEd && cap != null && latest?.census != null && latest.census > cap
-          const awaiting = !latest
+      {regions.map((region, regionIdx) => (
+        <div key={region}>
+          <StateHeader name={region} count={byRegion[region].length} first={regionIdx === 0} />
+          <div style={{ ...grid(3), marginBottom: 8 }}>
+            {byRegion[region].map(({ loc, latest, value, stage, trend, staffNeeds, hasHistory, cap }, idx) => {
+              const th = thresholdsFor(loc, thresholds)
+              const isEd = loc.type === 'ed'
+              const overCap = !isEd && cap != null && latest?.census != null && latest.census > cap
+              const awaiting = !latest
 
-          return (
-            <Card
-              key={loc.id}
-              interactive
-              className="fade-in-up"
-              style={{ animationDelay: `${idx * 60}ms` }}
-              title={loc.name}
-              sub={loc.facility}
-              right={
-                awaiting
-                  ? <Badge color={STAGE_COLORS.NONE}>AWAITING REPORT</Badge>
-                  : <Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge>
-              }
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                <div>
-                  <div style={{ fontSize: 30, fontWeight: 800, fontFamily: theme.display, color: STAGE_COLORS[stage] !== STAGE_COLORS.NONE ? theme.text : theme.text }}>
-                    {value != null ? value.toFixed(isEd ? 0 : 2) : '—'}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: theme.sub }}>{th.unit}</div>
-                </div>
-
-                {trend.length > 1 && (
-                  <div style={{ width: 110, height: 44 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={trend} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-                        <defs>
-                          <linearGradient id={`spark-${loc.id}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={STAGE_COLORS[stage]} stopOpacity={0.35} />
-                            <stop offset="100%" stopColor={STAGE_COLORS[stage]} stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <YAxis hide domain={['dataMin', 'dataMax']} />
-                        <Area type="monotone" dataKey="value" stroke={STAGE_COLORS[stage]} strokeWidth={2} fill={`url(#spark-${loc.id})`} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </div>
-
-              {!isEd && (
-                <div style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, color: theme.sub, marginBottom: 4 }}>
-                    <span>Census vs. nursing cap</span>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700, color: overCap ? STAGE_COLORS.RED : theme.text }}>
-                      {latest?.census ?? '—'} / <CapEditor value={cap} onSave={(v) => onUpdateCap(loc.id, v)} />
-                      {overCap && ' · over cap'}
-                    </span>
-                  </div>
-                  {cap != null && latest && (
-                    <ProgressBar
-                      value={latest.census ?? 0}
-                      max={cap}
-                      color={overCap ? STAGE_COLORS.RED : theme.accent}
-                    />
-                  )}
-                </div>
-              )}
-
-              {latest ? (
-                <div style={{ fontSize: 12, color: theme.sub }}>
-                  {latest.date} · {latest.shift} shift
-                  {!isEd && <> · {latest.staff} staff, {latest.points} points</>}
-                  {isEd && <> · {latest.points} points</>}
-                  {latest.capInPlace && (
-                    <span style={{ marginLeft: 6 }}>
-                      <Badge color={STAGE_COLORS.RED}>CAP IN PLACE</Badge>
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <div
-                  style={{
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: theme.sub,
-                    background: theme.panelAlt,
-                    borderRadius: 8,
-                    padding: '8px 10px',
-                  }}
+              return (
+                <Card
+                  key={loc.id}
+                  interactive
+                  className="fade-in-up"
+                  style={{ animationDelay: `${idx * 60}ms` }}
+                  title={loc.name}
+                  sub={loc.facility}
+                  right={
+                    awaiting
+                      ? <Badge color={STAGE_COLORS.NONE}>AWAITING REPORT</Badge>
+                      : <Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge>
+                  }
                 >
-                  {hasHistory ? 'Awaiting daily report for today' : 'No shift entries yet.'}
-                </div>
-              )}
-
-              {!isEd && latest && staffNeeds && (() => {
-                const parts = []
-                if (staffNeeds.toYellow > 0) parts.push(`${staffNeeds.toYellow} staff to YELLOW`)
-                if (staffNeeds.toGreen > 0) parts.push(`${staffNeeds.toGreen} staff to GREEN`)
-                const needsStaff = parts.length > 0
-                return (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      padding: '8px 10px',
-                      borderRadius: 8,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      background: needsStaff ? `${STAGE_COLORS[stage]}1a` : theme.panelAlt,
-                      color: needsStaff ? STAGE_COLORS[stage] : theme.sub,
-                    }}
-                  >
-                    {needsStaff
-                      ? `Deploy ${parts.join(', ')}`
-                      : 'Staffing is at target for current acuity'}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 30, fontWeight: 800, fontFamily: theme.display }}>
+                        {value != null ? value.toFixed(isEd ? 0 : 2) : '—'}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: theme.sub }}>{th.unit}</div>
+                    </div>
+                    {trend.length > 1 && (
+                      <div style={{ width: 110, height: 44 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={trend} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+                            <defs>
+                              <linearGradient id={`spark-${loc.id}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={STAGE_COLORS[stage]} stopOpacity={0.35} />
+                                <stop offset="100%" stopColor={STAGE_COLORS[stage]} stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <YAxis hide domain={['dataMin', 'dataMax']} />
+                            <Area type="monotone" dataKey="value" stroke={STAGE_COLORS[stage]} strokeWidth={2} fill={`url(#spark-${loc.id})`} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
                   </div>
-                )
-              })()}
 
-              <div style={{ fontSize: 11, color: theme.sub, marginTop: 10, opacity: 0.8 }}>
-                {loc.market} · {loc.region}
-              </div>
-            </Card>
-          )
-        })}
-      </div>
+                  {!isEd && (
+                    <div style={{ marginBottom: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11.5, color: theme.sub, marginBottom: 4 }}>
+                        <span>Census vs. nursing cap</span>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 700, color: overCap ? STAGE_COLORS.RED : theme.text }}>
+                          {latest?.census ?? '—'} / <CapEditor value={cap} onSave={(v) => onUpdateCap(loc.id, v)} />
+                          {overCap && ' · over cap'}
+                        </span>
+                      </div>
+                      {cap != null && latest && (
+                        <ProgressBar value={latest.census ?? 0} max={cap} color={overCap ? STAGE_COLORS.RED : theme.accent} />
+                      )}
+                    </div>
+                  )}
+
+                  {latest ? (
+                    <div style={{ fontSize: 12, color: theme.sub }}>
+                      {latest.date} · {latest.shift} shift
+                      {!isEd && <> · {latest.staff} staff, {latest.points} points</>}
+                      {isEd && <> · {latest.points} points</>}
+                      {latest.capInPlace && (
+                        <span style={{ marginLeft: 6 }}>
+                          <Badge color={STAGE_COLORS.RED}>CAP IN PLACE</Badge>
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        fontSize: 12, fontWeight: 700, color: theme.sub,
+                        background: theme.panelAlt, borderRadius: 8, padding: '8px 10px',
+                      }}
+                    >
+                      {hasHistory ? 'Awaiting daily report for today' : 'No shift entries yet.'}
+                    </div>
+                  )}
+
+                  {!isEd && latest && staffNeeds && (() => {
+                    const parts = []
+                    if (staffNeeds.toYellow > 0) parts.push(`${staffNeeds.toYellow} staff to YELLOW`)
+                    if (staffNeeds.toGreen > 0) parts.push(`${staffNeeds.toGreen} staff to GREEN`)
+                    const needsStaff = parts.length > 0
+                    return (
+                      <div
+                        style={{
+                          marginTop: 8, padding: '8px 10px', borderRadius: 8,
+                          fontSize: 12, fontWeight: 700,
+                          background: needsStaff ? `${STAGE_COLORS[stage]}1a` : theme.panelAlt,
+                          color: needsStaff ? STAGE_COLORS[stage] : theme.sub,
+                        }}
+                      >
+                        {needsStaff ? `Deploy ${parts.join(', ')}` : 'Staffing is at target for current acuity'}
+                      </div>
+                    )
+                  })()}
+
+                  <div style={{ fontSize: 11, color: theme.sub, marginTop: 10, opacity: 0.8 }}>
+                    {loc.market} · {loc.region}
+                  </div>
+                </Card>
+              )
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )
 }

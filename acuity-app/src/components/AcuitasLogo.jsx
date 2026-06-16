@@ -1,67 +1,84 @@
 import React from 'react'
 
-// dark=true → white diamond / teal pulse / white text (for navy sidebar)
-// dark=false → navy diamond / white pulse / navy text (for light backgrounds)
-export default function AcuitasLogo({ size = 36, dark = false, showWordmark = true, style = {} }) {
-  const diamond = dark ? '#ffffff' : '#1a3a4a'
-  const pulse = dark ? '#4db8a8' : '#ffffff'
-  const textColor = dark ? '#ffffff' : '#1a3a4a'
+// Brand colors from the Acuitas identity guide
+const BRAND = {
+  navy:  '#263D4A',
+  teal:  '#3DBCB4',
+  green: '#70C47A',
+}
 
-  // The mark is always square; word mark sits to the right
-  const markSize = size
-  const fontSize = Math.round(markSize * 0.48)
-  const subSize = Math.round(markSize * 0.28)
+/**
+ * dark=true  → white/light variant for navy sidebar background
+ * dark=false → full-color variant for white/light backgrounds
+ * showWordmark=false → mark only (app icon / favicon use)
+ */
+export default function AcuitasLogo({ size = 36, dark = false, showWordmark = true, style = {} }) {
+  const navy      = dark ? '#ffffff'  : BRAND.navy
+  const teal      = dark ? '#6DDDD8'  : BRAND.teal
+  const green     = dark ? '#90DC98'  : BRAND.green
+  const textColor = dark ? '#ffffff'  : BRAND.navy
+  const subColor  = dark ? '#9fc2bb'  : '#5a7a88'
+
+  const markW   = size
+  const markH   = Math.round(size * 1.12)
+  const wordPx  = Math.round(size * 0.8)
+  const tagPx   = Math.round(size * 0.27)
 
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: Math.round(markSize * 0.28), ...style }}>
-      {/* Diamond mark */}
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: Math.round(size * 0.3), ...style }}>
+
+      {/* ── Mark: stylised A with person figure + ascending data dots ── */}
       <svg
-        width={markSize}
-        height={markSize}
-        viewBox="0 0 40 40"
+        width={markW}
+        height={markH}
+        viewBox="0 0 44 50"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ flexShrink: 0 }}
       >
-        {/* Diamond / rhombus */}
-        <polygon points="20,2 38,20 20,38 2,20" fill={diamond} />
-        {/* EKG / pulse line */}
-        <polyline
-          points="6,20 12,20 15,13 18,27 21,9 24,20 34,20"
-          stroke={pulse}
-          strokeWidth="2.4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          fill="none"
-        />
+        {/* Left leg of A */}
+        <line x1="2"  y1="47" x2="22" y2="4" stroke={navy} strokeWidth="3.6" strokeLinecap="round" />
+        {/* Right leg of A */}
+        <line x1="42" y1="47" x2="22" y2="4" stroke={navy} strokeWidth="3.6" strokeLinecap="round" />
+
+        {/* Person — head circle */}
+        <circle cx="22" cy="20" r="4.5" fill={teal} />
+        {/* Person — shoulders / torso silhouette */}
+        <path d="M13.5,32 Q13.5,25 22,25 Q30.5,25 30.5,32 Z" fill={teal} />
+
+        {/* Ascending data-point dots along left leg */}
+        <circle cx="6"    cy="40"   r="2.6" fill={green} />
+        <circle cx="10.5" cy="29.5" r="2.6" fill={green} />
+        <circle cx="15"   cy="19.5" r="2.2" fill={green} />
       </svg>
 
+      {/* ── Wordmark ── */}
       {showWordmark && (
         <div style={{ lineHeight: 1 }}>
           <div
             style={{
               fontFamily: "'Playfair Display', Georgia, serif",
-              fontSize,
+              fontSize:   wordPx,
               fontWeight: 800,
-              color: textColor,
+              color:      textColor,
               letterSpacing: '-0.01em',
-              lineHeight: 1.1,
+              lineHeight: 1.05,
             }}
           >
             Acuitas
           </div>
-          {markSize >= 30 && (
+          {size >= 28 && (
             <div
               style={{
-                fontSize: subSize,
-                color: dark ? '#9fc2bb' : '#5a7a82',
-                letterSpacing: '0.06em',
+                fontSize:      tagPx,
+                color:         subColor,
+                letterSpacing: '0.07em',
                 textTransform: 'uppercase',
-                fontWeight: 600,
-                marginTop: 1,
+                fontWeight:    600,
+                marginTop:     2,
               }}
             >
-              Behavioral Health
+              Clarity in Acuity. Better Care.
             </div>
           )}
         </div>

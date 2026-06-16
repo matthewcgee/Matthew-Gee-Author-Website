@@ -130,28 +130,35 @@ export default function IntroVideo({ onClose }) {
 
         <div key={scene} className="fade-in-up" style={{ padding: '36px 32px 40px', minHeight: 280, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
           {current.logo ? (
-            <div style={{ marginBottom: 22 }}>
-              <AcuitasLogo size={52} dark showWordmark />
-            </div>
+            <>
+              <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 1, opacity: 0.85, marginBottom: 14 }}>
+                {current.eyebrow}
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <AcuitasLogo size={52} dark showWordmark />
+              </div>
+            </>
           ) : (
-            <div
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 14,
-                background: 'rgba(255,255,255,0.14)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 18,
-              }}
-            >
-              <Icon name={current.icon} size={26} />
-            </div>
+            <>
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: 14,
+                  background: 'rgba(255,255,255,0.14)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 18,
+                }}
+              >
+                <Icon name={current.icon} size={26} />
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: 0.8, marginBottom: 8 }}>
+                {current.eyebrow}
+              </div>
+            </>
           )}
-          <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: 0.8, marginBottom: 8 }}>
-            {current.eyebrow}
-          </div>
           <div style={{ fontFamily: theme.display, fontSize: 28, fontWeight: 800, lineHeight: 1.2, marginBottom: 14 }}>
             {current.title}
           </div>

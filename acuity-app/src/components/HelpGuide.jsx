@@ -442,11 +442,27 @@ export default function HelpGuide() {
             Enter the patient's <b>initials</b> — keeps the list readable without using full names.
           </Step>
           <Step n="3">
-            Check every box that applies across the three categories:
+            Check every box that applies across <b>four scoring categories</b>:
             <ul style={{ marginTop: 6, paddingLeft: 20, lineHeight: 1.7 }}>
-              <li><b>Observation Status</b> — level of observation required (1:1, Q15, line-of-sight).</li>
-              <li><b>Behavioral Risk (last 24 hours)</b> — aggression, restraints, PRN sedation, suicide/self-injury, homicidal ideation.</li>
-              <li><b>Clinical Complexity</b> — psychosis, mania, detox protocol, elopement risk, forensic hold, severe personality disorder behavior.</li>
+              <li><b>A. Observation Status</b> — level of observation required (1:1=5 pts, Q15=3 pts, line-of-sight=2 pts).</li>
+              <li><b>B. Behavioral Risk (last 24 hours)</b> — aggression, restraints, PRN sedation, suicide/self-injury, homicidal ideation.</li>
+              <li><b>C. Clinical Complexity</b> — psychosis, mania, detox protocol, elopement risk, forensic hold, severe personality disorder behavior.</li>
+              <li>
+                <b>D. Behavioral Severity – MASS (Last 24 Hours)</b> — select the highest applicable MASS level:
+                <ul style={{ marginTop: 4, paddingLeft: 20, lineHeight: 1.7 }}>
+                  <li>MASS 1–3 – Very Mild (behavioral interventions only) = <b>0 pts</b></li>
+                  <li>MASS 4–6 – Mild (behavioral interventions + oral meds) = <b>+1 pt</b></li>
+                  <li>MASS 7–9 – Moderate (behavioral + oral or IM meds) = <b>+2 pts</b></li>
+                  <li>MASS 10+ – Severe/Violent (IM meds ± seclusion/restraint) = <b>+4 pts</b></li>
+                </ul>
+              </li>
+            </ul>
+          </Step>
+          <Step n="3b">
+            <b>MASS Escalation alerts</b> appear automatically when a MASS level is selected that triggers clinical action:
+            <ul style={{ marginTop: 6, paddingLeft: 20, lineHeight: 1.7 }}>
+              <li><b>MASS ≥7</b> (Moderate selected) — yellow alert: Charge RN awareness + mitigation plan required.</li>
+              <li><b>MASS ≥10</b> (Severe/Violent selected) — red alert: High-risk — consider 1:1, staffing flex, admin notification.</li>
             </ul>
           </Step>
           <Step n="4">
@@ -592,7 +608,9 @@ export default function HelpGuide() {
           </Step>
           <Step n="3">
             <b>Default Thresholds</b> — set the Green/Yellow cutoffs used to determine status color for
-            Inpatient units and the ED, used when a unit doesn't have its own custom thresholds.
+            Inpatient units and the ED. System defaults: Inpatient GREEN ≤ 1.5 UAI / YELLOW ≤ 2.5 UAI;
+            ED GREEN ≤ 21 total points / YELLOW ≤ 27 total points (reflecting the four-category scoring
+            rubric including MASS). Leave custom fields blank on individual units to use these region defaults.
           </Step>
           <Step n="4">
             <b>Custom Green Max / Yellow Max</b> — each location row also has its own threshold override.

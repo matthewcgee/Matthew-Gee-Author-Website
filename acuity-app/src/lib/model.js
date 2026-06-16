@@ -2,7 +2,7 @@ import { uid } from './storage'
 
 export const DEFAULT_THRESHOLDS = {
   inpatient: { greenMax: 1.5, yellowMax: 2.5, unit: 'Acuity per staff (UAI)' },
-  ed: { greenMax: 8, yellowMax: 14, unit: 'Total ED behavioral health points' },
+  ed: { greenMax: 21, yellowMax: 27, unit: 'Total ED behavioral health points' },
 }
 
 export const STAGE_COLORS = {
@@ -103,6 +103,21 @@ export const ADULT_ACUITY_CRITERIA = [
       { id: 'complex_pd', label: 'Severe personality disorder behavioral dysregulation', points: 2 },
     ],
   },
+  {
+    group: 'Behavioral Severity – MASS (Last 24 Hours)',
+    note: 'MASS 1–3 (Very Mild – behavioral interventions only) = 0 pts; select the highest applicable level.',
+    items: [
+      { id: 'mass_mild',     label: 'MASS 4–6 – Mild (behavioral interventions + oral meds)',         points: 1 },
+      { id: 'mass_moderate', label: 'MASS 7–9 – Moderate (behavioral + oral or IM meds)',             points: 2 },
+      { id: 'mass_severe',   label: 'MASS 10+ – Severe/Violent (IM meds ± seclusion/restraint)',      points: 4 },
+    ],
+  },
+]
+
+// MASS escalation clinical decision triggers (based on raw MASS scale level)
+export const MASS_ESCALATION = [
+  { massItem: 'mass_moderate', level: 'warning', label: 'MASS ≥7 — Charge RN awareness + mitigation plan required.' },
+  { massItem: 'mass_severe',   level: 'danger',  label: 'MASS ≥10 — High-risk: consider 1:1, staffing flex, admin notification.' },
 ]
 
 export const PEDIATRIC_MODIFIERS = [

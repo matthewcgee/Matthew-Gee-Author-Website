@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Card, Field, Button, Badge, theme, grid } from './ui.jsx'
-import { ADULT_ACUITY_CRITERIA, PEDIATRIC_MODIFIER_GROUPS, scorePediatricModifiers } from '../lib/model.js'
+import { ADULT_ACUITY_CRITERIA, PEDIATRIC_MODIFIER_GROUPS, scorePediatricModifiers, MASS_ESCALATION } from '../lib/model.js'
 import { uid } from '../lib/storage.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
 
@@ -195,7 +195,10 @@ export default function AcuityCalculator({ locations, onPushToED }) {
           <div style={grid(3)}>
             {ADULT_ACUITY_CRITERIA.map((group) => (
               <div key={group.group}>
-                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 8, color: theme.text }}>{group.group}</div>
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4, color: theme.text }}>{group.group}</div>
+                {group.note && (
+                  <div style={{ fontSize: 11, color: theme.sub, marginBottom: 8, lineHeight: 1.4 }}>{group.note}</div>
+                )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {group.items.map((item) => (
                     <label key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 12.5, color: theme.sub, cursor: 'pointer' }}>
@@ -214,6 +217,23 @@ export default function AcuityCalculator({ locations, onPushToED }) {
               </div>
             ))}
           </div>
+
+          {(() => {
+            const alert = selections['mass_severe']
+              ? MASS_ESCALATION.find((e) => e.massItem === 'mass_severe')
+              : selections['mass_moderate']
+              ? MASS_ESCALATION.find((e) => e.massItem === 'mass_moderate')
+              : null
+            if (!alert) return null
+            const bg = alert.level === 'danger' ? '#fde8e6' : '#fff8e6'
+            const border = alert.level === 'danger' ? '#e0584a' : '#e0b341'
+            const color = alert.level === 'danger' ? '#c0392b' : '#9a7415'
+            return (
+              <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 8, background: bg, border: `1px solid ${border}`, fontSize: 12.5, fontWeight: 600, color }}>
+                ⚠ {alert.label}
+              </div>
+            )
+          })()}
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
             <div>

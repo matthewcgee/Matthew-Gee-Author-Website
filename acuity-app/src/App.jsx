@@ -21,7 +21,7 @@ const TABS = [
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
-  { id: 'calculator', label: 'Acuity Calculator™', icon: 'sparkle' },
+  { id: 'calculator', label: 'AcuiCalc™', icon: 'sparkle' },
   { id: 'help', label: 'Help & Training', icon: 'help' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ]

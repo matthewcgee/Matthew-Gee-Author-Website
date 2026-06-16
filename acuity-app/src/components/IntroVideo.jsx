@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { Icon, theme } from './ui.jsx'
+import AcuitasLogo from './AcuitasLogo.jsx'
 
 const SCENE_DURATION = 5200
 
 const SCENES = [
   {
-    icon: 'sparkle',
-    eyebrow: 'Atrium Health Behavioral Health',
-    title: 'A New Standard for Behavioral Health Acuity',
+    logo: true,
+    eyebrow: 'Clarity in Acuity. Better Care.',
+    title: 'Acuitas — Behavioral Health Acuity Software',
     body: 'Every shift. Every unit. Every region. One index that tells the real story of what your teams are facing — right now.',
   },
   {
@@ -128,20 +129,26 @@ export default function IntroVideo({ onClose }) {
         <style>{`@keyframes barfill { from { width: 0% } to { width: 100% } }`}</style>
 
         <div key={scene} className="fade-in-up" style={{ padding: '36px 32px 40px', minHeight: 280, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <div
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 14,
-              background: 'rgba(255,255,255,0.14)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: 18,
-            }}
-          >
-            <Icon name={current.icon} size={26} />
-          </div>
+          {current.logo ? (
+            <div style={{ marginBottom: 18 }}>
+              <AcuitasLogo size={44} dark showWordmark={false} />
+            </div>
+          ) : (
+            <div
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 14,
+                background: 'rgba(255,255,255,0.14)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: 18,
+              }}
+            >
+              <Icon name={current.icon} size={26} />
+            </div>
+          )}
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase', opacity: 0.8, marginBottom: 8 }}>
             {current.eyebrow}
           </div>

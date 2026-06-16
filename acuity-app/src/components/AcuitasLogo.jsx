@@ -7,6 +7,10 @@ import React from 'react'
  * dark=false → full wordmark SVG on light background
  * showWordmark=false → icon mark only
  */
+const BASE = import.meta.env.BASE_URL
+const ICON = `${BASE}assets/Acuitas_icon_transparent.svg`
+const WORDMARK = `${BASE}assets/Acuitas_wordmark_transparent.svg`
+
 export default function AcuitasLogo({ size = 36, dark = false, showWordmark = true, style = {} }) {
   // On dark (navy) backgrounds: the wordmark SVG has navy text that would vanish,
   // so we show the teal icon mark + white text rendered in HTML instead.
@@ -14,7 +18,7 @@ export default function AcuitasLogo({ size = 36, dark = false, showWordmark = tr
     return (
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: Math.round(size * 0.3), ...style }}>
         <img
-          src="/assets/Acuitas_icon_transparent.svg"
+          src={ICON}
           alt="Acuitas"
           height={size}
           width={size}
@@ -58,7 +62,7 @@ export default function AcuitasLogo({ size = 36, dark = false, showWordmark = tr
     const w = Math.round(h * (980 / 300))
     return (
       <img
-        src="/assets/Acuitas_wordmark_transparent.svg"
+        src={WORDMARK}
         alt="Acuitas"
         height={h}
         width={w}
@@ -70,7 +74,7 @@ export default function AcuitasLogo({ size = 36, dark = false, showWordmark = tr
   // Light, no wordmark: icon only
   return (
     <img
-      src="/assets/Acuitas_icon_transparent.svg"
+      src={ICON}
       alt="Acuitas"
       height={size}
       width={size}

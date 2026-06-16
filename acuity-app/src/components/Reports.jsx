@@ -16,6 +16,7 @@ import {
 } from 'recharts'
 import { Card, Button, Field, Badge, Icon, theme, grid } from './ui.jsx'
 import { computeEntryValue, entryStage, thresholdsFor, STAGE_COLORS } from '../lib/model.js'
+import AcuitasLogo from './AcuitasLogo.jsx'
 
 function download(filename, content, mime) {
   const blob = new Blob([content], { type: mime })
@@ -230,7 +231,10 @@ export default function Reports({ locations, entries, deployments, thresholds, o
     <div>
       <div className="fade-in-up" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Reports</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <AcuitasLogo size={28} dark={false} showWordmark={false} />
+            <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Reports</div>
+          </div>
           <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 2 }}>
             Acuity trends, census vs. caps, and staff deployment summaries for budgeting.
           </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { collection, deleteDoc, doc, getDocs, increment, onSnapshot, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { theme, Icon, Toast } from './components/ui.jsx'
+import AcuitasLogo from './components/AcuitasLogo.jsx'
 import { KEYS, readStorage, writeStorage, today, uid } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
 import { db, STATE_DOC } from './lib/firebase.js'
@@ -305,30 +306,7 @@ export default function App() {
           gap: 22,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 10,
-              background: 'rgba(255,255,255,0.12)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <Icon name="sparkle" size={20} />
-          </div>
-          <div>
-            <div style={{ fontFamily: theme.display, fontSize: 16, fontWeight: 800, lineHeight: 1.2 }}>
-              Atrium Health
-            </div>
-            <div style={{ fontSize: 11.5, color: '#9fc2bb', letterSpacing: 0.4 }}>
-              Behavioral Health Acuity Index
-            </div>
-          </div>
-        </div>
+        <AcuitasLogo size={36} dark showWordmark />
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {TABS.map((t) => {
@@ -481,6 +459,24 @@ export default function App() {
             )}
           </div>
           </ErrorBoundary>
+
+          <div
+            style={{
+              marginTop: 40,
+              paddingTop: 16,
+              borderTop: `1px solid ${theme.border}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 8,
+            }}
+          >
+            <AcuitasLogo size={22} dark={false} showWordmark />
+            <div style={{ fontSize: 10.5, color: theme.sub }}>
+              Patent Pending &mdash; &copy; Matthew C. Gee
+            </div>
+          </div>
         </main>
       </div>
 

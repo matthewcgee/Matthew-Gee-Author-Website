@@ -9,7 +9,7 @@ const SECTIONS = [
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports & Exports', icon: 'barChart' },
-  { id: 'acuity', label: 'Patient Acuity Calculator', icon: 'sparkle' },
+  { id: 'acuity', label: 'AcuiCalc™ — Acuity Calculator™', icon: 'sparkle' },
   { id: 'settings', label: 'Settings & Admin', icon: 'settings' },
   { id: 'tips', label: 'Tips & Troubleshooting', icon: 'help' },
 ]
@@ -91,6 +91,14 @@ function Pointer({ children }) {
   )
 }
 
+function BrandMark() {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18, paddingTop: 10, borderTop: `1px solid ${theme.border}` }}>
+      <AcuitasLogo size={20} dark={false} showWordmark />
+    </div>
+  )
+}
+
 export default function HelpGuide() {
   const refs = useRef({})
 
@@ -135,6 +143,7 @@ export default function HelpGuide() {
                 { label: 'New Shift Entry', icon: 'plusCircle' },
                 { label: 'Staff Deployments', icon: 'users' },
                 { label: 'Reports', icon: 'barChart' },
+                { label: 'AcuiCalc™', icon: 'sparkle' },
                 { label: 'Help & Training', icon: 'help' },
                 { label: 'Settings', icon: 'settings' },
               ].map((item) => (
@@ -165,9 +174,11 @@ export default function HelpGuide() {
             <li><b>Region Status Board</b> — a live snapshot of every unit's acuity and census, updated automatically.</li>
             <li><b>New Shift Entry</b> — where staff log census, acuity points, and staffing for AM/PM shifts.</li>
             <li><b>Staff Deployments</b> — a log of who was moved between units and why, for staffing/budget records.</li>
-            <li><b>Reports</b> — charts, trends, exportable data, and the Patient Acuity Calculator.</li>
+            <li><b>Reports</b> — charts, trends, and downloadable data exports.</li>
+            <li><b>AcuiCalc™</b> — score individual patients and push totals directly to ED acuity.</li>
             <li><b>Settings</b> — password-protected. Used to manage locations, thresholds, and data.</li>
           </ul>
+          <BrandMark />
         </Card>
       </div>
 
@@ -245,6 +256,7 @@ export default function HelpGuide() {
               all units, and how many units are currently in RED status.
             </div>
           </div>
+          <BrandMark />
         </Card>
       </div>
 
@@ -284,7 +296,7 @@ export default function HelpGuide() {
           </Step>
           <Step n="4">
             <b>Acuity Points / Behavioral Health Points</b> — total points from your unit's acuity scoring
-            (you can also build this number with the Patient Acuity Calculator on the Reports screen).
+            (you can also build this number with <b>AcuiCalc™</b> on its dedicated sidebar tab).
           </Step>
           <Step n="5">
             <b>Staff on Shift</b> — number of RNs/MHTs staffed (not shown for the ED, since ED status is based
@@ -300,6 +312,7 @@ export default function HelpGuide() {
           <Step n="8">
             Click <b>Save Entry</b>. The Status Board updates immediately for everyone.
           </Step>
+          <BrandMark />
         </Card>
       </div>
 
@@ -338,6 +351,7 @@ export default function HelpGuide() {
             Click <b>Log Deployment</b>. It appears instantly in the Deployment Log table below the form,
             which everyone can see. Use the <b>Remove</b> button on a row to delete a mistaken entry.
           </Step>
+          <BrandMark />
         </Card>
       </div>
 
@@ -398,14 +412,15 @@ export default function HelpGuide() {
             or <b>Export JSON</b> (a full backup of all locations, entries, deployments, and thresholds) for
             spreadsheets or record-keeping.
           </Step>
+          <BrandMark />
         </Card>
       </div>
 
       {/* ACUITY CALCULATOR */}
       <div ref={(el) => (refs.current.acuity = el)}>
-        <Card title="Patient Acuity Calculator" sub="Score a patient, then push the total straight to the ED">
+        <Card title="AcuiCalc™ — Acuity Calculator™" sub="Score a patient, then push the total straight to the ED">
           <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
-            Found at the bottom of the Reports screen, this tool helps providers quickly score an individual
+            AcuiCalc™ lives on its own tab in the sidebar. It helps providers quickly score an individual
             patient's behavioral health acuity and add that score to the ED's running total — no manual
             arithmetic required.
           </div>
@@ -552,6 +567,7 @@ export default function HelpGuide() {
             Tip: You can score and add several patients before pushing — the running total of pending points
             is shown in the card header.
           </div>
+          <BrandMark />
         </Card>
       </div>
 
@@ -624,6 +640,7 @@ export default function HelpGuide() {
             Note: Census caps on the Status Board can be updated by any charge nurse directly on the unit's
             card — you don't need the Settings password for day-to-day cap changes.
           </div>
+          <BrandMark />
         </Card>
       </div>
 
@@ -656,6 +673,7 @@ export default function HelpGuide() {
               <b>Need the intro video again?</b> Click "Watch the Story" at the bottom of the sidebar.
             </li>
           </ul>
+          <BrandMark />
         </Card>
       </div>
     </div>

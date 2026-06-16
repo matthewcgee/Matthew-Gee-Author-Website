@@ -55,7 +55,7 @@ export default function AcuitasLogo({ size = 36, dark = false, showWordmark = tr
           letterSpacing: '0.01em',
           lineHeight: 1.1,
         }}>
-          Acuitas
+          Acuitas&#8482;
         </div>
         {size >= 28 && (
           <div style={{
@@ -67,7 +67,7 @@ export default function AcuitasLogo({ size = 36, dark = false, showWordmark = tr
             textTransform: 'uppercase',
             marginTop:     2,
           }}>
-            Acuity You Can Act On.
+            Acuity You Can Act On.&#8482;
           </div>
         )}
       </div>

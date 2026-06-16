@@ -21,6 +21,7 @@ const TABS = [
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
+  { id: 'calculator', label: 'Acuity Calculator™', icon: 'sparkle' },
   { id: 'help', label: 'Help & Training', icon: 'help' },
   { id: 'settings', label: 'Settings', icon: 'settings' },
 ]
@@ -398,25 +399,25 @@ export default function App() {
               />
             )}
             {tab === 'reports' && (
-              <>
-                <Reports
-                  locations={locations}
-                  entries={entries}
-                  deployments={deployments}
-                  thresholds={thresholds}
-                  onDeleteEntry={(id) => {
-                    removeEntry(id)
-                    setToast('Entry removed')
-                  }}
-                />
-                <AcuityCalculator
-                  locations={locations}
-                  onPushToED={(locId, shift, points) => {
-                    pushAcuityToED(locId, shift, points)
-                    setToast('Pushed to ED acuity')
-                  }}
-                />
-              </>
+              <Reports
+                locations={locations}
+                entries={entries}
+                deployments={deployments}
+                thresholds={thresholds}
+                onDeleteEntry={(id) => {
+                  removeEntry(id)
+                  setToast('Entry removed')
+                }}
+              />
+            )}
+            {tab === 'calculator' && (
+              <AcuityCalculator
+                locations={locations}
+                onPushToED={(locId, shift, points) => {
+                  pushAcuityToED(locId, shift, points)
+                  setToast('Pushed to ED acuity')
+                }}
+              />
             )}
             {tab === 'help' && <HelpGuide />}
             {tab === 'settings' && !settingsUnlocked && (

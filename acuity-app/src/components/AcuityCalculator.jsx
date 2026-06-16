@@ -70,7 +70,7 @@ export default function AcuityCalculator({ locations, onPushToED }) {
       <div className="fade-in-up" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <AcuitasLogo size={26} dark={false} showWordmark={false} />
-          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Patient Acuity Calculator</div>
+          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Patient Acuity Calculator&#8482;</div>
         </div>
         <div style={{ fontSize: 12.5, color: theme.sub }}>
           Score an individual patient's acuity, then push the total directly to ED acuity points.

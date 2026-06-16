@@ -209,6 +209,11 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
                   {latest.date} · {latest.shift} shift
                   {!isEd && <> · {latest.staff} staff, {latest.points} points</>}
                   {isEd && <> · {latest.points} points</>}
+                  {latest.capInPlace && (
+                    <span style={{ marginLeft: 6 }}>
+                      <Badge color={STAGE_COLORS.RED}>CAP IN PLACE</Badge>
+                    </span>
+                  )}
                 </div>
               ) : (
                 <div

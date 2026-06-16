@@ -10,6 +10,7 @@ const emptyForm = (locId) => ({
   census: '',
   points: '',
   staff: '',
+  capInPlace: false,
   notes: '',
 })
 
@@ -41,6 +42,7 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
       census: form.census === '' ? null : Number(form.census),
       points: Number(form.points) || 0,
       staff: isEd ? null : Number(form.staff) || 0,
+      capInPlace: !isEd && form.capInPlace,
       notes: form.notes,
       pilot: false,
       createdAt: Date.now(),
@@ -97,6 +99,24 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
                 </Field>
               )}
             </div>
+
+            {!isEd && (
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', fontWeight: form.capInPlace ? 700 : 400 }}>
+                  <input
+                    type="checkbox"
+                    checked={form.capInPlace}
+                    onChange={(e) => setForm((f) => ({ ...f, capInPlace: e.target.checked }))}
+                  />
+                  Census cap in place this shift
+                </label>
+                {form.capInPlace && (
+                  <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 3, marginLeft: 24 }}>
+                    This shift will be recorded as a cap event in Reports.
+                  </div>
+                )}
+              </div>
+            )}
 
             <Field label="Notes" hint="Optional">
               <textarea rows={2} value={form.notes} onChange={set('notes')} />

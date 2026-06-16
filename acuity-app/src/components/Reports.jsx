@@ -133,6 +133,24 @@ export default function Reports({ locations, entries, deployments, thresholds, o
     return Array.from(totals.entries()).map(([name, hours]) => ({ name, hours }))
   }, [deployments, locations])
 
+  const capEvents = useMemo(() => {
+    return filteredEntries
+      .filter((e) => e.capInPlace)
+      .slice()
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+  }, [filteredEntries])
+
+  const capEventsByLocation = useMemo(() => {
+    const counts = new Map()
+    capEvents.forEach((e) => {
+      const name = locName(locations, e.locId)
+      counts.set(name, (counts.get(name) || 0) + 1)
+    })
+    return Array.from(counts.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+  }, [capEvents, locations])
+
   const stageDistribution = useMemo(() => {
     const counts = { GREEN: 0, YELLOW: 0, RED: 0, NONE: 0 }
     filteredEntries.forEach((e) => {
@@ -162,9 +180,25 @@ export default function Reports({ locations, entries, deployments, thresholds, o
           const loc = locations.find((l) => l.id === e.locId)
           return loc ? entryStage(e, loc, thresholds) : ''
         } },
+      { label: 'CapInPlace', value: (e) => e.capInPlace ? 'Yes' : '' },
       { label: 'Notes', value: (e) => e.notes },
     ]
     download('acuity-entries.csv', toCSV(sortedEntries, cols), 'text/csv')
+  }
+
+  const exportCapEventsCSV = () => {
+    const cols = [
+      { label: 'Date', value: (e) => e.date },
+      { label: 'Shift', value: (e) => e.shift },
+      { label: 'Location', value: (e) => locations.find((l) => l.id === e.locId)?.name || e.locId },
+      { label: 'Facility', value: (e) => locations.find((l) => l.id === e.locId)?.facility || '' },
+      { label: 'Census', value: (e) => e.census ?? '' },
+      { label: 'NursingCap', value: (e) => locations.find((l) => l.id === e.locId)?.censusCap ?? '' },
+      { label: 'AcuityPoints', value: (e) => e.points },
+      { label: 'Staff', value: (e) => e.staff ?? '' },
+      { label: 'Notes', value: (e) => e.notes || '' },
+    ]
+    download('cap-events.csv', toCSV(capEvents, cols), 'text/csv')
   }
 
   const exportDeploymentsCSV = () => {
@@ -286,6 +320,78 @@ export default function Reports({ locations, entries, deployments, thresholds, o
       </Card>
 
       <Card
+        title="Census Cap Events"
+        sub={`${capEvents.length} flagged shift${capEvents.length === 1 ? '' : 's'}`}
+        right={
+          capEvents.length > 0
+            ? <Button variant="ghost" onClick={exportCapEventsCSV}>Export Cap Events CSV</Button>
+            : null
+        }
+      >
+        {capEvents.length === 0 ? (
+          <div style={{ fontSize: 13, color: theme.sub }}>
+            No cap events logged yet. Check "Census cap in place" on a shift entry to flag it here.
+          </div>
+        ) : (
+          <>
+            {capEventsByLocation.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                {capEventsByLocation.map(({ name, count }) => (
+                  <div
+                    key={name}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      background: `${STAGE_COLORS.RED}18`,
+                      border: `1px solid ${STAGE_COLORS.RED}44`,
+                      fontSize: 12.5,
+                    }}
+                  >
+                    <span style={{ fontWeight: 700 }}>{name}</span>
+                    <span style={{ color: theme.sub, marginLeft: 6 }}>{count} event{count === 1 ? '' : 's'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                <thead>
+                  <tr style={{ textAlign: 'left', color: theme.sub, borderBottom: `1px solid ${theme.border}` }}>
+                    <th style={{ padding: '6px 8px' }}>Date</th>
+                    <th style={{ padding: '6px 8px' }}>Shift</th>
+                    <th style={{ padding: '6px 8px' }}>Location</th>
+                    <th style={{ padding: '6px 8px' }}>Census / Cap</th>
+                    <th style={{ padding: '6px 8px' }}>Acuity Pts</th>
+                    <th style={{ padding: '6px 8px' }}>Staff</th>
+                    <th style={{ padding: '6px 8px' }}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {capEvents.map((e) => {
+                    const loc = locations.find((l) => l.id === e.locId)
+                    if (!loc) return null
+                    return (
+                      <tr key={e.id} style={{ borderBottom: `1px solid ${theme.border}` }}>
+                        <td style={{ padding: '6px 8px' }}>{e.date}</td>
+                        <td style={{ padding: '6px 8px' }}>{e.shift}</td>
+                        <td style={{ padding: '6px 8px', fontWeight: 600 }}>{loc.name}</td>
+                        <td style={{ padding: '6px 8px', color: STAGE_COLORS.RED, fontWeight: 700 }}>
+                          {e.census ?? '—'}{loc.censusCap != null ? ` / ${loc.censusCap}` : ''}
+                        </td>
+                        <td style={{ padding: '6px 8px' }}>{e.points}</td>
+                        <td style={{ padding: '6px 8px' }}>{e.staff ?? '—'}</td>
+                        <td style={{ padding: '6px 8px', color: theme.sub }}>{e.notes || '—'}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </Card>
+
+      <Card
         title="Shift Entries"
         sub={`${sortedEntries.length} record${sortedEntries.length === 1 ? '' : 's'}`}
         right={
@@ -347,7 +453,12 @@ export default function Reports({ locations, entries, deployments, thresholds, o
                       <td style={{ padding: '6px 8px' }}>{e.points}</td>
                       <td style={{ padding: '6px 8px' }}>{e.staff ?? '—'}</td>
                       <td style={{ padding: '6px 8px', fontWeight: 700 }}>{value.toFixed(loc.type === 'ed' ? 0 : 2)}</td>
-                      <td style={{ padding: '6px 8px' }}><Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge></td>
+                      <td style={{ padding: '6px 8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                          <Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge>
+                          {e.capInPlace && <Badge color={STAGE_COLORS.RED}>CAP</Badge>}
+                        </div>
+                      </td>
                       <td style={{ padding: '6px 8px' }}>
                         <Button variant="danger" onClick={() => onDeleteEntry(e.id)}>Remove</Button>
                       </td>

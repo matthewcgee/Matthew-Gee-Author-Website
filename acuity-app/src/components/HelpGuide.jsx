@@ -193,7 +193,7 @@ export default function HelpGuide() {
             <Card
               interactive
               title="1 South A"
-              sub="High Point Medical Center"
+              sub=""
               right={<Badge color={STAGE_COLORS.YELLOW}>YELLOW</Badge>}
               style={{ marginBottom: 0, maxWidth: 360 }}
             >

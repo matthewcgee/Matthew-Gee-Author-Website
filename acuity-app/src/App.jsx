@@ -28,6 +28,7 @@ const TABS = [
 
 const INTRO_KEY = 'bhai:introSeen:v1'
 const DATA_CLEAR_KEY = 'bhai:cleared:v1'
+const SCRUB_KEY = 'bhai:scrubbed:v1'
 
 export default function App() {
   const [locations, setLocations] = useState(() => readStorage(KEYS.locations, null))
@@ -49,6 +50,7 @@ export default function App() {
   const entriesSnapRef = useRef(null)
   const deploymentsSnapRef = useRef(null)
   const legacyRef = useRef({ entries: null, deployments: null, loaded: false })
+  const scrubDone = useRef(false)
 
   // One-time move of legacy array-based entries/deployments into their own
   // per-document collections, where concurrent edits can't clobber each other
@@ -112,6 +114,24 @@ export default function App() {
       setShowIntro(true)
     }
   }, [])
+
+  // One-time scrub: strip facility, market, and region from every location
+  // stored in Firestore so no identifying names appear in the live app.
+  // Runs after Firestore locations have been loaded (remoteLoaded guard via
+  // locations dependency), then writes cleaned locations back to state so the
+  // existing locations-sync effect pushes them to Firestore automatically.
+  useEffect(() => {
+    if (!locations || !remoteLoaded.current) return
+    if (scrubDone.current || readStorage(SCRUB_KEY, false)) {
+      scrubDone.current = true
+      return
+    }
+    const needsScrub = locations.some((l) => l.facility || l.market || l.region)
+    scrubDone.current = true
+    writeStorage(SCRUB_KEY, true)
+    if (!needsScrub) return
+    setLocations(locations.map((l) => ({ ...l, facility: '', market: '', region: '' })))
+  }, [locations])
 
   // One-time clear of all pilot/seed entries and deployments from Firestore.
   // Write the guard key SYNCHRONOUSLY first so tryMigrateCollections (which

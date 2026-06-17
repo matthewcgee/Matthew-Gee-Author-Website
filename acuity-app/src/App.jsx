@@ -57,6 +57,9 @@ export default function App() {
     if (entriesSnapRef.current == null || deploymentsSnapRef.current == null || !legacyRef.current.loaded) return
     migrationDone.current = true
 
+    // Skip migration permanently once the one-time data clear has been requested
+    if (readStorage(DATA_CLEAR_KEY, false)) return
+
     if (entriesSnapRef.current.length === 0) {
       const source = (legacyRef.current.entries && legacyRef.current.entries.length)
         ? legacyRef.current.entries
@@ -110,9 +113,12 @@ export default function App() {
     }
   }, [])
 
-  // One-time clear of all pilot/seed entries and deployments from Firestore
+  // One-time clear of all pilot/seed entries and deployments from Firestore.
+  // Write the guard key SYNCHRONOUSLY first so tryMigrateCollections (which
+  // runs concurrently) cannot race ahead and re-populate the empty collections.
   useEffect(() => {
     if (readStorage(DATA_CLEAR_KEY, false)) return
+    writeStorage(DATA_CLEAR_KEY, true)
     Promise.all([
       getDocs(collection(db, 'entries')).then((snap) => {
         if (snap.empty) return
@@ -126,9 +132,7 @@ export default function App() {
         snap.docs.forEach((d) => batch.delete(d.ref))
         return batch.commit()
       }),
-    ])
-      .then(() => writeStorage(DATA_CLEAR_KEY, true))
-      .catch((e) => console.error('data clear failed', e))
+    ]).catch((e) => console.error('data clear failed', e))
   }, [])
 
   useEffect(() => {

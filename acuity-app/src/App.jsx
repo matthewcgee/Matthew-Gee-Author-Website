@@ -15,6 +15,7 @@ import Settings from './components/Settings.jsx'
 import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
@@ -29,8 +30,10 @@ const TABS = [
 const INTRO_KEY = 'bhai:introSeen:v1'
 const DATA_CLEAR_KEY = 'bhai:cleared:v1'
 const SCRUB_KEY = 'bhai:scrubbed:v1'
+const AUTH_KEY = 'bhai:auth:v1'
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => readStorage(AUTH_KEY, '') === EXPECTED_HASH)
   const [locations, setLocations] = useState(() => readStorage(KEYS.locations, null))
   const [entries, setEntries] = useState(() => readStorage(KEYS.entries, null))
   const [deployments, setDeployments] = useState(() => readStorage(KEYS.deployments, null))
@@ -332,6 +335,15 @@ export default function App() {
     snap.docs.forEach((d) => batch.delete(d.ref))
     items.forEach((item) => batch.set(doc(db, name, item.id), item))
     await batch.commit()
+  }
+
+  if (!authed) {
+    return (
+      <PasswordGate onSuccess={(hash) => {
+        writeStorage(AUTH_KEY, hash)
+        setAuthed(true)
+      }} />
+    )
   }
 
   if (locations == null || entries == null || deployments == null) {

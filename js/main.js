@@ -1,9 +1,4 @@
-// Snap to top after all images load (instant, bypassing CSS smooth-scroll).
-window.addEventListener('load', function () {
-  document.documentElement.style.scrollBehavior = 'auto';
-  window.scrollTo(0, 0);
-  document.documentElement.style.scrollBehavior = '';
-});
+window.addEventListener('load', function () { window.scrollTo(0, 0); });
 
 document.addEventListener('DOMContentLoaded', function () {
   // Footer year
@@ -11,6 +6,18 @@ document.addEventListener('DOMContentLoaded', function () {
   if (yearEl) {
     yearEl.textContent = new Date().getFullYear();
   }
+
+  // Smooth scroll for internal anchor links (replaces CSS scroll-behavior:smooth
+  // so programmatic snap-to-top is never accidentally animated).
+  document.querySelectorAll('a[href^="#"]').forEach(function (link) {
+    link.addEventListener('click', function (e) {
+      var target = document.querySelector(this.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
 
   // Mobile nav toggle
   var toggle = document.getElementById('navToggle');

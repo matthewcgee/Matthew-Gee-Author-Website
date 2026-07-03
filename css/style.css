@@ -28,7 +28,7 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* scroll-behavior is handled via JS so programmatic snap-to-top is never animated */
 }
 
 body {

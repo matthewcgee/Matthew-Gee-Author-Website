@@ -26,11 +26,7 @@
     // Bypass CSS scroll-behavior:smooth so we snap instantly rather than
     // animating from mid-page. Also fires on back-forward cache restores
     // (which skip the 'load' event entirely) via pageshow.
-    function snapToTop() {
-      document.documentElement.style.scrollBehavior = 'auto';
-      window.scrollTo(0, 0);
-      document.documentElement.style.scrollBehavior = '';
-    }
+    function snapToTop() { window.scrollTo(0, 0); }
     snapToTop();
     window.addEventListener('pageshow', snapToTop);
   </script>

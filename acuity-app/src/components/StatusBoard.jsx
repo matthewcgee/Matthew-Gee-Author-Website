@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
-import { Card, Badge, ProgressBar, StatCard, Icon, theme, grid } from './ui.jsx'
-import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
+import { Card, Badge, Button, ProgressBar, StatCard, Icon, theme, grid } from './ui.jsx'
+import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, detectTrend, staffingRatioRecommendation, STAGE_COLORS } from '../lib/model.js'
 import { today } from '../lib/storage.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
 
@@ -90,7 +90,7 @@ function CapEditor({ value, onSave }) {
   )
 }
 
-export default function StatusBoard({ locations, entries, thresholds, caps, onUpdateCap }) {
+export default function StatusBoard({ locations, entries, thresholds, caps, onUpdateCap, onHandoff }) {
   const todayStr = today()
   const summaries = locations.map((loc) => {
     const list = sortedEntriesFor(loc.id, entries)
@@ -102,7 +102,9 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
     const trend = list.slice(-8).map((e, i) => ({ i, value: computeEntryValue(e, loc, thresholds) }))
     const staffNeeds = latest ? staffNeededForThresholds(latest, loc, thresholds) : null
     const cap = caps[loc.id] !== undefined ? caps[loc.id] : loc.censusCap
-    return { loc, latest, value, stage, trend, staffNeeds, hasHistory, cap }
+    const trendDir = detectTrend(loc.id, entries, loc, thresholds)
+    const staffRec = latest ? staffingRatioRecommendation(latest, loc, thresholds) : null
+    return { loc, latest, value, stage, trend, staffNeeds, hasHistory, cap, trendDir, staffRec }
   })
 
   const greenCount = summaries.filter((s) => s.stage === 'GREEN').length
@@ -121,14 +123,22 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
 
   return (
     <div>
-      <div className="fade-in-up" style={{ marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-          <AcuitasLogo size={26} dark={false} showWordmark={false} />
-          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Region Status Board</div>
+      <div className="fade-in-up" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+            <AcuitasLogo size={26} dark={false} showWordmark={false} />
+            <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Region Status Board</div>
+          </div>
+          <div style={{ fontSize: 12.5, color: theme.sub }}>
+            Most recent acuity reading per location, with census vs. nursing-driven census caps.
+          </div>
         </div>
-        <div style={{ fontSize: 12.5, color: theme.sub }}>
-          Most recent acuity reading per location, with census vs. nursing-driven census caps.
-        </div>
+        {onHandoff && (
+          <Button variant="primary" onClick={onHandoff} className="no-print">
+            <Icon name="clipboard" size={15} />
+            Shift Handoff
+          </Button>
+        )}
       </div>
 
       <div style={{ ...grid(4), marginBottom: 20 }}>
@@ -166,7 +176,7 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
         <div key={region}>
           <StateHeader name={region} count={byRegion[region].length} first={regionIdx === 0} />
           <div style={{ ...grid(3), marginBottom: 8 }}>
-            {byRegion[region].map(({ loc, latest, value, stage, trend, staffNeeds, hasHistory, cap }, idx) => {
+            {byRegion[region].map(({ loc, latest, value, stage, trend, staffNeeds, hasHistory, cap, trendDir, staffRec }, idx) => {
               const th = thresholdsFor(loc, thresholds)
               const isEd = loc.type === 'ed'
               const overCap = !isEd && cap != null && latest?.census != null && latest.census > cap
@@ -181,9 +191,18 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
                   title={loc.name}
                   sub={loc.facility}
                   right={
-                    awaiting
-                      ? <Badge color={STAGE_COLORS.NONE}>AWAITING REPORT</Badge>
-                      : <Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      {trendDir.direction === 'up' && !awaiting && (
+                        <Badge color={STAGE_COLORS.YELLOW}>↑ TREND</Badge>
+                      )}
+                      {trendDir.direction === 'down' && !awaiting && (
+                        <Badge color={STAGE_COLORS.GREEN}>↓ EASING</Badge>
+                      )}
+                      {awaiting
+                        ? <Badge color={STAGE_COLORS.NONE}>AWAITING REPORT</Badge>
+                        : <Badge color={STAGE_COLORS[stage]} pulse={stage === 'RED'}>{stage}</Badge>
+                      }
+                    </div>
                   }
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
@@ -266,6 +285,27 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
                       </div>
                     )
                   })()}
+
+                  {staffRec && latest && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        padding: '6px 10px',
+                        borderRadius: 8,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        color: staffRec.color,
+                        background: `${staffRec.color}12`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 5,
+                      }}
+                    >
+                      <Icon name="users" size={12} />
+                      {staffRec.label}
+                      {staffRec.recommended != null && ` (${staffRec.recommended} staff)`}
+                    </div>
+                  )}
 
                   <div style={{ fontSize: 11, color: theme.sub, marginTop: 10, opacity: 0.8 }}>
                     {loc.market} · {loc.region}

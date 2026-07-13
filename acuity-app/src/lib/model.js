@@ -198,3 +198,53 @@ export function seedEntries() {
 export function seedDeployments() {
   return []
 }
+
+const SHIFT_ORDER = { AM: 0, PM: 1 }
+
+// Linear-regression trend over the last 3–5 entries for a location.
+// Returns { direction: 'up' | 'down' | 'stable', pct: number }
+export function detectTrend(locId, allEntries, location, globalThresholds) {
+  const list = allEntries
+    .filter((e) => e.locId === locId)
+    .slice()
+    .sort((a, b) => {
+      if (a.date !== b.date) return a.date < b.date ? -1 : 1
+      return (SHIFT_ORDER[a.shift] || 0) - (SHIFT_ORDER[b.shift] || 0)
+    })
+    .slice(-5)
+
+  if (list.length < 3) return { direction: 'stable', pct: 0 }
+
+  const values = list.map((e) => computeEntryValue(e, location, globalThresholds))
+  const n = values.length
+  const meanX = (n - 1) / 2
+  const meanY = values.reduce((s, v) => s + v, 0) / n
+  const num = values.reduce((s, v, i) => s + (i - meanX) * (v - meanY), 0)
+  const den = values.reduce((s, _, i) => s + (i - meanX) * (i - meanX), 0)
+  const slope = den === 0 ? 0 : num / den
+  const pct = (slope * (n - 1)) / (Math.abs(meanY) || 1)
+
+  if (pct > 0.15) return { direction: 'up', pct: Math.round(pct * 100) }
+  if (pct < -0.15) return { direction: 'down', pct: Math.round(Math.abs(pct) * 100) }
+  return { direction: 'stable', pct: 0 }
+}
+
+// Nurse-to-patient ratio recommendation based on current acuity stage.
+export function staffingRatioRecommendation(entry, location, globalThresholds) {
+  if (!entry || !location) return null
+  const stage = entryStage(entry, location, globalThresholds)
+  const isEd = location.type === 'ed'
+  const census = entry.census || 0
+
+  if (isEd) {
+    if (stage === 'GREEN') return { label: 'Standard staffing adequate', ratio: null, recommended: null, color: STAGE_COLORS.GREEN }
+    if (stage === 'YELLOW') return { label: 'Enhanced: add 1 dedicated BH staff', ratio: null, recommended: null, color: STAGE_COLORS.YELLOW }
+    if (stage === 'RED') return { label: 'Surge: activate BH flex pool (+2 minimum)', ratio: null, recommended: null, color: STAGE_COLORS.RED }
+    return null
+  }
+
+  if (stage === 'GREEN') return { label: '1:5 ratio adequate', ratio: '1:5', recommended: census ? Math.ceil(census / 5) : null, color: STAGE_COLORS.GREEN }
+  if (stage === 'YELLOW') return { label: '1:4 — consider 1 flex staff', ratio: '1:4', recommended: census ? Math.ceil(census / 4) : null, color: STAGE_COLORS.YELLOW }
+  if (stage === 'RED') return { label: '1:2 — surge staffing required', ratio: '1:2', recommended: census ? Math.ceil(census / 2) : null, color: STAGE_COLORS.RED }
+  return null
+}

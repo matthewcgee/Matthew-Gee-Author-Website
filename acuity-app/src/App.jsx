@@ -16,9 +16,12 @@ import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
+import SupervisorDashboard from './components/SupervisorDashboard.jsx'
+import ShiftHandoff from './components/ShiftHandoff.jsx'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
+  { id: 'supervisor', label: 'Supervisor View', icon: 'eye' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
@@ -42,7 +45,9 @@ export default function App() {
   const [tab, setTab] = useState('status')
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
+  const [showHandoff, setShowHandoff] = useState(false)
   const [settingsUnlocked, setSettingsUnlocked] = useState(() => sessionStorage.getItem('bhai:settingsUnlocked') === 'true')
+  const [auditLog, setAuditLog] = useState([])
 
   const lastSynced = useRef({})
   const remoteLoaded = useRef(false)
@@ -274,6 +279,27 @@ export default function App() {
     return unsub
   }, [])
 
+  // Live audit trail — most recent 100 records
+  useEffect(() => {
+    const unsub = onSnapshot(
+      collection(db, 'auditLog'),
+      (snap) => {
+        const arr = snap.docs
+          .map((d) => d.data())
+          .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+          .slice(0, 100)
+        setAuditLog(arr)
+      },
+      (err) => console.error('Firestore auditLog sync error', err)
+    )
+    return unsub
+  }, [])
+
+  function logAudit(action, details) {
+    const record = { id: uid(), action, details, createdAt: Date.now() }
+    setDoc(doc(db, 'auditLog', record.id), record).catch((e) => console.error('audit log', e))
+  }
+
   useEffect(() => {
     if (locations == null || !remoteLoaded.current) return
     if (JSON.stringify(locations) === JSON.stringify(lastSynced.current.locations)) return
@@ -301,10 +327,27 @@ export default function App() {
 
   const updateCap = (locId, censusCap) => setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('update cap', e))
 
-  const addEntry = (entry) => setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
-  const removeEntry = (id) => deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
-  const addDeployment = (dep) => setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
-  const removeDeployment = (id) => deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
+  const addEntry = (entry) => {
+    setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
+    const loc = stateRef.current.locations?.find((l) => l.id === entry.locId)
+    logAudit('add_entry', {
+      date: entry.date, shift: entry.shift,
+      locId: entry.locId, locName: loc?.name || '',
+      points: entry.points, staff: entry.staff, census: entry.census,
+    })
+  }
+  const removeEntry = (id) => {
+    deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
+    logAudit('remove_entry', { entryId: id })
+  }
+  const addDeployment = (dep) => {
+    setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
+    logAudit('add_deployment', { date: dep.date, shift: dep.shift, staffName: dep.staffName, role: dep.role })
+  }
+  const removeDeployment = (id) => {
+    deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
+    logAudit('remove_deployment', { deploymentId: id })
+  }
 
   async function pushAcuityToED(locId, shift, points) {
     const todayStr = today()
@@ -430,7 +473,23 @@ export default function App() {
           <ErrorBoundary key={tab}>
           <div className="fade-in">
             {tab === 'status' && (
-              <StatusBoard locations={locations} entries={entries} thresholds={thresholds} caps={caps} onUpdateCap={updateCap} />
+              <StatusBoard
+                locations={locations}
+                entries={entries}
+                thresholds={thresholds}
+                caps={caps}
+                onUpdateCap={updateCap}
+                onHandoff={() => setShowHandoff(true)}
+              />
+            )}
+            {tab === 'supervisor' && (
+              <SupervisorDashboard
+                locations={locations}
+                entries={entries}
+                thresholds={thresholds}
+                caps={caps}
+                onHandoff={() => setShowHandoff(true)}
+              />
             )}
             {tab === 'entry' && (
               <ShiftEntryForm
@@ -462,6 +521,7 @@ export default function App() {
                 entries={entries}
                 deployments={deployments}
                 thresholds={thresholds}
+                auditLog={auditLog}
                 onDeleteEntry={(id) => {
                   removeEntry(id)
                   setToast('Entry removed')
@@ -540,6 +600,15 @@ export default function App() {
       </div>
 
       {showIntro && <IntroVideo onClose={closeIntro} />}
+      {showHandoff && (
+        <ShiftHandoff
+          locations={locations}
+          entries={entries}
+          thresholds={thresholds}
+          caps={caps}
+          onClose={() => setShowHandoff(false)}
+        />
+      )}
       <Toast message={toast} />
     </div>
   )

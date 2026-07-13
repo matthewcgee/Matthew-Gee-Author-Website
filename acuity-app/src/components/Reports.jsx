@@ -75,7 +75,23 @@ const COLUMNS = [
   { key: 'stage', label: 'Stage', sortable: false },
 ]
 
-export default function Reports({ locations, entries, deployments, thresholds, onDeleteEntry }) {
+const ACTION_LABELS = {
+  add_entry: 'Shift entry logged',
+  remove_entry: 'Entry removed',
+  add_deployment: 'Deployment logged',
+  remove_deployment: 'Deployment removed',
+  update_cap: 'Census cap updated',
+}
+
+function formatAuditTime(ts) {
+  if (!ts) return '—'
+  return new Date(ts).toLocaleString('en-US', {
+    month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', hour12: true,
+  })
+}
+
+export default function Reports({ locations, entries, deployments, thresholds, auditLog, onDeleteEntry }) {
   const [locFilter, setLocFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [sortKey, setSortKey] = useState('date')
@@ -251,6 +267,9 @@ export default function Reports({ locations, entries, deployments, thresholds, o
           <Button variant="ghost" onClick={exportEntriesCSV}>Export Entries CSV</Button>
           <Button variant="ghost" onClick={exportDeploymentsCSV}>Export Deployments CSV</Button>
           <Button variant="ghost" onClick={exportJSON}>Export JSON</Button>
+          <Button variant="ghost" onClick={() => window.print()}>
+            <Icon name="printer" size={14} /> Print Report
+          </Button>
         </div>
       </div>
 
@@ -394,6 +413,49 @@ export default function Reports({ locations, entries, deployments, thresholds, o
           </>
         )}
       </Card>
+
+      {auditLog && auditLog.length > 0 && (
+        <Card
+          title="Audit Trail"
+          sub={`Last ${Math.min(auditLog.length, 100)} activity records`}
+          right={<Icon name="clock" size={16} style={{ color: theme.sub }} />}
+        >
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: theme.sub, borderBottom: `1px solid ${theme.border}` }}>
+                  <th style={{ padding: '6px 8px' }}>Time</th>
+                  <th style={{ padding: '6px 8px' }}>Action</th>
+                  <th style={{ padding: '6px 8px' }}>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditLog.slice(0, 100).map((log) => {
+                  const d = log.details || {}
+                  const locName = d.locName || (d.locId ? locations.find(l => l.id === d.locId)?.name : null) || ''
+                  const detail = [
+                    d.date && d.shift ? `${d.date} ${d.shift}` : '',
+                    locName,
+                    d.points != null ? `${d.points} pts` : '',
+                    d.staffName || '',
+                  ].filter(Boolean).join(' · ')
+                  return (
+                    <tr key={log.id} style={{ borderBottom: `1px solid ${theme.border}` }}>
+                      <td style={{ padding: '6px 8px', whiteSpace: 'nowrap', color: theme.sub }}>
+                        {formatAuditTime(log.createdAt)}
+                      </td>
+                      <td style={{ padding: '6px 8px', fontWeight: 600 }}>
+                        {ACTION_LABELS[log.action] || log.action}
+                      </td>
+                      <td style={{ padding: '6px 8px', color: theme.sub }}>{detail || '—'}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       <Card
         title="Shift Entries"

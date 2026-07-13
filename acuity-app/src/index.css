@@ -152,3 +152,24 @@ input:focus, select:focus, textarea:focus {
     overflow-x: auto;
   }
 }
+
+/* ---------- Print styles ---------- */
+@media print {
+  .no-print { display: none !important; }
+  .app-sidebar { display: none !important; }
+  .app-shell { display: block !important; }
+  .hover-lift { box-shadow: none !important; transform: none !important; }
+  .print-modal {
+    position: static !important;
+    background: transparent !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+  .print-modal > div {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+}

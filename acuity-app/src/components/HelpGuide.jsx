@@ -6,6 +6,8 @@ import AcuitasLogo from './AcuitasLogo.jsx'
 const SECTIONS = [
   { id: 'overview', label: 'Getting Around', icon: 'grid' },
   { id: 'status', label: 'Region Status Board', icon: 'shield' },
+  { id: 'supervisor', label: 'Supervisor Dashboard', icon: 'eye' },
+  { id: 'handoff', label: 'Shift Handoff', icon: 'clipboard' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports & Exports', icon: 'barChart' },
@@ -140,6 +142,7 @@ export default function HelpGuide() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 240 }}>
               {[
                 { label: 'Region Status Board', icon: 'grid', active: true },
+                { label: 'Supervisor View', icon: 'eye' },
                 { label: 'New Shift Entry', icon: 'plusCircle' },
                 { label: 'Staff Deployments', icon: 'users' },
                 { label: 'Reports', icon: 'barChart' },
@@ -171,10 +174,11 @@ export default function HelpGuide() {
             A quick summary of each screen:
           </div>
           <ul style={{ fontSize: 13, lineHeight: 1.7, marginTop: 6, paddingLeft: 20 }}>
-            <li><b>Region Status Board</b> — a live snapshot of every unit's acuity and census, updated automatically.</li>
+            <li><b>Region Status Board</b> — a live snapshot of every unit's acuity and census, updated automatically. Includes trend direction badges and staffing ratio guidance on each card.</li>
+            <li><b>Supervisor View</b> — a compact tile grid giving house supervisors an at-a-glance view of every unit's status at once, with escalation alerts at the top for RED and trending-up units.</li>
             <li><b>New Shift Entry</b> — where staff log census, acuity points, and staffing for AM/PM shifts.</li>
             <li><b>Staff Deployments</b> — a log of who was moved between units and why, for staffing/budget records.</li>
-            <li><b>Reports</b> — charts, trends, and downloadable data exports.</li>
+            <li><b>Reports</b> — charts, trends, audit trail, and downloadable data exports.</li>
             <li><b>AcuiCalc™</b> — score individual patients and push totals directly to ED acuity.</li>
             <li><b>Settings</b> — password-protected. Used to manage locations, thresholds, and data.</li>
           </ul>
@@ -194,8 +198,13 @@ export default function HelpGuide() {
               interactive
               title="1 South A"
               sub=""
-              right={<Badge color={STAGE_COLORS.YELLOW}>YELLOW</Badge>}
-              style={{ marginBottom: 0, maxWidth: 360 }}
+              right={
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 7px', borderRadius: 6, background: `${STAGE_COLORS.RED}22`, color: STAGE_COLORS.RED }}>↑ TREND</span>
+                  <Badge color={STAGE_COLORS.YELLOW}>YELLOW</Badge>
+                </div>
+              }
+              style={{ marginBottom: 0, maxWidth: 380 }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
                 <div>
@@ -218,9 +227,23 @@ export default function HelpGuide() {
                   borderRadius: 8,
                   background: `${STAGE_COLORS.YELLOW}1a`,
                   color: STAGE_COLORS.YELLOW,
+                  marginBottom: 6,
                 }}
               >
                 Deploy 1 staff to GREEN
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  background: `${STAGE_COLORS.YELLOW}0f`,
+                  color: STAGE_COLORS.YELLOW,
+                  borderLeft: `3px solid ${STAGE_COLORS.YELLOW}`,
+                }}
+              >
+                Staffing: 1:4 — consider 1 flex staff &nbsp;·&nbsp; Recommended: 4 staff
               </div>
             </Card>
           </Illustration>
@@ -234,18 +257,38 @@ export default function HelpGuide() {
             logged today's shift yet, you'll see <Badge color={STAGE_COLORS.NONE}>AWAITING REPORT</Badge>.
           </Step>
           <Step n="2">
+            <b>Trend badge</b> (next to the stage badge) — shows whether the unit's acuity has been rising or easing
+            based on the last 3–5 shift entries:
+            <ul style={{ marginTop: 6, paddingLeft: 20, lineHeight: 1.7 }}>
+              <li><b style={{ color: STAGE_COLORS.RED }}>↑ TREND</b> — acuity has been climbing. Warrants closer attention even if the current stage is GREEN or YELLOW.</li>
+              <li><b style={{ color: STAGE_COLORS.GREEN }}>↓ EASING</b> — acuity has been declining — a positive sign.</li>
+              <li>No badge shown when the trend is flat/stable.</li>
+            </ul>
+          </Step>
+          <Step n="3">
             <b>Big number</b> — the unit's computed acuity value for today (for inpatient units this is the
             "Unit Acuity Index," or acuity points divided by staff on shift; for the ED it's total behavioral
             health points). The small chart beside it shows the recent trend.
           </Step>
-          <Step n="3">
+          <Step n="4">
             <b>Census vs. nursing cap</b> — shows today's census against the unit's census cap. The number
             after the slash is editable — click it to type a new cap. Any charge nurse can update this without
             the Settings password, and it updates everywhere instantly.
           </Step>
-          <Step n="4">
+          <Step n="5">
             <b>Staffing suggestion</b> — if a unit is YELLOW or RED, this box tells you how many additional
             staff would be needed to reach GREEN (and to reach YELLOW if currently RED).
+          </Step>
+          <Step n="6">
+            <b>Staffing ratio guidance</b> — below the staffing suggestion, a second bar shows the recommended
+            nurse-to-patient ratio for the unit's current stage:
+            <ul style={{ marginTop: 6, paddingLeft: 20, lineHeight: 1.7 }}>
+              <li><b>GREEN</b> — 1:5 ratio adequate</li>
+              <li><b>YELLOW</b> — 1:4, consider adding 1 flex staff</li>
+              <li><b>RED</b> — 1:2 surge staffing required</li>
+              <li>For ED locations, guidance is qualitative (Standard / Enhanced / Surge) rather than ratio-based.</li>
+            </ul>
+            The recommended staff count is computed from today's census at the suggested ratio.
           </Step>
 
           <div style={{ marginTop: 14 }}>
@@ -256,6 +299,173 @@ export default function HelpGuide() {
               all units, and how many units are currently in RED status.
             </div>
           </div>
+
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Shift Handoff button</div>
+            <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+              The <b>Shift Handoff</b> button (top-right of the Status Board header) opens a printable modal
+              summarizing every unit in one table. Use it when handing off to the oncoming supervisor.
+              See the <Button variant="ghost" onClick={() => scrollTo('handoff')} style={{ fontSize: 12, padding: '2px 8px' }}>Shift Handoff</Button> section below for details.
+            </div>
+          </div>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* SUPERVISOR DASHBOARD */}
+      <div ref={(el) => (refs.current.supervisor = el)}>
+        <Card title="Supervisor Dashboard" sub="House supervisor view — all units at a glance">
+          <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
+            The <b>Supervisor View</b> tab (sidebar icon: eye) gives house supervisors a compact, color-coded
+            tile grid of the entire region. Everything critical is visible without scrolling.
+          </div>
+
+          <Illustration label="Escalation alert bar (appears when any unit is RED or trending up)">
+            <div
+              style={{
+                padding: '10px 14px',
+                borderRadius: 8,
+                background: `${STAGE_COLORS.RED}15`,
+                border: `1px solid ${STAGE_COLORS.RED}40`,
+                fontSize: 12.5,
+                lineHeight: 1.6,
+              }}
+            >
+              <div style={{ fontWeight: 700, color: STAGE_COLORS.RED, marginBottom: 4 }}>⚠ Escalation Alerts</div>
+              <div style={{ color: theme.text }}>
+                <b>1 South A</b> — RED · 2.31 UAI &nbsp;|&nbsp; <b>ICU-B</b> — YELLOW · ↑ TREND
+              </div>
+            </div>
+          </Illustration>
+
+          <Illustration label="Unit tile grid (each tile = one unit)">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                { name: '1 South A', stage: 'RED', val: '3.10' },
+                { name: '2 North', stage: 'YELLOW', val: '2.31' },
+                { name: 'ICU-B', stage: 'GREEN', val: '0.98' },
+                { name: 'Peds ED', stage: 'GREEN', val: '18 pts' },
+              ].map((u) => (
+                <div
+                  key={u.name}
+                  style={{
+                    minWidth: 110,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: theme.panel,
+                    border: `2px solid ${STAGE_COLORS[u.stage]}`,
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4, color: theme.sub }}>{u.name}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, fontFamily: theme.display }}>{u.val}</div>
+                  <Badge color={STAGE_COLORS[u.stage]} style={{ marginTop: 4 }}>{u.stage}</Badge>
+                </div>
+              ))}
+            </div>
+          </Illustration>
+
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>Key features</div>
+          <Step n="1">
+            <b>Escalation alert bar</b> — appears at the top whenever any unit is RED or has a rising trend.
+            Lists the unit name, stage, and acuity value so you know where to focus first.
+          </Step>
+          <Step n="2">
+            <b>Color-coded tile grid</b> — each unit appears as a compact tile with its name, current acuity
+            value, and a colored border matching its GREEN/YELLOW/RED stage. Tiles for RED units pulse.
+          </Step>
+          <Step n="3">
+            <b>4 regional summary tiles</b> at the top (same as the Status Board): total units, units
+            on target, RED count, and total census vs. capacity.
+          </Step>
+          <Step n="4">
+            <b>Print / Export</b> button — prints the Supervisor Dashboard (tiles + escalation bar) to paper or
+            PDF. Sidebar and navigation are hidden automatically in the printed output.
+          </Step>
+          <Step n="5">
+            <b>Shift Handoff</b> button — opens the handoff modal directly from the Supervisor View.
+            See the <Button variant="ghost" onClick={() => scrollTo('handoff')} style={{ fontSize: 12, padding: '2px 8px' }}>Shift Handoff</Button> section below.
+          </Step>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* SHIFT HANDOFF */}
+      <div ref={(el) => (refs.current.handoff = el)}>
+        <Card title="Shift Handoff" sub="One-page printable summary for supervisor-to-supervisor handoff">
+          <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
+            The Shift Handoff modal generates a structured summary of every unit that is ready to hand to the
+            oncoming supervisor — on paper, as a PDF, or read on-screen. It is available from both the
+            Status Board and the Supervisor View.
+          </div>
+
+          <Illustration label="Shift Handoff modal (simplified)">
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
+                <thead>
+                  <tr style={{ background: theme.panelAlt }}>
+                    {['Unit', 'Stage', 'Acuity', 'Census/Cap', 'Staff', 'Trend', 'Staffing Guidance', 'Notes'].map((h) => (
+                      <th key={h} style={{ padding: '6px 8px', textAlign: 'left', fontWeight: 700, borderBottom: `1px solid ${theme.border}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { unit: '1 South A', stage: 'RED', val: '3.10', census: '20/20', staff: '6', trend: '↑', guidance: '1:2 — surge', notes: '' },
+                    { unit: '2 North', stage: 'YELLOW', val: '2.31', census: '16/18', staff: '4', trend: '→', guidance: '1:4 — flex', notes: '' },
+                    { unit: 'Peds ED', stage: 'GREEN', val: '18 pts', census: '—', staff: '—', trend: '↓', guidance: 'Standard', notes: '' },
+                  ].map((r) => (
+                    <tr key={r.unit} style={{ borderBottom: `1px solid ${theme.border}` }}>
+                      <td style={{ padding: '5px 8px', fontWeight: 600 }}>{r.unit}</td>
+                      <td style={{ padding: '5px 8px' }}><Badge color={STAGE_COLORS[r.stage]}>{r.stage}</Badge></td>
+                      <td style={{ padding: '5px 8px' }}>{r.val}</td>
+                      <td style={{ padding: '5px 8px' }}>{r.census}</td>
+                      <td style={{ padding: '5px 8px' }}>{r.staff}</td>
+                      <td style={{ padding: '5px 8px', fontWeight: 700 }}>{r.trend}</td>
+                      <td style={{ padding: '5px 8px' }}>{r.guidance}</td>
+                      <td style={{ padding: '5px 8px', color: theme.sub }}>{r.notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pointer>Print / Save PDF button at top right of the modal</Pointer>
+          </Illustration>
+
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 6 }}>How to use Shift Handoff</div>
+          <Step n="1">
+            Click the <b>Shift Handoff</b> button in the Status Board header or in the Supervisor View. The
+            modal opens over the current screen.
+          </Step>
+          <Step n="2">
+            Review the table. Every unit in the system appears in one row with its current stage, acuity value,
+            census vs. cap, staff count, trend direction, and staffing guidance.
+          </Step>
+          <Step n="3">
+            The <b>Escalation Notes</b> section below the table lists any unit that is RED or has a rising
+            trend, with additional detail for verbal handoff emphasis.
+          </Step>
+          <Step n="4">
+            Click <b>Print / Save PDF</b> to send the modal to your printer or save it as a PDF. Only the
+            handoff content prints — the app's sidebar, navigation, and other UI elements are hidden.
+          </Step>
+          <Step n="5">
+            Click the <b>✕</b> button or outside the modal to close it and return to the app.
+          </Step>
+          <div
+            style={{
+              marginTop: 12,
+              padding: '10px 12px',
+              borderRadius: 8,
+              background: theme.accentSoft,
+              fontSize: 12.5,
+              lineHeight: 1.6,
+            }}
+          >
+            <b>Tip:</b> Open the Shift Handoff a few minutes before the oncoming supervisor arrives and leave it
+            on-screen (or print it). It gives a complete picture without having to narrate the Status Board
+            unit by unit.
+          </div>
           <BrandMark />
         </Card>
       </div>
@@ -265,7 +475,7 @@ export default function HelpGuide() {
         <Card title="New Shift Entry" sub="Log a unit's numbers once per shift">
           <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
             Each unit should submit one entry per shift (AM and PM). This is the data that drives the
-            Status Board and Reports.
+            Status Board, Supervisor View, and Reports.
           </div>
           <Illustration label="The shift entry form">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 420 }}>
@@ -310,7 +520,8 @@ export default function HelpGuide() {
             before you save, so you can confirm it looks right.
           </Step>
           <Step n="8">
-            Click <b>Save Entry</b>. The Status Board updates immediately for everyone.
+            Click <b>Save Entry</b>. The Status Board and Supervisor View update immediately for everyone.
+            The save is also recorded in the Audit Trail (visible in Reports).
           </Step>
           <BrandMark />
         </Card>
@@ -350,6 +561,7 @@ export default function HelpGuide() {
           <Step n="6">
             Click <b>Log Deployment</b>. It appears instantly in the Deployment Log table below the form,
             which everyone can see. Use the <b>Remove</b> button on a row to delete a mistaken entry.
+            Each deployment log and removal is recorded in the Audit Trail.
           </Step>
           <BrandMark />
         </Card>
@@ -357,9 +569,10 @@ export default function HelpGuide() {
 
       {/* REPORTS */}
       <div ref={(el) => (refs.current.reports = el)}>
-        <Card title="Reports & Exports" sub="Trends, charts, and downloadable data">
+        <Card title="Reports & Exports" sub="Trends, charts, audit trail, and downloadable data">
           <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
-            The Reports screen turns every shift entry and deployment into charts and exportable files.
+            The Reports screen turns every shift entry and deployment into charts, an audit trail, and
+            exportable files.
           </div>
           <Illustration label="What you'll see">
             <div style={{ ...grid(3), gap: 10 }}>
@@ -392,22 +605,32 @@ export default function HelpGuide() {
             "All locations."
           </Step>
           <Step n="2">
+            <b>Print Report</b> button (top right) — sends the entire Reports page to your printer or saves it
+            as a PDF. Charts, the audit trail, and the entries table are all included; sidebar and navigation
+            are hidden automatically.
+          </Step>
+          <Step n="3">
             <b>Acuity Trend</b> — line chart of each unit's computed acuity value over time, so you can spot
             patterns by shift.
           </Step>
-          <Step n="3">
+          <Step n="4">
             <b>Acuity Stage Mix</b> — pie chart showing what proportion of shift entries were GREEN, YELLOW,
             or RED.
           </Step>
-          <Step n="4">
+          <Step n="5">
             <b>Deployment Hours by Destination</b> — bar chart of total staff hours deployed to each unit,
             useful for budget conversations.
           </Step>
-          <Step n="5">
+          <Step n="6">
+            <b>Audit Trail</b> — a timestamped log of every action taken in the app: shift entries saved,
+            entries removed, deployments logged, deployments removed. The last 100 records are shown.
+            Use this for compliance tracking, incident review, or simply confirming when data was entered.
+          </Step>
+          <Step n="7">
             <b>Shift Entries table</b> — every entry ever logged. Click any column header to sort, use the
             search box to filter by unit/date/notes, and click <b>Remove</b> to delete a bad entry.
           </Step>
-          <Step n="6">
+          <Step n="8">
             <b>Export buttons</b> (top right) — download <b>Export Entries CSV</b>, <b>Export Deployments CSV</b>,
             or <b>Export JSON</b> (a full backup of all locations, entries, deployments, and thresholds) for
             spreadsheets or record-keeping.
@@ -661,6 +884,25 @@ export default function HelpGuide() {
             <li>
               <b>"Awaiting daily report"</b> on the Status Board just means no one has logged today's shift
               for that unit yet — it isn't an error.
+            </li>
+            <li>
+              <b>Trend badges need at least 3 entries.</b> The ↑ TREND / ↓ EASING badges use a linear
+              regression over the last 3–5 shift entries per unit. A new location won't show a trend badge
+              until enough data has been entered.
+            </li>
+            <li>
+              <b>Staffing ratio guidance uses today's census.</b> If today's census hasn't been entered yet
+              (e.g., early in the shift), the recommended staff count may not appear — log the shift entry
+              first.
+            </li>
+            <li>
+              <b>Print works from multiple places.</b> You can print from the Status Board header (via Shift
+              Handoff), from the Supervisor View, or from the Reports page. Each prints only relevant content
+              — the sidebar and navigation are hidden automatically.
+            </li>
+            <li>
+              <b>Audit trail is automatic.</b> Every save and delete is logged with a timestamp. You don't need
+              to do anything — just check Reports → Audit Trail if you need to review who did what and when.
             </li>
             <li>
               <b>Census cap edits are instant and shared.</b> Click the cap number on any unit card to update

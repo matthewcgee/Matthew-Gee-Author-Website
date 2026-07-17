@@ -1,5 +1,5 @@
 # BedSpace — Technical Handoff Guide
-**Shelter Bed &amp; Residency Coordination — Bethesda Center Partnership**
+**Shelter Bed &amp; Residency Coordination — A Service of the Bethesda Center**
 
 ---
 

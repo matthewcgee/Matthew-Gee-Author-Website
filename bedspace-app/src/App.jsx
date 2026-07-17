@@ -360,7 +360,7 @@ export default function App() {
 
           <div style={{ marginTop: 40, paddingTop: 16, borderTop: `1px solid ${theme.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
             <BedSpaceLogo size={20} showTagline={false} />
-            <div style={{ fontSize: 10.5, color: theme.sub }}>BedSpace &mdash; Bethesda Center Partnership</div>
+            <div style={{ fontSize: 10.5, color: theme.sub }}>BedSpace &mdash; A Service of the Bethesda Center</div>
           </div>
         </main>
       </div>

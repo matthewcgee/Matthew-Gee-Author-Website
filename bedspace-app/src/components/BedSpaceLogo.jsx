@@ -80,7 +80,7 @@ export default function BedSpaceLogo({ size = 36, dark = false, showWordmark = t
               marginTop: 2,
             }}
           >
-            Bethesda Center Partnership
+            A Service of the Bethesda Center
           </div>
         )}
       </div>

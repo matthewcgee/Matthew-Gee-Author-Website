@@ -1,15 +1,15 @@
 import React from 'react'
 
 export const theme = {
-  bg: '#f6f4f0',
+  bg: '#f7f6f3',
   panel: '#ffffff',
-  panelAlt: '#f1ece1',
-  border: '#e3dac8',
-  text: '#23201b',
-  sub: '#75695a',
+  panelAlt: '#f0eeea',
+  border: '#e2e0da',
+  text: '#262c36',
+  sub: '#6b7280',
   accent: '#b0602a',
   accentSoft: 'rgba(176,96,42,0.10)',
-  navy: '#1c2333',
+  navy: '#262c36',
   green: '#2f9e5c',
   greenSoft: 'rgba(47,158,92,0.12)',
   amber: '#c98a2b',
@@ -18,7 +18,7 @@ export const theme = {
   redSoft: 'rgba(193,74,58,0.12)',
   blue: '#3b6ea5',
   blueSoft: 'rgba(59,110,165,0.12)',
-  display: "'Fraunces', 'Georgia', serif",
+  display: "'Quicksand', 'Nunito', sans-serif",
 }
 
 const ICON_PATHS = {
@@ -203,7 +203,7 @@ export function Card({ title, sub, right, children, style, interactive, classNam
         borderRadius: 14,
         padding: 18,
         marginBottom: 16,
-        boxShadow: '0 1px 3px rgba(35,32,27,0.05)',
+        boxShadow: '0 1px 3px rgba(38,44,54,0.05)',
         ...style,
       }}
     >
@@ -342,7 +342,7 @@ export function StatCard({ label, value, sub, color, icon }) {
         display: 'flex',
         alignItems: 'center',
         gap: 12,
-        boxShadow: '0 1px 3px rgba(35,32,27,0.05)',
+        boxShadow: '0 1px 3px rgba(38,44,54,0.05)',
       }}
     >
       {icon && (

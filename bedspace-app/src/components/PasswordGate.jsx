@@ -41,7 +41,7 @@ export default function PasswordGate({ onSuccess }) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #1c2333 0%, #3a2a1c 100%)',
+      background: 'linear-gradient(135deg, #262c36 0%, #40372c 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',

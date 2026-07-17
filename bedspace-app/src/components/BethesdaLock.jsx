@@ -23,7 +23,7 @@ async function sha256(str) {
 
 export { EXPECTED_HASH }
 
-export default function BethesdaLock({ onUnlock }) {
+export default function BethesdaLock({ onUnlock, onBack }) {
   const [value, setValue] = useState('')
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -72,11 +72,20 @@ export default function BethesdaLock({ onUnlock }) {
                 Incorrect PIN.
               </div>
             )}
-            <div style={{ marginTop: 14 }}>
+            <div style={{ marginTop: 14, display: 'flex', gap: 10, justifyContent: 'center' }}>
               <Button type="submit" disabled={loading || !value}>
                 <Icon name="shieldLock" size={15} /> Unlock
               </Button>
             </div>
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                style={{ display: 'block', margin: '14px auto 0', background: 'none', border: 'none', cursor: 'pointer', color: theme.sub, fontSize: 12, fontWeight: 600 }}
+              >
+                &larr; Not Bethesda Center staff? Choose a different role
+              </button>
+            )}
           </form>
         </div>
       </Card>

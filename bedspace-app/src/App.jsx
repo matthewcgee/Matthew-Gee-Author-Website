@@ -17,12 +17,25 @@ import HelpGuide from './components/HelpGuide.jsx'
 import AdmitModal from './components/AdmitModal.jsx'
 import ResidentDetailModal from './components/ResidentDetailModal.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
-import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
+import PasswordGate from './components/PasswordGate.jsx'
 import BethesdaLock from './components/BethesdaLock.jsx'
+import RoleSelectGate from './components/RoleSelectGate.jsx'
 
+// All auth state lives in sessionStorage (never localStorage) and is wiped
+// whenever the tab is left, closed, or restored from the back/forward cache
+// (see the pagehide/pageshow effect below) — the app should never stay
+// signed in once someone walks away from a shared hospital workstation.
+const ENTRY_ROLE_KEY = 'bedspace:entryRole'
 const AUTH_KEY = 'bedspace:auth:v1'
 const STAFF_NAME_KEY = 'bedspace:staffName'
 const BETHESDA_UNLOCKED_KEY = 'bedspace:bethesdaUnlocked'
+
+function clearSessionAuth() {
+  sessionStorage.removeItem(ENTRY_ROLE_KEY)
+  sessionStorage.removeItem(AUTH_KEY)
+  sessionStorage.removeItem(STAFF_NAME_KEY)
+  sessionStorage.removeItem(BETHESDA_UNLOCKED_KEY)
+}
 
 const HOSPITAL_TABS = [
   { id: 'board', label: 'Bed Board', icon: 'bed' },
@@ -32,10 +45,39 @@ const HOSPITAL_TABS = [
 ]
 
 export default function App() {
-  const [authed, setAuthed] = useState(() => readStorage(AUTH_KEY, '') === EXPECTED_HASH)
+  const [entryRole, setEntryRole] = useState(() => sessionStorage.getItem(ENTRY_ROLE_KEY) || null)
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem(AUTH_KEY) === 'true')
   const [staffName, setStaffName] = useState(() => sessionStorage.getItem(STAFF_NAME_KEY) || '')
   const [bethesdaUnlocked, setBethesdaUnlocked] = useState(() => sessionStorage.getItem(BETHESDA_UNLOCKED_KEY) === 'true')
   const [showBethesdaLock, setShowBethesdaLock] = useState(false)
+
+  // Sign out automatically when the tab is closed or navigated away from, and
+  // force a fresh reload (re-running the auth check above) if the browser
+  // instead restores the page from its back/forward cache — otherwise a
+  // bfcache restore could show a still-authenticated in-memory app even
+  // though sessionStorage has been cleared.
+  useEffect(() => {
+    function handlePageHide() {
+      clearSessionAuth()
+    }
+    function handlePageShow(e) {
+      if (e.persisted) window.location.reload()
+    }
+    window.addEventListener('pagehide', handlePageHide)
+    window.addEventListener('pageshow', handlePageShow)
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide)
+      window.removeEventListener('pageshow', handlePageShow)
+    }
+  }, [])
+
+  function logout() {
+    clearSessionAuth()
+    setEntryRole(null)
+    setAuthed(false)
+    setStaffName('')
+    setBethesdaUnlocked(false)
+  }
 
   const [beds, setBeds] = useState(() => readStorage(KEYS.beds, null))
   const [residents, setResidents] = useState(() => readStorage(KEYS.residents, null))
@@ -245,10 +287,32 @@ export default function App() {
     setToast('Compliance record updated')
   }
 
-  if (!authed) {
+  if (!entryRole) {
     return (
-      <PasswordGate onSuccess={(hash) => {
-        writeStorage(AUTH_KEY, hash)
+      <RoleSelectGate onSelect={(role) => {
+        sessionStorage.setItem(ENTRY_ROLE_KEY, role)
+        setEntryRole(role)
+      }} />
+    )
+  }
+
+  if (!authed) {
+    const back = () => { sessionStorage.removeItem(ENTRY_ROLE_KEY); setEntryRole(null) }
+    if (entryRole === 'bethesda') {
+      return (
+        <div style={{ minHeight: '100vh', background: theme.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <BethesdaLock onBack={back} onUnlock={() => {
+            sessionStorage.setItem(AUTH_KEY, 'true')
+            sessionStorage.setItem(BETHESDA_UNLOCKED_KEY, 'true')
+            setAuthed(true)
+            setBethesdaUnlocked(true)
+          }} />
+        </div>
+      )
+    }
+    return (
+      <PasswordGate onBack={back} onSuccess={() => {
+        sessionStorage.setItem(AUTH_KEY, 'true')
         setAuthed(true)
       }} />
     )
@@ -310,6 +374,13 @@ export default function App() {
               <Icon name="shieldLock" size={14} /> Lock Bethesda Access
             </button>
           )}
+          <button
+            onClick={logout}
+            className="btn-press"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)', color: '#ffffff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', marginTop: 8 }}
+          >
+            <Icon name="logOut" size={14} /> Log Out
+          </button>
           <div style={{ fontSize: 10.5, color: '#a99a80', marginTop: 10, textAlign: 'center' }}>
             Signed in as {staffName}
           </div>

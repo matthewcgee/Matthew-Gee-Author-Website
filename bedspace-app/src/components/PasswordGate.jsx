@@ -14,7 +14,7 @@ async function sha256(str) {
 
 export { EXPECTED_HASH }
 
-export default function PasswordGate({ onSuccess }) {
+export default function PasswordGate({ onSuccess, onBack }) {
   const [pw, setPw] = useState('')
   const [show, setShow] = useState(false)
   const [error, setError] = useState('')
@@ -153,6 +153,25 @@ export default function PasswordGate({ onSuccess }) {
             {loading ? 'Verifying…' : 'Sign In'}
           </button>
         </form>
+
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              display: 'block',
+              margin: '16px auto 0',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.55)',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            &larr; Not hospital staff? Choose a different role
+          </button>
+        )}
       </div>
 
       <div style={{

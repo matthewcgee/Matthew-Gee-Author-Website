@@ -1,0 +1,60 @@
+rules_version = '2';
+
+// BedSpace Firestore security rules.
+//
+// These rules assume the "Server-Side Confidentiality" upgrade described in
+// HANDOFF.md has been completed: every signed-in user has an anonymous
+// Firebase Auth account, and Bethesda Center staff additionally carry a
+// custom claim `role: "bethesda"` set by the claimBethesdaRole Cloud
+// Function in functions/index.js after they enter the correct PIN.
+//
+// Until that Cloud Function is deployed, request.auth.token.role will never
+// be set, so the disallowedList/screeningLog rules below simply deny
+// hospital-side clients — which is the safe default. Anonymous sign-in
+// alone (already wired up in src/lib/firebase.js) is enough for `beds` and
+// `residents`, which every signed-in user may read/write.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isBethesda() {
+      return signedIn() && request.auth.token.role == 'bethesda';
+    }
+
+    // Fixed 100-bed inventory (70 men's + 30 women's). Any signed-in hospital
+    // or Bethesda user may update bed status/holds from the board.
+    match /beds/{bedId} {
+      allow read, write: if signedIn();
+    }
+
+    // Resident records contain name, bed assignment, and 90-day residency
+    // tracking. Both sides need read/write to admit, hold, and discharge.
+    match /residents/{residentId} {
+      allow read, write: if signedIn();
+    }
+
+    // THE confidential list. Only Bethesda Center staff (custom claim) may
+    // read or write it directly — hospital clients never query this
+    // collection; they only ever see the accepted/not-accepted/possible-match
+    // outcome computed client-side against data they were never sent... which
+    // means, importantly, this rule alone is NOT sufficient. See the note in
+    // HANDOFF.md: real confidentiality additionally requires moving the
+    // screenName() comparison in src/lib/model.js into the callable
+    // screenResident Cloud Function in functions/index.js, so hospital
+    // clients never download this collection's contents at all.
+    match /disallowedList/{entryId} {
+      allow read, write: if isBethesda();
+    }
+
+    // Any signed-in user may create a screening log entry (create-only, no
+    // reading back other users' queried names). Bethesda staff can read/
+    // resolve entries to process the verification queue.
+    match /screeningLog/{logId} {
+      allow create: if signedIn();
+      allow read, update: if isBethesda();
+      allow delete: if false;
+    }
+  }
+}

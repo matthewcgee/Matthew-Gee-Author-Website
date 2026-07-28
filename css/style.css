@@ -803,8 +803,15 @@ section:last-of-type {
     grid-template-columns: 1fr;
   }
 
+  .modal-cover {
+    max-width: 180px;
+    margin: 32px auto 0;
+  }
+
   .modal-cover img {
-    max-height: 200px;
+    height: auto;
+    max-height: none;
+    object-fit: unset;
   }
 
   .modal-copy {

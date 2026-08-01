@@ -633,6 +633,32 @@ section:last-of-type {
   border-color: var(--color-gold-bright);
 }
 
+.social-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 28px;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid var(--color-line);
+  padding: 10px 20px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.social-link:hover {
+  color: var(--color-gold);
+  border-color: var(--color-gold);
+}
+
 /* ---------- Footer ---------- */
 .site-footer {
   padding: 48px 0;

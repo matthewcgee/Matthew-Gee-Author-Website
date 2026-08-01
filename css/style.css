@@ -609,6 +609,11 @@ section:last-of-type {
   }
 }
 
+/* ---------- Instagram Feed ---------- */
+.instagram-feed {
+  margin-top: 40px;
+}
+
 /* ---------- Contact / CTA ---------- */
 .contact-section {
   text-align: center;

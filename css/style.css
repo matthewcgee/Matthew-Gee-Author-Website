@@ -533,6 +533,12 @@ section:last-of-type {
   color: var(--color-muted);
 }
 
+.audible-pill {
+  color: var(--color-gold);
+  border-color: var(--color-gold);
+  background: rgba(201, 168, 104, 0.07);
+}
+
 @media (max-width: 760px) {
   .book {
     grid-template-columns: 1fr;

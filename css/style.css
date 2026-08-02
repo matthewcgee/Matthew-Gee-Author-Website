@@ -819,6 +819,13 @@ section:last-of-type {
   margin-bottom: 24px;
 }
 
+.modal-audible {
+  font-size: 0.88rem;
+  color: var(--color-gold);
+  letter-spacing: 0.04em;
+  margin-bottom: 20px !important;
+}
+
 .modal-actions {
   display: flex;
   flex-wrap: wrap;

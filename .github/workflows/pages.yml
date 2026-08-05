@@ -32,8 +32,13 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Build Volleyball Stat Tracker
+        working-directory: volleyball-app
+        run: |
+          npm ci
+          npm run build
       - name: Remove build-time dependencies from artifact
-        run: rm -rf bedspace-app/node_modules
+        run: rm -rf bedspace-app/node_modules volleyball-app/node_modules
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

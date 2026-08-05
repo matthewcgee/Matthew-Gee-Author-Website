@@ -46,7 +46,7 @@ prompt on Android) and it behaves like a normal app, full-screen, no browser chr
 ```bash
 npm install
 npm run dev
-# App available at http://localhost:5173/Matthew-Gee-Author-Website/volleyball/
+# App available at http://localhost:5173/volleyball/
 
 npm run build
 # Output goes to ../volleyball/ (served at matthewcgee.com/volleyball/)
@@ -82,7 +82,7 @@ volleyball-app/
 │   ├── assets/                    # Eagles logo + home-screen icons
 │   └── manifest.webmanifest       # PWA "add to home screen" config
 ├── index.html
-└── vite.config.js                 # base path: /Matthew-Gee-Author-Website/volleyball/
+└── vite.config.js                 # base path: /volleyball/ (matthewcgee.com is the custom domain, served at root — see /CNAME)
 ```
 
 ## Adding Next Season's Schedule

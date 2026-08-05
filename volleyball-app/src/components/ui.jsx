@@ -3,7 +3,7 @@ import React from 'react'
 export function EaglesLogo({ className }) {
   return (
     <img
-      src="/Matthew-Gee-Author-Website/volleyball/assets/eagles-logo.png"
+      src="/volleyball/assets/eagles-logo.png"
       alt="East Forsyth Eagles"
       className={className || 'eagles-logo'}
     />

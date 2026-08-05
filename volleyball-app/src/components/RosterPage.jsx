@@ -55,7 +55,7 @@ export default function RosterPage() {
 
       <Card eyebrow={`${state.players.length} on roster`} title="Players">
         {state.players.length === 0 ? (
-          <EmptyState>Add your player above to get started &mdash; e.g. Payton.</EmptyState>
+          <EmptyState>Add your player above to get started &mdash; e.g. Peyton.</EmptyState>
         ) : (
           state.players.map((p) => (
             <div className="player-row" key={p.id}>

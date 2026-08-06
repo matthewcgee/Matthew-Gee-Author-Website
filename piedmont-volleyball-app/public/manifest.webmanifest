@@ -1,0 +1,13 @@
+{
+  "name": "Piedmont Volleyball Club Stat Tracker",
+  "short_name": "PVC Volleyball",
+  "start_url": "/piedmont-volleyball/",
+  "scope": "/piedmont-volleyball/",
+  "display": "standalone",
+  "background_color": "#181c2a",
+  "theme_color": "#181c2a",
+  "icons": [
+    { "src": "/piedmont-volleyball/assets/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/piedmont-volleyball/assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

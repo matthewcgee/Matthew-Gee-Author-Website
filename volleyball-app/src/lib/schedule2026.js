@@ -3,6 +3,7 @@
 // Home games at EFHS, 900 Building Main Gym.
 export const SCHEDULE_2026 = [
   { date: '2026-08-11', opponent: 'East Surry', site: 'Home', jvTime: '5:00', varsityTime: '6:30' },
+  { date: '2026-08-12', opponent: 'Walkertown', site: 'Away', jvTime: '5:00', varsityTime: '6:30' },
   { date: '2026-08-13', opponent: 'East Surry', site: 'Away', jvTime: '4:30', varsityTime: '6:00' },
   { date: '2026-08-17', opponent: 'Southwest Guilford', site: 'Home', jvTime: '5:00', varsityTime: '6:30' },
   { date: '2026-08-20', opponent: 'Atkins Academic & Tech', site: 'Home', jvTime: '5:00', varsityTime: '6:30' },

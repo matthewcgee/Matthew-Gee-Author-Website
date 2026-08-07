@@ -210,6 +210,7 @@ button {
   flex-direction: column;
   gap: 4px;
   margin-bottom: 10px;
+  min-width: 0;
 }
 
 .field label {
@@ -219,6 +220,7 @@ button {
 }
 
 .field input, .field select {
+  width: 100%;
   background: var(--navy-900);
   border: 1px solid var(--navy-500);
   color: var(--white);
@@ -229,7 +231,17 @@ button {
 }
 
 .row { display: flex; gap: 10px; }
-.row > * { flex: 1; }
+.row > * { flex: 1; min-width: 0; }
+.row > input, .row > select {
+  width: 100%;
+  background: var(--navy-900);
+  border: 1px solid var(--navy-500);
+  color: var(--white);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  min-height: 44px;
+}
 
 /* ---- Roster list ---- */
 

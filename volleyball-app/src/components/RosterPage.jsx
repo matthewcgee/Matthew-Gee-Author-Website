@@ -71,6 +71,7 @@ export default function RosterPage() {
                   <input
                     style={{
                       flex: 1,
+                      minWidth: 0,
                       background: 'var(--navy-900)',
                       border: '1px solid var(--navy-500)',
                       color: 'var(--white)',

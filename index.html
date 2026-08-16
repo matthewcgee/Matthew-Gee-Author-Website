@@ -430,32 +430,48 @@
   <div class="modal-overlay" id="announcementModal" role="dialog" aria-modal="true" aria-labelledby="announcementTitle" hidden>
     <div class="modal-card">
       <button class="modal-close" id="announcementClose" aria-label="Close announcement">&times;</button>
-      <div class="modal-grid">
-        <div class="modal-cover">
-          <img src="images/roots-before-branches-front.jpg" alt="Cover of Roots Before Branches: Reestablishing Connection in Healthcare, Leadership, and Society by Matthew C. Gee, MBA">
-        </div>
-        <div class="modal-copy">
-          <span class="eyebrow">Now Available</span>
-          <h2 id="announcementTitle">Roots Before Branches</h2>
-          <p class="modal-subtitle">Reestablishing Connection in Healthcare, Leadership, and Society</p>
-          <p class="modal-release">Out Now &mdash; Order Your Copy Today</p>
-          <p>
-            Matthew C. Gee's debut book is here. A call to rebuild the human connections that hold
-            healthcare, leadership, and society together &mdash; available now on Amazon, Barnes &amp; Noble,
-            and wherever books are sold.
-          </p>
-          <p class="modal-audible">🎧 Audiobook now available on <a href="https://www.audible.com/pd/B0HDFFLCTZ?source_code=ASSORAP0511160006&share_location=pdp" target="_blank" rel="noopener" style="color:#c9a868;">Audible</a></p>
-          <div class="modal-actions">
-            <a href="https://a.co/d/0ejzYnl5" class="btn btn-primary" target="_blank" rel="noopener" id="announcementCta">Buy on Amazon</a>
-            <button class="btn btn-ghost" id="announcementDismiss">Maybe Later</button>
-          </div>
-          <div class="modal-coming-soon">
-            <span class="modal-coming-soon-label">Also Coming Late 2026</span>
-            <span class="modal-coming-soon-title">The God Who Sees</span>
-            <span class="modal-coming-soon-sub">Recovering Our Sight in a World That Has Stopped Looking</span>
-          </div>
-        </div>
+
+      <div class="modal-header">
+        <span class="eyebrow">From Matthew C. Gee</span>
       </div>
+
+      <div class="modal-books">
+
+        <!-- Book 1: Roots Before Branches -->
+        <div class="modal-book">
+          <div class="modal-book-cover">
+            <img src="images/roots-before-branches-front.jpg" alt="Cover of Roots Before Branches by Matthew C. Gee">
+          </div>
+          <div class="modal-book-info">
+            <span class="modal-badge modal-badge--available">Now Available</span>
+            <h2 id="announcementTitle" class="modal-book-title">Roots Before Branches</h2>
+            <p class="modal-book-sub">Reestablishing Connection in Healthcare, Leadership, and Society</p>
+            <p class="modal-audible">🎧 Also on <a href="https://www.audible.com/pd/B0HDFFLCTZ?source_code=ASSORAP0511160006&share_location=pdp" target="_blank" rel="noopener" style="color:#c9a868;">Audible</a></p>
+            <a href="https://a.co/d/0ejzYnl5" class="btn btn-primary" target="_blank" rel="noopener" id="announcementCta">Buy on Amazon</a>
+          </div>
+        </div>
+
+        <div class="modal-col-divider"></div>
+
+        <!-- Book 2: The God Who Sees -->
+        <div class="modal-book">
+          <div class="modal-book-cover">
+            <img src="images/the-god-who-sees-cover.png" alt="Cover of The God Who Sees by Matthew C. Gee">
+          </div>
+          <div class="modal-book-info">
+            <span class="modal-badge modal-badge--coming">Coming Late 2026</span>
+            <h3 class="modal-book-title">The God Who Sees</h3>
+            <p class="modal-book-sub">Recovering Our Sight in a World That Has Stopped Looking</p>
+            <p class="modal-book-teaser">Matthew's next book — stay tuned for pre-order details.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="announcementDismiss">Maybe Later</button>
+      </div>
+
     </div>
   </div>
 

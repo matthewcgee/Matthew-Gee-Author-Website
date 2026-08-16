@@ -848,6 +848,36 @@ section:last-of-type {
   color: var(--color-gold-bright);
 }
 
+.modal-coming-soon {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.modal-coming-soon-label {
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+.modal-coming-soon-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--color-cream);
+}
+
+.modal-coming-soon-sub {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.88rem;
+  color: var(--color-muted);
+}
+
 @media (max-width: 700px) {
   .modal-grid {
     grid-template-columns: 1fr;

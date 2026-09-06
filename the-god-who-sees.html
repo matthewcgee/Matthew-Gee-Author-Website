@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The God Who Sees — Matthew C. Gee</title>
+  <meta name="description" content="Coming Fall 2026. The God Who Sees by Matthew C. Gee — a powerful invitation to recover attention, dignity, and hope in a world that has forgotten how to truly see one another.">
+  <meta property="og:title" content="The God Who Sees — Matthew C. Gee">
+  <meta property="og:description" content="Coming Fall 2026. A powerful new book by Matthew C. Gee.">
+  <meta property="og:image" content="https://matthewcgee.com/images/the-god-who-sees-cover.png">
+  <meta property="og:type" content="website">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-bg: #0a0a0c;
+      --color-surface: #0d0d10;
+      --color-gold: #c9a868;
+      --color-gold-bright: #dfc078;
+      --color-cream: #f3efe6;
+      --color-muted: #a7a39a;
+      --font-display: 'Playfair Display', Georgia, serif;
+      --font-body: 'Lato', 'Helvetica Neue', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-cream);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* NAV */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 40px;
+      background: rgba(10,10,12,0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(201,168,104,0.12);
+    }
+
+    .nav-logo a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--color-cream);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-logo svg { width: 30px; height: 30px; flex-shrink: 0; }
+
+    .nav-back {
+      font-family: var(--font-body);
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    .nav-back:hover { color: var(--color-gold-bright); }
+
+    /* HERO */
+    .hero {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: 100vh;
+      padding-top: 65px;
+    }
+
+    .hero-left {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #060608;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+    }
+    .hero-bg img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+      filter: brightness(0.35) saturate(1.1);
+      transform: scale(1.04);
+    }
+
+    .hero-cover-wrap {
+      position: relative;
+      z-index: 2;
+      width: 56%;
+      max-width: 280px;
+    }
+
+    .hero-cover-wrap img {
+      width: 100%;
+      display: block;
+      box-shadow: 0 40px 100px -20px rgba(0,0,0,0.95), 0 0 0 1px rgba(201,168,104,0.2);
+    }
+
+    .hero-right {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 80px 64px 80px 60px;
+      background: var(--color-surface);
+      border-left: 1px solid rgba(201,168,104,0.1);
+    }
+
+    .hero-eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      margin-bottom: 24px;
+    }
+
+    .hero-eyebrow-line {
+      display: inline-block;
+      width: 40px;
+      height: 1px;
+      background: var(--color-gold);
+      flex-shrink: 0;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 700;
+      line-height: 1.1;
+      color: var(--color-cream);
+      margin-bottom: 10px;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-display);
+      font-size: clamp(1rem, 1.8vw, 1.35rem);
+      font-style: italic;
+      color: var(--color-gold);
+      margin-bottom: 28px;
+    }
+
+    .hero-rule {
+      width: 100%;
+      height: 1px;
+      background: rgba(201,168,104,0.25);
+      border: none;
+      margin-bottom: 28px;
+    }
+
+    .hero-description {
+      font-size: 1.05rem;
+      line-height: 1.75;
+      color: var(--color-muted);
+      margin-bottom: 40px;
+      max-width: 460px;
+    }
+
+    .hero-author {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(201,168,104,0.5);
+    }
+
+    /* COMING SOON SECTION */
+    .coming-soon {
+      background: var(--color-bg);
+      padding: 100px 40px;
+      text-align: center;
+    }
+
+    .coming-soon-inner {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .section-eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      margin-bottom: 20px;
+    }
+
+    .section-headline {
+      font-family: var(--font-display);
+      font-size: clamp(1.9rem, 3.5vw, 2.8rem);
+      font-weight: 700;
+      color: var(--color-cream);
+      line-height: 1.2;
+      margin-bottom: 18px;
+    }
+
+    .section-body {
+      font-size: 1rem;
+      line-height: 1.75;
+      color: var(--color-muted);
+      margin-bottom: 56px;
+      max-width: 580px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* RETAILER GRID */
+    .retailers {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .retailer-card {
+      border: 1px solid rgba(201,168,104,0.2);
+      background: rgba(201,168,104,0.03);
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      transition: border-color 0.25s ease, background 0.25s ease;
+    }
+
+    .retailer-card:hover {
+      border-color: rgba(201,168,104,0.45);
+      background: rgba(201,168,104,0.06);
+    }
+
+    .retailer-icon {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .retailer-icon svg {
+      width: 36px;
+      height: 36px;
+      fill: var(--color-gold);
+      opacity: 0.75;
+    }
+
+    .retailer-name {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-cream);
+    }
+
+    .retailer-status {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      opacity: 0.75;
+    }
+
+    /* NOTIFY BANNER */
+    .notify-banner {
+      background: rgba(201,168,104,0.07);
+      border: 1px solid rgba(201,168,104,0.25);
+      padding: 40px 36px;
+      max-width: 600px;
+      margin: 0 auto 56px;
+    }
+
+    .notify-banner p {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--color-muted);
+      margin-bottom: 20px;
+    }
+
+    .notify-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 28px;
+      background: var(--color-gold);
+      color: #0a0a0c;
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.2s ease;
+    }
+
+    .notify-link:hover { background: var(--color-gold-bright); }
+
+    /* DIVIDER */
+    .section-divider {
+      width: 60px;
+      height: 1px;
+      background: rgba(201,168,104,0.3);
+      margin: 0 auto 56px;
+      border: none;
+    }
+
+    /* FOOTER */
+    .footer {
+      border-top: 1px solid rgba(201,168,104,0.1);
+      padding: 36px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      background: var(--color-bg);
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-left svg { width: 22px; height: 22px; flex-shrink: 0; }
+
+    .footer-name {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      color: var(--color-cream);
+      letter-spacing: 0.04em;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 28px;
+    }
+
+    .footer-links a {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover { color: var(--color-gold); }
+
+    .footer-copy {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      color: rgba(167,163,154,0.35);
+      letter-spacing: 0.1em;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+
+      .hero-left { min-height: 340px; }
+      .hero-cover-wrap { width: 40%; }
+
+      .hero-right {
+        padding: 48px 28px 60px;
+        border-left: none;
+        border-top: 1px solid rgba(201,168,104,0.1);
+      }
+
+      .retailers { grid-template-columns: repeat(2, 1fr); }
+
+      .nav { padding: 14px 20px; }
+      .nav-logo a span { display: none; }
+
+      .coming-soon { padding: 72px 24px; }
+    }
+
+    @media (max-width: 520px) {
+      .retailers { grid-template-columns: 1fr 1fr; }
+      .retailer-card { padding: 22px 14px; }
+      .footer { flex-direction: column; align-items: flex-start; gap: 12px; }
+      .notify-banner { padding: 28px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-logo">
+      <a href="index.html">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Matthew C. Gee monogram">
+          <text x="32" y="28" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="23" font-weight="bold" fill="#f3efe6">M</text>
+          <line x1="13" y1="33" x2="51" y2="33" stroke="#c9a868" stroke-width="0.9"/>
+          <text x="32" y="54" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="23" font-weight="bold" fill="#c9a868">G</text>
+        </svg>
+        <span>Matthew C. Gee</span>
+      </a>
+    </div>
+    <a href="index.html" class="nav-back">&larr; Back to Site</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-bg">
+        <img src="images/the-god-who-sees-cover.png" alt="" aria-hidden="true">
+      </div>
+      <div class="hero-cover-wrap">
+        <img src="images/the-god-who-sees-cover.png" alt="Cover of The God Who Sees by Matthew C. Gee">
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="hero-eyebrow">
+        <span class="hero-eyebrow-line"></span>
+        Coming Fall 2026
+      </div>
+      <h1 class="hero-title">The God Who Sees</h1>
+      <p class="hero-subtitle">Recovering Our Sight in a World That Has Stopped Looking</p>
+      <hr class="hero-rule">
+      <p class="hero-description">
+        In a culture of endless scroll and selective attention, we have lost the art of truly seeing one another.
+        <em>The God Who Sees</em> is a compelling call to rediscover the sacred practice of attention — and to
+        encounter a God who has never stopped seeing us.
+      </p>
+      <p class="hero-author">By Matthew C. Gee &bull; matthewcgee.com</p>
+    </div>
+  </section>
+
+  <!-- COMING SOON SECTION -->
+  <section class="coming-soon">
+    <div class="coming-soon-inner">
+
+      <p class="section-eyebrow">Where to Find It</p>
+      <h2 class="section-headline">Coming Soon to All Major Platforms</h2>
+      <p class="section-body">
+        <em>The God Who Sees</em> will be available Fall 2026 wherever books are sold.
+        Pre-order and launch links will be announced here and across social media as the release date approaches.
+      </p>
+
+      <div class="retailers">
+        <div class="retailer-card">
+          <div class="retailer-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13.958 10.09c0 1.232.029 2.256-.591 3.351-.502.891-1.301 1.439-2.186 1.439-1.214 0-1.922-.924-1.922-2.292 0-2.692 2.415-3.182 4.7-3.182v.684zm3.186 7.705c-.209.189-.512.201-.745.074-1.047-.87-1.233-1.274-1.807-2.101-1.726 1.759-2.95 2.285-5.185 2.285-2.646 0-4.704-1.633-4.704-4.899 0-2.552 1.383-4.288 3.357-5.139 1.713-.754 4.104-.889 5.933-1.097v-.41c0-.753.06-1.642-.384-2.294-.385-.578-1.124-.819-1.776-.819-1.205 0-2.277.618-2.54 1.9-.054.285-.262.567-.55.582l-3.073-.333c-.259-.056-.546-.267-.472-.663C5.497 1.816 8.253.5 11.1.5c1.45 0 3.346.386 4.49 1.485 1.452 1.354 1.313 3.162 1.313 5.13v4.645c0 1.396.58 2.009 1.126 2.763.193.271.235.596-.01.797l-2.876 2.475-.001-.001z"/><path d="M20.995 20.975c-1.854 1.309-4.552 2.011-6.873 2.011-3.253 0-6.181-1.203-8.398-3.203-.174-.157-.018-.372.19-.25 2.393 1.392 5.348 2.228 8.404 2.228 2.062 0 4.329-.428 6.415-1.312.315-.133.578.207.262.526zm.74-.85c-.238-.305-1.572-.144-2.172-.073-.182.022-.211-.136-.046-.25 1.065-.748 2.811-.532 3.015-.281.202.252-.054 2.003-1.056 2.838-.154.128-.301.061-.232-.11.226-.559.729-1.813.491-2.124z"/></svg>
+          </div>
+          <span class="retailer-name">Amazon</span>
+          <span class="retailer-status">Coming Fall 2026</span>
+        </div>
+
+        <div class="retailer-card">
+          <div class="retailer-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.84 0h14.32C21.76 0 24 2.24 24 5v14c0 2.76-2.24 5-5 5H5c-2.76 0-5-2.24-5-5V5C0 2.24 2.24 0 5 0h-.16zm7.26 4.5c-3.87 0-7 3.13-7 7s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 1.5c3.03 0 5.5 2.47 5.5 5.5S15.13 17 12.1 17s-5.5-2.47-5.5-5.5 2.47-5.5 5.5-5.5zm0 2c-1.93 0-3.5 1.57-3.5 3.5s1.57 3.5 3.5 3.5 3.5-1.57 3.5-3.5-1.57-3.5-3.5-3.5zm0 1.5c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2z"/></svg>
+          </div>
+          <span class="retailer-name">Barnes &amp; Noble</span>
+          <span class="retailer-status">Coming Fall 2026</span>
+        </div>
+
+        <div class="retailer-card">
+          <div class="retailer-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm-.5 5.5c.828 0 1.5.672 1.5 1.5s-.672 1.5-1.5 1.5S10 7.828 10 7s.672-1.5 1.5-1.5zm3 9.5h-1V9h-4v1h1v5H9v1h6v-1h-1v-4h.5z"/></svg>
+          </div>
+          <span class="retailer-name">Audible</span>
+          <span class="retailer-status">Coming Fall 2026</span>
+        </div>
+
+        <div class="retailer-card">
+          <div class="retailer-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
+          </div>
+          <span class="retailer-name">Apple Books</span>
+          <span class="retailer-status">Coming Fall 2026</span>
+        </div>
+
+        <div class="retailer-card">
+          <div class="retailer-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.49 1.49 0 0 0-.483 1.118v19.932c0 .415.17.811.484 1.117l.068.065 11.146-11.11v-.277L1.404.857l-.067.067zM15.81 15.51l-3.71-3.688v-.278l3.71-3.69 3.913 2.22-3.913 2.436z"/></svg>
+          </div>
+          <span class="retailer-name">Google Play</span>
+          <span class="retailer-status">Coming Fall 2026</span>
+        </div>
+
+        <div class="retailer-card">
+          <div class="retailer-icon">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5.582 0C2.498 0 0 2.498 0 5.582v12.836C0 21.502 2.498 24 5.582 24h12.836C21.502 24 24 21.502 24 18.418V5.582C24 2.498 21.502 0 18.418 0H5.582zm9.982 5.876c.343 0 .628.08.854.238.226.16.34.392.34.695 0 .18-.05.347-.147.5a.97.97 0 0 1-.394.346c.214.063.383.184.505.362.123.178.184.386.184.623 0 .32-.12.576-.358.765-.238.19-.55.284-.935.284H13.27V5.876h2.294zm-5.476 0l1.466 3.813H9.988l-.265-.748H8.046l-.265.748H6.115L7.58 5.876h2.508zm5.377 1.098h-.912v.712h.912c.152 0 .272-.034.36-.102a.338.338 0 0 0 .13-.275.338.338 0 0 0-.13-.275.51.51 0 0 0-.36-.06zm-4.33.042l-.442 1.249h.884l-.442-1.249zm4.208 1.364h-1.12v.8h1.12c.166 0 .297-.04.392-.12a.4.4 0 0 0 .143-.315.4.4 0 0 0-.143-.315c-.095-.067-.226-.05-.392-.05z"/></svg>
+          </div>
+          <span class="retailer-name">Kobo</span>
+          <span class="retailer-status">Coming Fall 2026</span>
+        </div>
+      </div>
+
+      <hr class="section-divider">
+
+      <div class="notify-banner">
+        <p>
+          Be among the first to know when <em>The God Who Sees</em> is available for pre-order.
+          Links will be shared here and on social media as the Fall 2026 release approaches.
+        </p>
+        <a href="https://www.instagram.com/matthew.c.gee" class="notify-link" target="_blank" rel="noopener noreferrer">
+          Follow for Updates &rarr;
+        </a>
+      </div>
+
+      <p class="section-body" style="font-size:0.88rem; opacity:0.7; margin-bottom:0;">
+        <em>The God Who Sees</em> will also be available through independent bookstores, Walmart, Target, and additional retail partners. Check back as the release date approaches.
+      </p>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-left">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Matthew C. Gee monogram">
+        <text x="32" y="28" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="23" font-weight="bold" fill="#f3efe6">M</text>
+        <line x1="13" y1="33" x2="51" y2="33" stroke="#c9a868" stroke-width="0.9"/>
+        <text x="32" y="54" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="23" font-weight="bold" fill="#c9a868">G</text>
+      </svg>
+      <span class="footer-name">Matthew C. Gee</span>
+    </div>
+
+    <div class="footer-links">
+      <a href="index.html">Home</a>
+      <a href="index.html#books">Books</a>
+      <a href="index.html#contact">Contact</a>
+    </div>
+
+    <span class="footer-copy">&copy; 2026 Matthew C. Gee</span>
+  </footer>
+
+</body>
+</html>

@@ -428,50 +428,44 @@
 
   <!-- ===================== ANNOUNCEMENT MODAL ===================== -->
   <div class="modal-overlay" id="announcementModal" role="dialog" aria-modal="true" aria-labelledby="announcementTitle" hidden>
-    <div class="modal-card">
+    <div class="modal-card modal-card--tgws">
       <button class="modal-close" id="announcementClose" aria-label="Close announcement">&times;</button>
 
-      <div class="modal-header">
-        <span class="eyebrow">From Matthew C. Gee</span>
-      </div>
+      <div class="modal-tgws">
 
-      <div class="modal-books">
-
-        <!-- Book 1: Roots Before Branches -->
-        <div class="modal-book">
-          <div class="modal-book-cover">
-            <img src="images/roots-before-branches-front.jpg" alt="Cover of Roots Before Branches by Matthew C. Gee">
+        <!-- Left: dramatic cover panel -->
+        <div class="modal-tgws-left">
+          <div class="modal-tgws-bg">
+            <img src="images/the-god-who-sees-cover.png" alt="" aria-hidden="true">
           </div>
-          <div class="modal-book-info">
-            <span class="modal-badge modal-badge--available">Now Available</span>
-            <h2 id="announcementTitle" class="modal-book-title">Roots Before Branches</h2>
-            <p class="modal-book-sub">Reestablishing Connection in Healthcare, Leadership, and Society</p>
-            <p class="modal-audible">🎧 Also on <a href="https://www.audible.com/pd/B0HDFFLCTZ?source_code=ASSORAP0511160006&share_location=pdp" target="_blank" rel="noopener" style="color:#c9a868;">Audible</a></p>
-            <a href="https://a.co/d/0ejzYnl5" class="btn btn-primary" target="_blank" rel="noopener" id="announcementCta">Buy on Amazon</a>
-          </div>
-        </div>
-
-        <div class="modal-col-divider"></div>
-
-        <!-- Book 2: The God Who Sees -->
-        <div class="modal-book">
-          <div class="modal-book-cover">
+          <div class="modal-tgws-cover">
             <img src="images/the-god-who-sees-cover.png" alt="Cover of The God Who Sees by Matthew C. Gee">
           </div>
-          <div class="modal-book-info">
-            <span class="modal-badge modal-badge--coming">Coming Late 2026</span>
-            <h3 class="modal-book-title">The God Who Sees</h3>
-            <p class="modal-book-sub">Recovering Our Sight in a World That Has Stopped Looking</p>
-            <p class="modal-book-teaser">Matthew's next book — stay tuned for pre-order details.</p>
+          <p class="modal-tgws-byline">A NEW BOOK BY MATTHEW C. GEE</p>
+        </div>
+
+        <!-- Right: copy + CTA -->
+        <div class="modal-tgws-right">
+          <div class="modal-tgws-eyebrow">
+            <span class="modal-tgws-eyebrow-line"></span>
+            COMING FALL 2026
           </div>
+          <h2 id="announcementTitle" class="modal-tgws-headline">
+            A world has stopped looking.<br>
+            <em>This fall, see again.</em>
+          </h2>
+          <div class="modal-tgws-rule"></div>
+          <p class="modal-tgws-body">
+            <em>The God Who Sees</em> is a powerful new invitation to recover attention, dignity,
+            and hope in a world that has forgotten how to truly see one another.
+          </p>
+          <a href="the-god-who-sees.html" class="modal-tgws-cta" id="announcementCta">
+            GET LAUNCH UPDATES &rarr;
+          </a>
+          <p class="modal-tgws-domain">MATTHEW C. GEE &bull; MATTHEWCGEE.COM</p>
         </div>
 
       </div>
-
-      <div class="modal-footer">
-        <button class="btn btn-ghost" id="announcementDismiss">Maybe Later</button>
-      </div>
-
     </div>
   </div>
 

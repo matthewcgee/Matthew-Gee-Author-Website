@@ -37,11 +37,15 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Announcement modal: Roots Before Branches, coming July 2026
-  // Shown on every page load.
-  var modal = document.getElementById('announcementModal');
+  // Pick modal: September 11 memorial today only, otherwise standard TGWS modal.
+  var now = new Date();
+  var isSept11 = (now.getMonth() === 8 && now.getDate() === 11); // month is 0-indexed
+  var modalId = isSept11 ? 'sept11Modal' : 'announcementModal';
+  var closeId = isSept11 ? 'sept11Close' : 'announcementClose';
+
+  var modal = document.getElementById(modalId);
   if (modal) {
-    var closeBtn = document.getElementById('announcementClose');
+    var closeBtn = document.getElementById(closeId);
     var dismissBtn = document.getElementById('announcementDismiss');
     var ctaLink = document.getElementById('announcementCta');
 

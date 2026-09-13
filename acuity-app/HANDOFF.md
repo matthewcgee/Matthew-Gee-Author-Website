@@ -6,12 +6,15 @@
 
 ## What Is This
 
-Acuitas™ is a real-time behavioral health acuity dashboard. It allows charge nurses and clinical staff to:
+Acuitas™ is a real-time, predictive behavioral health acuity dashboard. It allows charge nurses and clinical staff to:
 - Log shift acuity data per unit (census, points, staffing)
 - View color-coded acuity status across an entire region
 - Score patient acuity using the built-in AcuiCalc™ calculator
 - Track staff deployments
 - Generate trend reports
+- **See where every unit is heading** over the next several shifts, with prediction ranges
+- **Get a specific, ranked deployment plan** — who to move, from where, to where, and what it buys
+- **Forecast census and volume** against nursing-driven caps before a unit runs over
 
 The application is a **React single-page app** that builds to plain static files (HTML, CSS, JavaScript). It requires no application server — only a web server capable of serving static files.
 
@@ -40,7 +43,10 @@ npm install
 npm run dev
 # App available at http://localhost:5173/<base-path>/
 
-# 3. Build for production
+# 3. Run the test suite (covers the forecasting and optimization math)
+npm test
+
+# 4. Build for production
 npm run build
 # Output goes to ../acuity/ (configurable — see vite.config.js)
 ```
@@ -93,6 +99,90 @@ const EXPECTED_HASH = 'paste-your-new-hash-here'
 ```
 
 Rebuild and redeploy.
+
+---
+
+## The Predictive Engine
+
+The Command Center tab forecasts each unit forward, estimates the chance it
+breaches its thresholds, and computes where staff should go. Three files carry
+all of it, and none of them touch the network:
+
+| File | Responsibility |
+|---|---|
+| `src/lib/forecast.js` | Per-unit time-series forecasting and self-scoring |
+| `src/lib/risk.js` | Breach probability, runway, drift detection, attribution |
+| `src/lib/optimize.js` | Optimal staff allocation across units |
+
+### How the forecast works
+
+Each unit gets its own model fit to its own history — never a single model
+imposed across the region:
+
+1. **Shift-of-week pattern.** Additive offsets for each of the 14 weekly slots
+   (7 days × AM/PM), estimated against a *locally* centered baseline so a unit's
+   underlying trend is not misread as seasonality. Offsets are shrunk toward zero
+   in proportion to how little evidence backs them, so one unusual Tuesday does
+   not become "Tuesdays are bad."
+2. **Damped trend.** Holt's linear method with a damping factor, so a three-shift
+   climb projects forward realistically instead of off the top of the chart.
+3. **Fitted parameters.** Smoothing constants are chosen per unit by minimizing
+   one-step-ahead error, not hardcoded.
+4. **Honest method selection.** The fitted model is compared by walk-forward
+   backtest against two simple baselines — same shift last week, and the unit's
+   recent median — and whichever actually scores best is the one used. On a unit
+   whose acuity is pure noise, the simple rule wins and the app says so.
+5. **Measured uncertainty.** Prediction ranges come from the unit's own past
+   forecast errors at each horizon, not an assumed normal distribution.
+
+Every unit card reports its method, its typical error, how many held-out shifts
+that was measured on, and how it compares to the naive baseline.
+
+### Data requirements
+
+| History logged | What the app shows |
+|---|---|
+| 0–5 shifts | "Too little history to forecast" — no prediction, and it says why |
+| 6–13 shifts | Forecast with wide ranges, marked low confidence |
+| 14–27 shifts | Weekly pattern becomes usable; moderate confidence |
+| 28+ shifts | Full confidence available if the unit is genuinely predictable |
+
+Confidence reflects *usefulness*, not sophistication. A unit earns high
+confidence either because the model explains its swings or because it is steady
+enough to pin down tightly — and never simply for beating a weak baseline.
+
+### How the deployment plan works
+
+Staff allocation is solved **exactly**, by dynamic programming over the staffing
+budget — not by a greedy "best next move" heuristic, which gets the answer wrong
+whenever a unit needs several staff to climb out of RED and earns no credit for
+the first one or two.
+
+- Risk is weighted by patients exposed, so a 20-bed unit in RED outranks a 6-bed
+  unit in the same state.
+- Pulling staff off a unit is modeled as a negative allocation, so a donor is
+  only tapped when the receiving unit's gain outweighs the donor's loss.
+- Donors are never dropped below GREEN, and never below the staffing floor.
+- A per-move disruption cost stops the optimizer recommending churn for a
+  rounding-error improvement.
+- "Act on next shift" optimizes against the *forecast* rather than the current
+  reading — moving staff before the surge lands.
+
+### Privacy posture
+
+There is **no external model service, no vendor AI API, and no patient data in
+transit**. Every forecast, probability, and recommendation is computed in the
+browser from data the app already holds. This is a deliberate architectural
+choice for a clinical tool: it keeps the system auditable, keeps PHI inside your
+network, and means the predictive features carry no additional BAA, vendor
+review, or data-egress burden.
+
+### Demonstration mode
+
+The Command Center has a "Show me with demo data" toggle that builds a synthetic
+seven-unit region in memory for demonstrations and training. It is generated in
+the browser, **never written to the database**, never mixed with live entries,
+and disappears when toggled off. Every synthetic record is stamped `demo: true`.
 
 ---
 
@@ -160,6 +250,7 @@ acuity-app/
 │   ├── components/
 │   │   ├── AcuityCalculator.jsx # AcuiCalc™ two-step scoring tool
 │   │   ├── AcuitasLogo.jsx      # Brand logo component
+│   │   ├── CommandCenter.jsx    # Predictive forecasts, risk & deployment plan
 │   │   ├── Deployments.jsx      # Staff deployment tracking
 │   │   ├── ErrorBoundary.jsx    # Error handling wrapper
 │   │   ├── HelpGuide.jsx        # Built-in help & training
@@ -172,8 +263,13 @@ acuity-app/
 │   │   ├── StatusBoard.jsx      # Region-wide acuity overview
 │   │   └── ui.jsx               # Shared UI components & theme
 │   └── lib/
+│       ├── __tests__/           # Test suite for the predictive math
+│       ├── demoData.js          # Synthetic demo region (in-memory only)
 │       ├── firebase.js          # Firebase connection (swap this for your backend)
+│       ├── forecast.js          # Time-series forecasting & backtesting
 │       ├── model.js             # Acuity scoring logic, thresholds, seed data
+│       ├── optimize.js          # Exact staff-allocation optimizer
+│       ├── risk.js              # Breach probability, drift, attribution
 │       ├── stateShapes.js       # US state SVG map shapes
 │       └── storage.js           # localStorage helpers
 ├── public/

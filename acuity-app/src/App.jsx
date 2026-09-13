@@ -15,10 +15,12 @@ import Settings from './components/Settings.jsx'
 import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import CommandCenter from './components/CommandCenter.jsx'
 import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
+  { id: 'command', label: 'Command Center', icon: 'trendUp' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
@@ -431,6 +433,9 @@ export default function App() {
           <div className="fade-in">
             {tab === 'status' && (
               <StatusBoard locations={locations} entries={entries} thresholds={thresholds} caps={caps} onUpdateCap={updateCap} />
+            )}
+            {tab === 'command' && (
+              <CommandCenter locations={locations} entries={entries} thresholds={thresholds} caps={caps} />
             )}
             {tab === 'entry' && (
               <ShiftEntryForm

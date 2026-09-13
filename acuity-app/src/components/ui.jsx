@@ -90,6 +90,31 @@ const ICON_PATHS = {
       <path d="M5 3l5.5 14 2-6 6-2L5 3z" />
     </>
   ),
+  trendUp: (
+    <>
+      <path d="M3 17l6-6 4 4 8-8" />
+      <path d="M21 7h-5M21 7v5" />
+    </>
+  ),
+  target: (
+    <>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+    </>
+  ),
+  clock: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7.5V12l3 2" />
+    </>
+  ),
+  alert: (
+    <>
+      <path d="M12 4.5l8 14H4l8-14z" />
+      <path d="M12 10v4M12 16.5h.01" />
+    </>
+  ),
 }
 
 export function Icon({ name, size = 18, strokeWidth = 2, style }) {

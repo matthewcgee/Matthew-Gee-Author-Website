@@ -15,9 +15,17 @@
 // Pulling staff off a unit is modeled as a negative allocation, so a donor is
 // only tapped when the receiving unit's gain genuinely outweighs the donor's
 // loss. Every recommendation carries the before/after numbers behind it.
+//
+// Donating and receiving are deliberately asymmetric. Any unit may receive
+// staff, including one that opened yesterday — a new unit in trouble still
+// needs help. But a unit must have earned a track record before it is allowed
+// to give staff away, because a single GREEN reading on a brand-new unit is not
+// evidence that it will still be GREEN next shift, and a risk with no history
+// behind it cannot be quantified.
 
 import { computeStage, thresholdsFor, safeDiv } from './model.js'
 import { probabilityAbove } from './risk.js'
+import { buildSeries, SEASON_LENGTH } from './forecast.js'
 
 // Crossing into RED is not "a bit worse than YELLOW" — it is the condition the
 // whole tool exists to prevent. Weights encode that, and the continuous excess
@@ -33,6 +41,46 @@ export const DEFAULT_STAFF_FLOOR = 1
 
 // Guards against a pathological pull recommendation on a large, quiet system.
 const MAX_PULL_PER_UNIT = 3
+
+// Logged shifts a unit must have before it may be treated as a donor.
+//
+// One full weekly cycle (7 days x AM/PM). A week is the right bar rather than
+// an arbitrary count because acuity moves with the day of the week: a unit
+// observed only across a few quiet weekdays has never been seen on a Monday
+// morning, and "quiet so far" is not the same as "has staff to spare".
+export const DONOR_MIN_HISTORY = SEASON_LENGTH
+
+export const DONOR_INELIGIBLE = {
+  THIN_HISTORY: 'thin-history',
+  NOT_GREEN: 'not-green',
+  AT_FLOOR: 'at-staffing-floor',
+}
+
+/**
+ * May this unit give staff away at all?
+ *
+ * Separate from *how many* it could spare, so the board can explain why a quiet
+ * unit was passed over instead of silently leaving it out of the plan.
+ */
+export function donorEligibility({
+  observations,
+  points,
+  staff,
+  th,
+  staffFloor = DEFAULT_STAFF_FLOOR,
+  minHistory = DONOR_MIN_HISTORY,
+}) {
+  if (observations < minHistory) {
+    return { eligible: false, reason: DONOR_INELIGIBLE.THIN_HISTORY, observations, required: minHistory }
+  }
+  if (staff - 1 < staffFloor) {
+    return { eligible: false, reason: DONOR_INELIGIBLE.AT_FLOOR, observations, required: minHistory }
+  }
+  if (unitRisk({ points, staff, th }).stage !== 'GREEN') {
+    return { eligible: false, reason: DONOR_INELIGIBLE.NOT_GREEN, observations, required: minHistory }
+  }
+  return { eligible: true, reason: null, observations, required: minHistory }
+}
 
 /**
  * Risk contributed by one inpatient unit at a hypothetical staffing level.
@@ -60,7 +108,15 @@ export function unitRisk({ points, staff, th, exposure = 1 }) {
  * 'forecast'` optimizes against the next predicted shift — deploying ahead of
  * the surge rather than after it, which is the entire point of forecasting.
  */
-export function buildUnitStates({ locations, entries, thresholds, forecasts = {}, mode = 'current', staffFloor = DEFAULT_STAFF_FLOOR }) {
+export function buildUnitStates({
+  locations,
+  entries,
+  thresholds,
+  forecasts = {},
+  mode = 'current',
+  staffFloor = DEFAULT_STAFF_FLOOR,
+  donorMinHistory = DONOR_MIN_HISTORY,
+}) {
   const latestByLoc = new Map()
   for (const e of entries || []) {
     const prev = latestByLoc.get(e.locId)
@@ -96,6 +152,11 @@ export function buildUnitStates({ locations, entries, thresholds, forecasts = {}
     const exposure = Number(latest.census) > 0 ? Number(latest.census) : 1
     const base = unitRisk({ points, staff, th, exposure })
 
+    // Counted through buildSeries so "a logged shift" means exactly what it
+    // means to the forecast engine — one reading per shift, duplicates resolved.
+    const observations = buildSeries(entries, loc, thresholds).length
+    const donor = donorEligibility({ observations, points, staff, th, staffFloor, minHistory: donorMinHistory })
+
     states.push({
       loc,
       th,
@@ -104,12 +165,15 @@ export function buildUnitStates({ locations, entries, thresholds, forecasts = {}
       points,
       staff,
       exposure,
+      observations,
+      donor,
       baseUai: base.uai,
       baseStage: base.stage,
       baseRisk: base.risk,
       forecastPoint: nextPoint,
-      // How many staff this unit could release while still holding GREEN.
-      releasable: releasableStaff({ points, staff, th, staffFloor }),
+      // How many staff this unit could release while still holding GREEN — zero
+      // for any unit not yet eligible to donate at all.
+      releasable: donor.eligible ? releasableStaff({ points, staff, th, staffFloor }) : 0,
     })
   }
 
@@ -332,10 +396,24 @@ export function planMoves(states, allocation, { forecasts = {} } = {}) {
 
   const stageCount = (key) => units.reduce((n, u) => n + (u[key] === 'RED' ? 1 : 0), 0)
 
+  // Units that look like they have staff to spare but were deliberately not
+  // asked for any, because they have not been open long enough to know. Worth
+  // naming on the board: otherwise a supervisor looking at a quiet unit will
+  // wonder why the plan ignored it.
+  const heldBack = states
+    .filter((u) => u.donor && !u.donor.eligible && u.donor.reason === DONOR_INELIGIBLE.THIN_HISTORY)
+    .map((u) => ({
+      loc: u.loc,
+      stage: u.baseStage,
+      observations: u.donor.observations,
+      required: u.donor.required,
+    }))
+
   return {
     ok: true,
     moves,
     units,
+    heldBack,
     summary: {
       redBefore: stageCount('stageBefore'),
       redAfter: stageCount('stageAfter'),
@@ -364,10 +442,11 @@ export function recommendDeployment({
   mode = 'current',
   moveCost = DEFAULT_MOVE_COST,
   staffFloor = DEFAULT_STAFF_FLOOR,
+  donorMinHistory = DONOR_MIN_HISTORY,
 }) {
-  const states = buildUnitStates({ locations, entries, thresholds, forecasts, mode, staffFloor })
+  const states = buildUnitStates({ locations, entries, thresholds, forecasts, mode, staffFloor, donorMinHistory })
   if (!states.length) {
-    return { ok: false, reason: 'no-staffed-units', moves: [], units: [], states }
+    return { ok: false, reason: 'no-staffed-units', moves: [], units: [], states, heldBack: [] }
   }
   const allocation = optimizeAllocation(states, { floatStaff, moveCost })
   const plan = planMoves(states, allocation, { forecasts })

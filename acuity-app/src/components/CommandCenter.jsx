@@ -538,29 +538,60 @@ function DeploymentPlan({ plan, mode, onModeChange, floatStaff, onFloatChange })
             ? 'No inpatient unit has a logged shift with staffing yet, so there is nothing to optimize.'
             : 'Nothing to optimize right now.'}
         </div>
-      ) : plan.moves.length === 0 ? (
-        <div
-          style={{
-            padding: '14px 16px',
-            borderRadius: 10,
-            background: `${STAGE_COLORS.GREEN}14`,
-            color: '#1f7a54',
-            fontSize: 13,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-          }}
-        >
-          <Icon name="shield" size={16} />
-          No staff moves recommended — every unit is holding, and no move would buy more than the disruption costs.
-        </div>
       ) : (
         <>
-          {plan.moves.map((move, i) => (
-            <MoveCard key={`${move.fromLocId || 'float'}-${move.toLocId}-${i}`} move={move} />
-          ))}
-          <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 4, lineHeight: 1.5 }}>
+          {plan.moves.length === 0 ? (
+            <div
+              style={{
+                padding: '14px 16px',
+                borderRadius: 10,
+                background: `${STAGE_COLORS.GREEN}14`,
+                color: '#1f7a54',
+                fontSize: 13,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <Icon name="shield" size={16} />
+              No staff moves recommended — every unit is holding, and no move would buy more than the disruption
+              costs.
+            </div>
+          ) : (
+            plan.moves.map((move, i) => (
+              <MoveCard key={`${move.fromLocId || 'float'}-${move.toLocId}-${i}`} move={move} />
+            ))
+          )}
+
+          {/* A quiet unit that was deliberately not asked for staff needs to say
+              so, or the supervisor looking at it will assume the plan missed it. */}
+          {plan.heldBack?.length > 0 && (
+            <div
+              style={{
+                marginTop: 12,
+                padding: '11px 14px',
+                borderRadius: 10,
+                background: theme.panelAlt,
+                fontSize: 11.5,
+                lineHeight: 1.55,
+              }}
+            >
+              <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Icon name="shield" size={13} />
+                Not asked to give up staff
+              </div>
+              {plan.heldBack.map((h) => (
+                <div key={h.loc.id} style={{ color: theme.sub }}>
+                  <strong style={{ color: theme.text }}>{h.loc.name}</strong> is {h.stage} but has {h.observations} of{' '}
+                  {h.required} logged shifts. A unit needs a full week on the board before Acuitas will pull staff from
+                  it — one quiet reading is not a track record. It can still receive staff.
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 10, lineHeight: 1.5 }}>
             Exact optimum across {plan.states.length} staffed unit{plan.states.length === 1 ? '' : 's'}, weighted by
             patients exposed. Donor units are only tapped when they can drop a staff member and still hold GREEN.
           </div>

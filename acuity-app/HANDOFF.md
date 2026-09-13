@@ -163,6 +163,16 @@ the first one or two.
 - Pulling staff off a unit is modeled as a negative allocation, so a donor is
   only tapped when the receiving unit's gain outweighs the donor's loss.
 - Donors are never dropped below GREEN, and never below the staffing floor.
+- **A unit must have a track record before it can donate.** Giving and receiving
+  are deliberately asymmetric: any unit may *receive* staff, including one that
+  opened yesterday, but a unit needs a full week on the board — 14 logged shifts
+  by default — before Acuitas will pull staff off it. One quiet reading on a new
+  unit is not evidence it will still be quiet next shift, and acuity moves with
+  the day of the week, so a unit seen only across a few weekdays has never been
+  observed on a Monday morning. When a unit is held back for this reason the
+  board names it and says how many shifts it still needs, so a supervisor
+  looking at a quiet unit knows it was skipped deliberately. Tune the bar with
+  the `donorMinHistory` option (`DONOR_MIN_HISTORY` in `src/lib/optimize.js`).
 - A per-move disruption cost stops the optimizer recommending churn for a
   rounding-error improvement.
 - "Act on next shift" optimizes against the *forecast* rather than the current

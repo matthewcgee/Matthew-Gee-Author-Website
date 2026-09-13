@@ -141,6 +141,31 @@ describe('engine behavior across the scenario', () => {
     expect(plan.summary.fromFloat).toBeLessThanOrEqual(2)
   })
 
+  it('never pulls staff from the four-shift-old unit', () => {
+    const plan = recommendDeployment({
+      locations: scenario.locations,
+      entries: scenario.entries,
+      thresholds: DEFAULT_THRESHOLDS,
+      floatStaff: 2,
+    })
+    expect(plan.moves.every((m) => m.fromLocId !== 'demo_new')).toBe(true)
+    expect(plan.heldBack.map((h) => h.loc.id)).toContain('demo_new')
+  })
+
+  it('would still send staff to the new unit if it needed them', () => {
+    // Same scenario, but the new unit is the one in trouble.
+    const entries = scenario.entries.map((e) =>
+      e.locId === 'demo_new' ? { ...e, points: 24, staff: 4 } : e
+    )
+    const plan = recommendDeployment({
+      locations: scenario.locations,
+      entries,
+      thresholds: DEFAULT_THRESHOLDS,
+      floatStaff: 3,
+    })
+    expect(plan.moves.some((m) => m.toLocId === 'demo_new')).toBe(true)
+  })
+
   it('runs the whole pipeline for every unit without throwing', () => {
     for (const loc of scenario.locations) {
       const f = forecastLocation(scenario.entries, loc, DEFAULT_THRESHOLDS, { horizon: 4 })

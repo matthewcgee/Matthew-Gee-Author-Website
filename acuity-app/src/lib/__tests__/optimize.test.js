@@ -5,11 +5,15 @@ import {
   optimizeAllocation,
   planMoves,
   recommendDeployment,
+  donorEligibility,
   STAGE_WEIGHT,
   DEFAULT_MOVE_COST,
   DEFAULT_STAFF_FLOOR,
+  DONOR_MIN_HISTORY,
+  DONOR_INELIGIBLE,
 } from '../optimize.js'
 import { DEFAULT_THRESHOLDS } from '../model.js'
+import { dayIndex, SHIFTS } from '../forecast.js'
 
 const TH = DEFAULT_THRESHOLDS.inpatient
 
@@ -17,18 +21,30 @@ function loc(id, over = {}) {
   return { id, name: id, type: 'inpatient', censusCap: 18, thresholds: null, ...over }
 }
 
-// One logged shift per unit: { id, points, staff, census }
-function entriesFor(units, { date = '2026-03-02', shift = 'PM' } = {}) {
-  return units.map((u, i) => ({
-    id: `e${i}`,
-    locId: u.id,
-    date,
-    shift,
-    points: u.points,
-    staff: u.staff,
-    census: u.census ?? 12,
-    createdAt: 1000 + i,
-  }))
+// Give each unit a full track record by default, so tests that are not about
+// the donor history rule are not silently governed by it. `shifts` overrides
+// the count for a single unit.
+function entriesFor(units, { shifts = DONOR_MIN_HISTORY } = {}) {
+  const end = dayIndex('2026-03-02') * SHIFTS.length + 1
+  const out = []
+  units.forEach((u, i) => {
+    const count = u.shifts ?? shifts
+    for (let k = 0; k < count; k++) {
+      const slot = end - (count - 1 - k)
+      const day = Math.floor(slot / SHIFTS.length)
+      out.push({
+        id: `e${i}_${k}`,
+        locId: u.id,
+        date: new Date(day * 86400000).toISOString().slice(0, 10),
+        shift: SHIFTS[slot - day * SHIFTS.length],
+        points: u.points,
+        staff: u.staff,
+        census: u.census ?? 12,
+        createdAt: 1000 + k,
+      })
+    }
+  })
+  return out
 }
 
 /**
@@ -172,6 +188,113 @@ describe('buildUnitStates', () => {
     // Forecast says 3.0 acuity per staff next shift — that is RED.
     expect(ahead[0].points).toBeCloseTo(12)
     expect(ahead[0].baseStage).toBe('RED')
+  })
+})
+
+describe('donor track-record rule', () => {
+  const build = (units, opts = {}) =>
+    buildUnitStates({
+      locations: units.map((u) => loc(u.id)),
+      entries: entriesFor(units),
+      thresholds: DEFAULT_THRESHOLDS,
+      ...opts,
+    })
+
+  it('requires a full weekly cycle of history by default', () => {
+    expect(DONOR_MIN_HISTORY).toBe(14)
+  })
+
+  it('refuses to treat a brand-new unit as a donor even when it looks quiet', () => {
+    const states = build([{ id: 'newbie', points: 4, staff: 4, shifts: 3 }])
+    expect(states[0].baseStage).toBe('GREEN')
+    expect(states[0].observations).toBe(3)
+    expect(states[0].donor.eligible).toBe(false)
+    expect(states[0].donor.reason).toBe(DONOR_INELIGIBLE.THIN_HISTORY)
+    expect(states[0].releasable).toBe(0)
+  })
+
+  it('allows a donor once it has the history behind it', () => {
+    const states = build([{ id: 'established', points: 4, staff: 4, shifts: 14 }])
+    expect(states[0].donor.eligible).toBe(true)
+    expect(states[0].releasable).toBe(1)
+  })
+
+  it('still lets a brand-new unit receive staff', () => {
+    // Receiving is never gated: a new unit in trouble needs help most.
+    const locations = [loc('newbie')]
+    const entries = entriesFor([{ id: 'newbie', points: 20, staff: 4, shifts: 2 }])
+    const plan = recommendDeployment({ locations, entries, thresholds: DEFAULT_THRESHOLDS, floatStaff: 2 })
+    expect(plan.ok).toBe(true)
+    expect(plan.moves.length).toBeGreaterThan(0)
+    expect(plan.moves[0].toName).toBe('newbie')
+    expect(plan.moves[0].fromName).toBe('Float pool')
+  })
+
+  it('sends the float nurse instead of raiding a unit it cannot vouch for', () => {
+    const locations = [loc('newbie'), loc('critical')]
+    const entries = entriesFor([
+      { id: 'newbie', points: 4, staff: 4, shifts: 3 },
+      { id: 'critical', points: 20, staff: 4 },
+    ])
+    const plan = recommendDeployment({ locations, entries, thresholds: DEFAULT_THRESHOLDS, floatStaff: 1 })
+    expect(plan.moves).toHaveLength(1)
+    expect(plan.moves[0].toName).toBe('critical')
+    expect(plan.moves[0].fromLocId).toBeNull()
+    expect(plan.summary.fromUnits).toBe(0)
+  })
+
+  it('leaves a RED unit short rather than pull from an unproven one', () => {
+    // No float pool at all: the only theoretical donor is too new, so the
+    // correct answer is to recommend nothing and say why.
+    const locations = [loc('newbie'), loc('critical')]
+    const entries = entriesFor([
+      { id: 'newbie', points: 4, staff: 4, shifts: 3 },
+      { id: 'critical', points: 20, staff: 4 },
+    ])
+    const plan = recommendDeployment({ locations, entries, thresholds: DEFAULT_THRESHOLDS, floatStaff: 0 })
+    expect(plan.moves).toHaveLength(0)
+    expect(plan.heldBack.map((h) => h.loc.id)).toEqual(['newbie'])
+    expect(plan.heldBack[0].observations).toBe(3)
+    expect(plan.heldBack[0].required).toBe(14)
+  })
+
+  it('prefers an established donor over a new one', () => {
+    const locations = [loc('newbie'), loc('established'), loc('critical')]
+    const entries = entriesFor([
+      { id: 'newbie', points: 4, staff: 4, shifts: 3 },
+      { id: 'established', points: 4, staff: 4 },
+      { id: 'critical', points: 26, staff: 4, census: 20 },
+    ])
+    const plan = recommendDeployment({ locations, entries, thresholds: DEFAULT_THRESHOLDS, floatStaff: 0 })
+    expect(plan.moves.length).toBeGreaterThan(0)
+    expect(plan.moves.every((m) => m.fromLocId !== 'newbie')).toBe(true)
+    expect(plan.moves.some((m) => m.fromLocId === 'established')).toBe(true)
+  })
+
+  it('reports a held-back unit only for thin history, not for being busy', () => {
+    const locations = [loc('busy'), loc('critical')]
+    const entries = entriesFor([
+      { id: 'busy', points: 9, staff: 4 },
+      { id: 'critical', points: 20, staff: 4 },
+    ])
+    const plan = recommendDeployment({ locations, entries, thresholds: DEFAULT_THRESHOLDS, floatStaff: 0 })
+    // 'busy' is simply not GREEN — that is obvious on the board and needs no
+    // explanation, so it is not listed as held back.
+    expect(plan.heldBack).toHaveLength(0)
+  })
+
+  it('lets the history bar be tuned', () => {
+    const units = [{ id: 'newbie', points: 4, staff: 4, shifts: 6 }]
+    expect(build(units, { donorMinHistory: 14 })[0].donor.eligible).toBe(false)
+    expect(build(units, { donorMinHistory: 4 })[0].donor.eligible).toBe(true)
+  })
+
+  it('names the blocking reason for each ineligible case', () => {
+    const green = { observations: 20, points: 4, staff: 4, th: TH }
+    expect(donorEligibility(green).eligible).toBe(true)
+    expect(donorEligibility({ ...green, observations: 2 }).reason).toBe(DONOR_INELIGIBLE.THIN_HISTORY)
+    expect(donorEligibility({ ...green, points: 16 }).reason).toBe(DONOR_INELIGIBLE.NOT_GREEN)
+    expect(donorEligibility({ ...green, staff: 1, points: 0.5 }).reason).toBe(DONOR_INELIGIBLE.AT_FLOOR)
   })
 })
 

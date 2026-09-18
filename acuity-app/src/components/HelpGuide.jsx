@@ -114,7 +114,7 @@ export default function HelpGuide() {
           <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Help &amp; Training Guide</div>
         </div>
         <div style={{ fontSize: 12.5, color: theme.sub }}>
-          A step-by-step walkthrough of every screen in the Behavioral Health Acuity Index dashboard.
+          A step-by-step walkthrough of every screen in the Acuitas™ AcuiScale™ dashboard.
         </div>
       </div>
 

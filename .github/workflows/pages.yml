@@ -42,8 +42,25 @@ jobs:
         run: |
           npm ci
           npm run build
+      # Acuitas is built WITHOUT VITE_FIREBASE_CONFIG on purpose. With no config
+      # the app runs entirely in the visitor's browser: no database connection,
+      # no credentials in the bundle, and no way for a visitor to reach anyone
+      # else's data. Do not add that variable to this public workflow — supply
+      # it only in an internal deployment.
+      - name: Build Acuitas
+        working-directory: acuity-app
+        run: |
+          npm ci
+          npm run build
+      - name: Verify the public Acuitas build carries no credentials or institution names
+        run: |
+          if grep -rioE "atrium|wake ?forest|wakehealth|AIzaSy[0-9A-Za-z_-]{10}|firebaseapp\.com" acuity/ ; then
+            echo "::error::Identifying strings or credentials found in the Acuitas build — refusing to publish."
+            exit 1
+          fi
+          echo "Acuitas build is clean."
       - name: Remove build-time dependencies from artifact
-        run: rm -rf bedspace-app/node_modules volleyball-app/node_modules piedmont-volleyball-app/node_modules
+        run: rm -rf bedspace-app/node_modules volleyball-app/node_modules piedmont-volleyball-app/node_modules acuity-app/node_modules
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

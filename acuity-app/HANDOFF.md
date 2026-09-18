@@ -1,5 +1,5 @@
 # Acuitas™ — Technical Handoff Guide
-**Behavioral Health Acuity Dashboard**  
+**Behavioral Health Acuity Dashboard — powered by AcuiScale™**  
 *Patent Pending — © Matthew C. Gee*
 
 ---
@@ -27,7 +27,7 @@ The application is a **React single-page app** that builds to plain static files
 | Frontend framework | React 18 + Vite 5 |
 | Language | JavaScript (ES2022) |
 | Styling | Inline styles (no CSS framework) |
-| Real-time database | Firebase Firestore (swappable — see below) |
+| Real-time database | Optional — Firebase Firestore, supplied at build time (swappable, see below) |
 | Build output | Static HTML/CSS/JS |
 | Node.js required | v18 or higher (build-time only) |
 
@@ -85,6 +85,14 @@ base: '/'
 ## Changing the Access Password
 
 The app is password-protected. The password is never stored in plain text — only its SHA-256 hash is in the source code.
+
+> **What this gate is and is not.** It keeps casual visitors out of the
+> interface. It is checked in the browser, so it is *not* an access control on
+> the data: anyone who can reach a build configured against a real database can
+> reach that database directly unless the database's own security rules stop
+> them. Before any deployment holding real data, set server-side rules (Firestore
+> Security Rules, or the equivalent in whatever backend replaces it) and put
+> proper authentication in front of it.
 
 To set a new password:
 
@@ -198,9 +206,33 @@ and disappears when toggled off. Every synthetic record is stamped `demo: true`.
 
 ## Database / Backend
 
-### Current Setup — Firebase Firestore
+### Connection is supplied at build time
 
-The app currently connects to a Firebase Firestore project. The connection config is in:
+Nothing is hardcoded. The app reads its database config from a single build-time
+environment variable, `VITE_FIREBASE_CONFIG`, holding the Firebase config object
+as JSON:
+
+```bash
+VITE_FIREBASE_CONFIG='{"apiKey":"…","authDomain":"…","projectId":"…","storageBucket":"…","messagingSenderId":"…","appId":"…"}' npm run build
+```
+
+This matters for two reasons. A build carries no credentials and no project
+identifier, so the compiled bundle never reveals which institution it belongs
+to. And each environment points at its own database by changing one variable,
+with no source edit.
+
+### Local mode — what happens with no config
+
+**With `VITE_FIREBASE_CONFIG` unset the app runs entirely in the browser.** Every
+shift entry, deployment and census cap is kept in that browser's local storage
+and nothing is transmitted anywhere. No database connection is opened at all.
+
+This is the mode the public demonstration build runs in, and it is the right
+mode for training or evaluation: each person gets a working sandbox of their
+own, and no one can reach anyone else's data. It is *not* suitable for real use
+across a unit, because nothing is shared between browsers or devices.
+
+The mode is decided in:
 
 ```
 src/lib/firebase.js

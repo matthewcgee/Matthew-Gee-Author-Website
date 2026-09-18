@@ -2,9 +2,7 @@
 /volleyball/
 /piedmont-volleyball/
 
-# Acuitas build output. Ignored for a different reason than the apps above:
-# those are built by CI and served, while Acuitas was deliberately taken off
-# GitHub Pages (see commit 2c1ecea) and its build step removed from the Pages
-# workflow. `npm run build` in acuity-app/ writes here, so ignoring it keeps a
-# local build from quietly putting the app back online.
+# Acuitas build output. Built fresh by the Pages workflow like the apps above,
+# so the compiled bundle is never committed. The public build is produced with
+# no VITE_FIREBASE_CONFIG, which keeps it local-only and free of credentials.
 /acuity/

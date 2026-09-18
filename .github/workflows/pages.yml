@@ -52,7 +52,7 @@ jobs:
         run: |
           npm ci
           npm run build
-      - name: Verify the public Acuitas build carries no credentials or institution names
+      - name: Verify the published builds
         run: |
           if grep -rioE "atrium|wake ?forest|wakehealth|AIzaSy[0-9A-Za-z_-]{10}|firebaseapp\.com" acuity/ ; then
             echo "::error::Identifying strings or credentials found in the Acuitas build — refusing to publish."
@@ -60,12 +60,15 @@ jobs:
           fi
           # This site is served from a custom domain at its root (see /CNAME), so
           # any asset pointing at /Matthew-Gee-Author-Website/ 404s and the page
-          # renders blank. That bug has bitten this repo twice; fail loudly on it.
-          if grep -rioF "Matthew-Gee-Author-Website" acuity/index.html ; then
-            echo "::error::Acuitas build references the project path instead of the custom-domain root — assets would 404."
-            exit 1
-          fi
-          echo "Acuitas build is clean."
+          # renders blank. That bug has bitten three apps in this repo; fail
+          # loudly on it for every one of them.
+          for app in acuity bedspace volleyball piedmont-volleyball ; do
+            if [ -f "$app/index.html" ] && grep -ioF "Matthew-Gee-Author-Website" "$app/index.html" ; then
+              echo "::error::$app/index.html references the project path instead of the custom-domain root — its assets would 404."
+              exit 1
+            fi
+          done
+          echo "All builds are clean."
       - name: Remove build-time dependencies from artifact
         run: rm -rf bedspace-app/node_modules volleyball-app/node_modules piedmont-volleyball-app/node_modules acuity-app/node_modules
       - name: Setup Pages

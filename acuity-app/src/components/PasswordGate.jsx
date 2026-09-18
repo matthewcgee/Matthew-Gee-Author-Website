@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import AcuitasLogo from './AcuitasLogo.jsx'
 
 // SHA-256 of the access password — never store plaintext in source code
-const EXPECTED_HASH = '76b1dcf369d5236f088a4d22f62e7070be4bc99eec8bc6a923e2f4de0a4e7581'
+const EXPECTED_HASH = '8deae185909f0ebb39619118224ddb40fe7a411d4c6a29897d72f55b6eea0538'
 
 async function sha256(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))

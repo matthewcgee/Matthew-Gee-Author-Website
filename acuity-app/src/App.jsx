@@ -4,7 +4,7 @@ import { theme, Icon, Toast } from './components/ui.jsx'
 import AcuitasLogo from './components/AcuitasLogo.jsx'
 import { KEYS, readStorage, writeStorage, today, uid } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
-import { db, STATE_DOC } from './lib/firebase.js'
+import { db, LOCAL_MODE, STATE_DOC } from './lib/firebase.js'
 import StatusBoard from './components/StatusBoard.jsx'
 import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
@@ -15,10 +15,12 @@ import Settings from './components/Settings.jsx'
 import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import CommandCenter from './components/CommandCenter.jsx'
 import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
+  { id: 'command', label: 'Command Center', icon: 'trendUp' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
@@ -38,7 +40,7 @@ export default function App() {
   const [entries, setEntries] = useState(() => readStorage(KEYS.entries, null))
   const [deployments, setDeployments] = useState(() => readStorage(KEYS.deployments, null))
   const [thresholds, setThresholds] = useState(() => normalizeThresholds(readStorage(KEYS.thresholds, null)))
-  const [caps, setCaps] = useState({})
+  const [caps, setCaps] = useState(() => (LOCAL_MODE ? readStorage(KEYS.caps, {}) : {}))
   const [tab, setTab] = useState('status')
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
@@ -58,6 +60,7 @@ export default function App() {
   // One-time move of legacy array-based entries/deployments into their own
   // per-document collections, where concurrent edits can't clobber each other
   function tryMigrateCollections() {
+    if (LOCAL_MODE) return
     if (migrationDone.current) return
     if (entriesSnapRef.current == null || deploymentsSnapRef.current == null || !legacyRef.current.loaded) return
     migrationDone.current = true
@@ -140,6 +143,7 @@ export default function App() {
   // Write the guard key SYNCHRONOUSLY first so tryMigrateCollections (which
   // runs concurrently) cannot race ahead and re-populate the empty collections.
   useEffect(() => {
+    if (LOCAL_MODE) return
     if (readStorage(DATA_CLEAR_KEY, false)) return
     writeStorage(DATA_CLEAR_KEY, true)
     Promise.all([
@@ -174,8 +178,15 @@ export default function App() {
     if (thresholds != null) writeStorage(KEYS.thresholds, thresholds)
   }, [thresholds])
 
+  // Census caps live in their own collection remotely; with no remote they
+  // need persisting here or they would reset on every reload.
+  useEffect(() => {
+    if (LOCAL_MODE) writeStorage(KEYS.caps, caps)
+  }, [caps])
+
   // Live sync of locations & thresholds via a single shared document
   useEffect(() => {
+    if (LOCAL_MODE) return
     const unsub = onSnapshot(
       doc(db, ...STATE_DOC),
       (snap) => {
@@ -221,6 +232,7 @@ export default function App() {
   // Live sync of shift entries — each entry is its own document, so two
   // units submitting at the same time never overwrite each other
   useEffect(() => {
+    if (LOCAL_MODE) return
     const unsub = onSnapshot(
       collection(db, 'entries'),
       (snap) => {
@@ -240,6 +252,7 @@ export default function App() {
 
   // Live sync of staff deployments, same per-document approach as entries
   useEffect(() => {
+    if (LOCAL_MODE) return
     const unsub = onSnapshot(
       collection(db, 'deployments'),
       (snap) => {
@@ -260,6 +273,7 @@ export default function App() {
   // Live sync of nursing-driven census caps — one document per location, so
   // charge nurses on different units can update their cap independently
   useEffect(() => {
+    if (LOCAL_MODE) return
     const unsub = onSnapshot(
       collection(db, 'locationCaps'),
       (snap) => {
@@ -275,14 +289,14 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    if (locations == null || !remoteLoaded.current) return
+    if (LOCAL_MODE || locations == null || !remoteLoaded.current) return
     if (JSON.stringify(locations) === JSON.stringify(lastSynced.current.locations)) return
     lastSynced.current.locations = locations
     setDoc(doc(db, ...STATE_DOC), { locations }, { merge: true }).catch((e) => console.error('sync locations', e))
   }, [locations])
 
   useEffect(() => {
-    if (thresholds == null || !remoteLoaded.current) return
+    if (LOCAL_MODE || thresholds == null || !remoteLoaded.current) return
     if (JSON.stringify(thresholds) === JSON.stringify(lastSynced.current.thresholds)) return
     lastSynced.current.thresholds = thresholds
     setDoc(doc(db, ...STATE_DOC), { thresholds }, { merge: true }).catch((e) => console.error('sync thresholds', e))
@@ -299,17 +313,48 @@ export default function App() {
     setShowIntro(false)
   }
 
-  const updateCap = (locId, censusCap) => setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('update cap', e))
+  const updateCap = (locId, censusCap) => {
+    if (LOCAL_MODE) return setCaps((prev) => ({ ...prev, [locId]: censusCap }))
+    setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('update cap', e))
+  }
 
-  const addEntry = (entry) => setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
-  const removeEntry = (id) => deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
-  const addDeployment = (dep) => setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
-  const removeDeployment = (id) => deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
+  // In local mode these update React state directly; the existing effects
+  // persist that state to the browser, so the data survives a reload.
+  const addEntry = (entry) => {
+    if (LOCAL_MODE) return setEntries((prev) => [...(prev || []), entry])
+    setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
+  }
+  const removeEntry = (id) => {
+    if (LOCAL_MODE) return setEntries((prev) => (prev || []).filter((e) => e.id !== id))
+    deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
+  }
+  const addDeployment = (dep) => {
+    if (LOCAL_MODE) return setDeployments((prev) => [...(prev || []), dep])
+    setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
+  }
+  const removeDeployment = (id) => {
+    if (LOCAL_MODE) return setDeployments((prev) => (prev || []).filter((d) => d.id !== id))
+    deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
+  }
 
   async function pushAcuityToED(locId, shift, points) {
     const todayStr = today()
     const list = entries.filter((e) => e.locId === locId && e.date === todayStr && e.shift === shift)
     const existing = list[list.length - 1]
+    if (LOCAL_MODE) {
+      if (existing) {
+        return setEntries((prev) =>
+          (prev || []).map((e) => (e.id === existing.id ? { ...e, points: (e.points || 0) + points } : e))
+        )
+      }
+      return setEntries((prev) => [
+        ...(prev || []),
+        {
+          id: uid(), locId, date: todayStr, shift, census: null, points, staff: null,
+          notes: 'Added via Patient Acuity Calculator', pilot: false, createdAt: Date.now(),
+        },
+      ])
+    }
     if (existing) {
       await updateDoc(doc(db, 'entries', existing.id), { points: increment(points) }).catch((e) => console.error('push acuity', e))
     } else {
@@ -330,6 +375,11 @@ export default function App() {
   }
 
   async function replaceCollection(name, items) {
+    if (LOCAL_MODE) {
+      if (name === 'entries') setEntries(items)
+      if (name === 'deployments') setDeployments(items)
+      return
+    }
     const snap = await getDocs(collection(db, name))
     const batch = writeBatch(db)
     snap.docs.forEach((d) => batch.delete(d.ref))
@@ -431,6 +481,9 @@ export default function App() {
           <div className="fade-in">
             {tab === 'status' && (
               <StatusBoard locations={locations} entries={entries} thresholds={thresholds} caps={caps} onUpdateCap={updateCap} />
+            )}
+            {tab === 'command' && (
+              <CommandCenter locations={locations} entries={entries} thresholds={thresholds} caps={caps} />
             )}
             {tab === 'entry' && (
               <ShiftEntryForm

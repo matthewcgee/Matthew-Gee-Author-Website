@@ -4,6 +4,7 @@ export const KEYS = {
   deployments: 'bhai:deployments',
   thresholds: 'bhai:thresholds',
   seed: 'bhai:seeded:v2',
+  caps: 'bhai:caps',
 }
 
 export function readStorage(key, fallback) {

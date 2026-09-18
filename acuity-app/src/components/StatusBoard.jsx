@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts'
 import { Card, Badge, ProgressBar, StatCard, Icon, theme, grid } from './ui.jsx'
 import { computeEntryValue, entryStage, thresholdsFor, staffNeededForThresholds, STAGE_COLORS } from '../lib/model.js'
 import { today } from '../lib/storage.js'
+import { forecastLocation } from '../lib/forecast.js'
+import { assessForecast } from '../lib/risk.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
 
 const SHIFT_ORDER = { AM: 0, PM: 1 }
@@ -92,6 +94,19 @@ function CapEditor({ value, onSave }) {
 
 export default function StatusBoard({ locations, entries, thresholds, caps, onUpdateCap }) {
   const todayStr = today()
+
+  // Next-shift outlook per unit. Kept in a memo because fitting each unit's
+  // model walks its whole history, and the board re-renders on every live
+  // Firestore update.
+  const outlooks = useMemo(() => {
+    const out = {}
+    for (const loc of locations) {
+      const forecast = forecastLocation(entries, loc, thresholds, { horizon: 2 })
+      out[loc.id] = assessForecast(forecast, loc, thresholds)
+    }
+    return out
+  }, [locations, entries, thresholds])
+
   const summaries = locations.map((loc) => {
     const list = sortedEntriesFor(loc.id, entries)
     const todaysEntries = list.filter((e) => e.date === todayStr)
@@ -247,6 +262,39 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
                       {hasHistory ? 'Awaiting daily report for today' : 'No shift entries yet.'}
                     </div>
                   )}
+
+                  {(() => {
+                    const outlook = outlooks[loc.id]
+                    if (!outlook?.ok || !outlook.next) return null
+                    const next = outlook.next
+                    const rising = value != null && next.p50 > value
+                    return (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          paddingTop: 9,
+                          borderTop: `1px dashed ${theme.border}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          flexWrap: 'wrap',
+                          fontSize: 11.5,
+                        }}
+                      >
+                        <span style={{ color: theme.sub }}>Next shift</span>
+                        <span style={{ fontWeight: 800, fontSize: 13.5, color: STAGE_COLORS[next.stage] }}>
+                          {next.p50.toFixed(isEd ? 0 : 2)}
+                        </span>
+                        {rising && <Icon name="trendUp" size={12} style={{ color: STAGE_COLORS[next.stage] }} />}
+                        <Badge color={STAGE_COLORS[next.stage]}>{next.stage}</Badge>
+                        {next.pRed >= 0.2 && (
+                          <span style={{ color: next.band.color, fontWeight: 700 }}>
+                            {Math.round(next.pRed * 100)}% chance of RED
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {!isEd && latest && staffNeeds && (() => {
                     const parts = []

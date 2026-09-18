@@ -1,8 +1,13 @@
 import { uid } from './storage'
 
+// AcuiScale™ — the acuity index this dashboard is built on.
+//
+// Inpatient units score as acuity points per staff member; ED and pediatric ED
+// score as a raw point total, because neither carries a staffing denominator.
+// Both are AcuiScale scores, read against the same GREEN / YELLOW / RED bands.
 export const DEFAULT_THRESHOLDS = {
-  inpatient: { greenMax: 1.5, yellowMax: 2.5, unit: 'Acuity per staff (UAI)' },
-  ed: { greenMax: 21, yellowMax: 27, unit: 'Total ED behavioral health points' },
+  inpatient: { greenMax: 1.5, yellowMax: 2.5, unit: 'AcuiScale — acuity per staff' },
+  ed: { greenMax: 21, yellowMax: 27, unit: 'AcuiScale — total ED points' },
 }
 
 export const STAGE_COLORS = {
@@ -158,7 +163,7 @@ export function scorePediatricModifiers(activeIds) {
 export const PEDIATRIC_ED_THRESHOLDS = {
   greenMax: 53,
   yellowMax: 71,
-  unit: 'Total pediatric ED behavioral health points',
+  unit: 'AcuiScale — total pediatric ED points',
 }
 
 export const PEDIATRIC_MODIFIER_GROUPS = ['Observation', 'Behavioral Safety', 'Medical Complexity'].map((group) => ({

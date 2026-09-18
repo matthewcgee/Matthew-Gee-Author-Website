@@ -64,7 +64,7 @@ The build output is a folder of static files. Deploy them to any static file hos
 
 ### Important: Base Path
 
-The app is currently configured for the path `/Matthew-Gee-Author-Website/acuity/`.  
+The app is currently configured for the path `/acuity/`, which is where it sits on the custom domain in `/CNAME`.  
 **Change this before deployment** to match your institution's URL structure.
 
 Edit `vite.config.js`:

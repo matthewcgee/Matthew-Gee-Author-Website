@@ -58,6 +58,13 @@ jobs:
             echo "::error::Identifying strings or credentials found in the Acuitas build — refusing to publish."
             exit 1
           fi
+          # This site is served from a custom domain at its root (see /CNAME), so
+          # any asset pointing at /Matthew-Gee-Author-Website/ 404s and the page
+          # renders blank. That bug has bitten this repo twice; fail loudly on it.
+          if grep -rioF "Matthew-Gee-Author-Website" acuity/index.html ; then
+            echo "::error::Acuitas build references the project path instead of the custom-domain root — assets would 404."
+            exit 1
+          fi
           echo "Acuitas build is clean."
       - name: Remove build-time dependencies from artifact
         run: rm -rf bedspace-app/node_modules volleyball-app/node_modules piedmont-volleyball-app/node_modules acuity-app/node_modules

@@ -441,6 +441,12 @@ section:last-of-type {
   padding: 7px 14px;
 }
 
+.book-badge--available {
+  background: var(--color-gold);
+  color: var(--color-bg);
+  border-color: var(--color-gold);
+}
+
 .book-series {
   font-size: 0.82rem;
   letter-spacing: 0.12em;

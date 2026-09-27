@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildDemoScenario } from '../demoData.js'
+import { buildDemoScenario, buildSampleData } from '../demoData.js'
 import { forecastLocation, buildSeries, slotIndex } from '../forecast.js'
 import { assessForecast, driftSignal, assessCensus } from '../risk.js'
 import { recommendDeployment } from '../optimize.js'
@@ -174,5 +174,40 @@ describe('engine behavior across the scenario', () => {
       const series = buildSeries(scenario.entries, loc, DEFAULT_THRESHOLDS)
       expect(() => driftSignal(series)).not.toThrow()
     }
+  })
+})
+
+describe('buildSampleData', () => {
+  it('returns data shaped like live app state for every screen', () => {
+    const s = buildSampleData()
+    expect(Array.isArray(s.locations)).toBe(true)
+    expect(s.locations.length).toBeGreaterThan(1)
+    expect(s.entries.length).toBeGreaterThan(100)
+    expect(Array.isArray(s.deployments)).toBe(true)
+    expect(s.deployments.length).toBeGreaterThan(0)
+    expect(typeof s.caps).toBe('object')
+  })
+
+  it('stamps everything as sample data so it can never be mistaken for real', () => {
+    const s = buildSampleData()
+    expect(s.locations.every((l) => l.demo === true)).toBe(true)
+    expect(s.entries.every((e) => e.demo === true)).toBe(true)
+    expect(s.deployments.every((d) => d.demo === true)).toBe(true)
+  })
+
+  it('gives deployments that reference real sample units and unique ids', () => {
+    const s = buildSampleData()
+    const ids = new Set(s.locations.map((l) => l.id))
+    for (const d of s.deployments) {
+      expect(ids.has(d.toLocId)).toBe(true)
+      if (d.fromLocId) expect(ids.has(d.fromLocId)).toBe(true)
+      expect(d.staffName).toBeTruthy()
+    }
+    expect(new Set(s.deployments.map((d) => d.id)).size).toBe(s.deployments.length)
+  })
+
+  it('is deterministic', () => {
+    expect(JSON.stringify(buildSampleData().entries.map((e) => e.points)))
+      .toBe(JSON.stringify(buildSampleData().entries.map((e) => e.points)))
   })
 })

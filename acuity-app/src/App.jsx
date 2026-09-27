@@ -4,6 +4,7 @@ import { theme, Icon, Toast } from './components/ui.jsx'
 import AcuitasLogo from './components/AcuitasLogo.jsx'
 import { KEYS, readStorage, writeStorage, today, uid } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
+import { buildSampleData } from './lib/demoData.js'
 import { db, LOCAL_MODE, STATE_DOC } from './lib/firebase.js'
 import StatusBoard from './components/StatusBoard.jsx'
 import ShiftEntryForm from './components/ShiftEntryForm.jsx'
@@ -374,6 +375,20 @@ export default function App() {
     }
   }
 
+  // Restore a map of per-location census caps from a backup or the sample set.
+  // Local mode holds them in state (persisted to the browser); a real backend
+  // keeps one document per location, so write each.
+  function restoreCaps(capMap) {
+    if (!capMap || typeof capMap !== 'object') return
+    if (LOCAL_MODE) {
+      setCaps(capMap)
+      return
+    }
+    Object.entries(capMap).forEach(([locId, censusCap]) =>
+      setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('restore cap', e))
+    )
+  }
+
   async function replaceCollection(name, items) {
     if (LOCAL_MODE) {
       if (name === 'entries') setEntries(items)
@@ -556,17 +571,29 @@ export default function App() {
                   if (data.thresholds) setThresholds(normalizeThresholds(data.thresholds))
                   if (data.entries) await replaceCollection('entries', data.entries)
                   if (data.deployments) await replaceCollection('deployments', data.deployments)
+                  if (data.caps) restoreCaps(data.caps)
                   setToast('Data imported')
                 }}
                 onClear={async () => {
                   const freshLocations = seedLocations()
                   setLocations(freshLocations)
                   setThresholds(DEFAULT_THRESHOLDS)
+                  setCaps({})
                   await replaceCollection('entries', [])
                   await replaceCollection('deployments', [])
                   setToast('All data cleared')
                 }}
-                getExportData={() => ({ locations, entries, deployments, thresholds })}
+                localMode={LOCAL_MODE}
+                onLoadSample={async () => {
+                  const sample = buildSampleData()
+                  setLocations(sample.locations)
+                  setThresholds(DEFAULT_THRESHOLDS)
+                  setCaps(sample.caps)
+                  await replaceCollection('entries', sample.entries)
+                  await replaceCollection('deployments', sample.deployments)
+                  setToast('Sample data loaded')
+                }}
+                getExportData={() => ({ locations, entries, deployments, thresholds, caps })}
               />
             )}
           </div>

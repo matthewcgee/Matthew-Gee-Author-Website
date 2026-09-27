@@ -2,15 +2,25 @@ import React, { useState } from 'react'
 import { Card, Field, Button, Icon, theme } from './ui.jsx'
 import AcuitasLogo from './AcuitasLogo.jsx'
 
-const SETTINGS_PASSWORD = 'Advocate'
+// SHA-256 of the settings password — never store the plaintext in source, or it
+// ships readable in the bundle. Currently the same password as the login gate.
+const SETTINGS_HASH = '8deae185909f0ebb39619118224ddb40fe7a411d4c6a29897d72f55b6eea0538'
+
+async function sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str))
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
 
 export default function SettingsLock({ onUnlock }) {
   const [value, setValue] = useState('')
   const [error, setError] = useState(false)
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    if (value === SETTINGS_PASSWORD) {
+    if (!value) return
+    if ((await sha256(value)) === SETTINGS_HASH) {
       onUnlock()
     } else {
       setError(true)

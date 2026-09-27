@@ -14,7 +14,7 @@
 // *and* what it says when it doesn't.
 
 import { dayIndex, slotToDateShift, SHIFTS } from './forecast.js'
-import { today } from './storage.js'
+import { today, uid } from './storage.js'
 
 // Mulberry32 — small, fast, and deterministic, so the same scenario renders
 // identically for everyone looking at it.
@@ -228,5 +228,51 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
       observations: entries.length,
       generatedFor: today(),
     },
+  }
+}
+
+// A few plausible staff deployments, so the Deployments tab and the deployment
+// reports are populated when the sample region is loaded rather than empty.
+// Dated across the last few days and aimed at the units the scenario runs hot.
+function sampleDeployments() {
+  const end = dayIndex(today())
+  const day = (back) => new Date((end - back) * 86400000).toISOString().slice(0, 10)
+  const rows = [
+    { staffName: 'J. Alvarez, RN', role: 'RN', fromLocId: null, toLocId: 'demo_1sa', shift: 'PM', hours: 8, reason: 'Acuity surge', back: 0 },
+    { staffName: 'M. Okafor, BHT', role: 'BHT', fromLocId: 'demo_2n', toLocId: 'demo_1sa', shift: 'AM', hours: 8, reason: 'Projected breach — moved ahead of surge', back: 1 },
+    { staffName: 'D. Chen, RN', role: 'RN', fromLocId: null, toLocId: 'demo_4e', shift: 'PM', hours: 4, reason: 'Census cap support', back: 2 },
+  ]
+  return rows.map((r, i) => ({
+    id: `demo_dep_${i}`,
+    date: day(r.back),
+    shift: r.shift,
+    staffName: r.staffName,
+    role: r.role,
+    fromLocId: r.fromLocId,
+    toLocId: r.toLocId,
+    hours: r.hours,
+    reason: r.reason,
+    notes: '',
+    demo: true,
+    createdAt: Date.now() - r.back * 86400000,
+  }))
+}
+
+/**
+ * The full sample region, shaped exactly like live app state, for seeding the
+ * whole app (Status Board, Reports, Deployments, caps) in local mode so a new
+ * user has something to explore instead of empty screens.
+ *
+ * Everything is stamped `demo: true` and can be wiped with "Clear All Data".
+ */
+export function buildSampleData(opts = {}) {
+  const scenario = buildDemoScenario(opts)
+  return {
+    locations: scenario.locations,
+    entries: scenario.entries,
+    deployments: sampleDeployments(),
+    caps: scenario.caps,
+    thresholds: null, // caller applies its own defaults
+    meta: scenario.meta,
   }
 }

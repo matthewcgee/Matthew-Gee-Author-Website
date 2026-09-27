@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { Card, Field, Button, theme } from './ui.jsx'
+import { Card, Field, Button, Icon, theme } from './ui.jsx'
 import { uid } from '../lib/storage.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
 
@@ -21,6 +21,8 @@ export default function Settings({
   onChangeThresholds,
   onImport,
   onClear,
+  onLoadSample,
+  localMode = false,
   getExportData,
 }) {
   const [newLoc, setNewLoc] = useState(emptyLocation)
@@ -115,6 +117,14 @@ export default function Settings({
     if (window.confirm('Clear all locations, shift entries, deployments, and thresholds? This cannot be undone.')) {
       onClear()
     }
+  }
+
+  const loadSample = () => {
+    const hasData = (locations && locations.length > 0)
+    const msg = hasData
+      ? 'Replace everything currently in the app with a sample region to explore? Export a backup first if you want to keep what you have. This cannot be undone.'
+      : 'Load a sample region — several units with weeks of history — so you can explore every screen?'
+    if (window.confirm(msg)) onLoadSample()
   }
 
   return (
@@ -243,10 +253,44 @@ export default function Settings({
         </div>
       </Card>
 
+      {localMode && (
+        <Card title="Explore with sample data" sub="A quick way to see every screen with realistic numbers">
+          <div style={{ fontSize: 12.5, color: theme.sub, marginBottom: 12, lineHeight: 1.5 }}>
+            Load a sample region — several behavioral health units with weeks of shift history — to populate the
+            Status Board, Reports, Deployments, and the Command Center forecasts. Everything is clearly marked sample
+            data and can be wiped anytime with <strong>Clear All Data</strong> below.
+          </div>
+          <Button onClick={loadSample}>Load sample data</Button>
+        </Card>
+      )}
+
       <Card title="Data Management">
+        {localMode && (
+          <div
+            style={{
+              display: 'flex',
+              gap: 10,
+              alignItems: 'flex-start',
+              padding: '11px 13px',
+              marginBottom: 14,
+              borderRadius: 9,
+              background: theme.accentSoft,
+              border: `1px solid ${theme.accent}33`,
+              fontSize: 12.5,
+              lineHeight: 1.5,
+            }}
+          >
+            <Icon name="shield" size={16} style={{ color: theme.accent, marginTop: 1, flexShrink: 0 }} />
+            <div>
+              <strong>Your data is stored only in this browser.</strong> It is not sent anywhere, which keeps it
+              private — but clearing your browser data, or switching device, will erase it. Export a backup to keep a
+              copy you can re-import later.
+            </div>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <Button variant="ghost" onClick={exportAll}>Export All Data (JSON)</Button>
-          <Button variant="ghost" onClick={() => fileInputRef.current?.click()}>Import Data (JSON)</Button>
+          <Button onClick={exportAll}>{localMode ? 'Back up my data (Export JSON)' : 'Export All Data (JSON)'}</Button>
+          <Button variant="ghost" onClick={() => fileInputRef.current?.click()}>Import / Restore (JSON)</Button>
           <input ref={fileInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={handleImport} />
           <Button variant="danger" onClick={clearAll}>Clear All Data</Button>
         </div>

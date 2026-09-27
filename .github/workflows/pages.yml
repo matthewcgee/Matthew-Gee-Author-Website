@@ -54,7 +54,11 @@ jobs:
           npm run build
       - name: Verify the published builds
         run: |
-          if grep -rioE "atrium|wake ?forest|wakehealth|AIzaSy[0-9A-Za-z_-]{10}|firebaseapp\.com" acuity/ ; then
+          # Institution names and credentials must never ship in the public
+          # build. "advocate" is here because the settings password once was
+          # "Advocate" (Advocate Health, the parent system) and slipped past an
+          # earlier scrub that only searched the two-word "advocate health".
+          if grep -rioE "atrium|wake ?forest|wakehealth|advocate|novant|AIzaSy[0-9A-Za-z_-]{10}|firebaseapp\.com" acuity/ ; then
             echo "::error::Identifying strings or credentials found in the Acuitas build — refusing to publish."
             exit 1
           fi

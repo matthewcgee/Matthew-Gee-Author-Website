@@ -186,9 +186,9 @@ the first one or two.
 - "Act on next shift" optimizes against the *forecast* rather than the current
   reading — moving staff before the surge lands.
 
-### The Level of Care module (outpatient)
+### AcuiPath™ — the outpatient module
 
-A second tab, **Level of Care**, extends Acuitas from inpatient units to the
+A second tab, **AcuiPath™**, extends Acuitas from inpatient units to the
 outpatient continuum. It answers two questions:
 
 1. **Is this patient appropriate for the outpatient setting?** A screener scores
@@ -198,9 +198,28 @@ outpatient continuum. It answers two questions:
    along the continuum: self-management, Outpatient, IOP, PHP, residential, or
    acute inpatient.
 2. **Who should see whom?** An assignment view matches the outpatient-appropriate
-   caseload to providers by role (prescriber / therapist), specialty, telehealth,
-   and open capacity, placing the most urgent patients first and reporting every
-   patient it could not place with the reason.
+   caseload to providers by role (prescriber / therapist), **clinic/program**,
+   specialty, telehealth, **supervision level**, and open capacity, placing the
+   most urgent patients first and reporting every patient it could not place with
+   the reason.
+
+**Clinic / program routing.** Each screen prominently recommends which clinic or
+program the patient should go to (Therapy only, Medication management,
+Neuromodulation, etc.). That list is **org-configurable** — edited in the
+Caseload tab and stored under `bhai:opPrograms` — so a site can name its own
+programs. A provider is tagged with the programs they staff, and a patient's
+recommended program is a hard matching constraint.
+
+**Academic / teaching model.** Providers carry a training level (attending,
+fellow, staff, resident). A patient at or above a risk threshold
+(`ATTENDING_RISK_THRESHOLD` in `opmatch.js`, default 3 — acute but still
+outpatient) is too acute for a resident and is routed to an attending or an
+independently-licensed non-trainee instead. A provider with no training level
+set is treated as independent, so non-academic clinics need no configuration.
+
+**No patient-identifying information is required.** The case label is optional
+and discourages names/MRNs; if left blank a non-identifying reference (e.g.
+`Case 3F1A`) is generated. Nothing in the module needs PHI.
 
 Two files carry the logic, both pure functions with no network use:
 

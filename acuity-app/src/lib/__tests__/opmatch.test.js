@@ -6,6 +6,8 @@ import {
   reasonLabel,
   UNMATCHED,
   CREDENTIAL_ROLES,
+  requiresAttending,
+  ATTENDING_RISK_THRESHOLD,
 } from '../opmatch.js'
 
 function patient(over = {}) {
@@ -198,5 +200,77 @@ describe('assignment', () => {
     const two = assignCaseload(patients, providers)
     expect(JSON.stringify(one.assignments.map((a) => [a.patientId, a.providerId])))
       .toBe(JSON.stringify(two.assignments.map((a) => [a.patientId, a.providerId])))
+  })
+})
+
+describe('program (clinic) routing', () => {
+  it('requires the provider to staff the recommended program when one is set', () => {
+    const neuro = patient({ program: 'Neuromodulation' })
+    expect(isEligible(provider({ programs: [] }), neuro)).toBe(false)
+    expect(isEligible(provider({ programs: ['Neuromodulation'] }), neuro)).toBe(true)
+    expect(ineligibilityReason(provider({ programs: ['Therapy only'] }), neuro)).toBe(UNMATCHED.PROGRAM)
+  })
+
+  it('imposes no program constraint when the patient has none', () => {
+    expect(isEligible(provider({ programs: [] }), patient({ program: undefined }))).toBe(true)
+  })
+
+  it('reports the missing program in the gap report', () => {
+    const neuro = patient({ program: 'Neuromodulation' })
+    const r = assignCaseload([neuro], [provider({ programs: ['Therapy only'], capacity: 3 })])
+    expect(r.summary.placed).toBe(0)
+    expect(r.unmatched[0].reason).toBe(UNMATCHED.PROGRAM)
+  })
+
+  it('carries the program onto the assignment record', () => {
+    const p = patient({ program: 'Therapy only' })
+    const r = assignCaseload([p], [provider({ programs: ['Therapy only'], capacity: 1 })])
+    expect(r.assignments[0].program).toBe('Therapy only')
+  })
+})
+
+describe('academic supervision model', () => {
+  it('marks a patient at or above the risk threshold as needing an attending', () => {
+    expect(requiresAttending(patient({ riskScore: 2 }))).toBe(false)
+    expect(requiresAttending(patient({ riskScore: 3 }))).toBe(true)
+    expect(requiresAttending(patient({ riskScore: 4 }))).toBe(true)
+    expect(ATTENDING_RISK_THRESHOLD).toBe(3)
+  })
+
+  it('bars a resident from an acute patient but allows attending and staff', () => {
+    const acute = patient({ riskScore: 3 })
+    expect(isEligible(provider({ trainingLevel: 'resident' }), acute)).toBe(false)
+    expect(isEligible(provider({ trainingLevel: 'attending' }), acute)).toBe(true)
+    expect(isEligible(provider({ trainingLevel: 'staff' }), acute)).toBe(true)
+    expect(ineligibilityReason(provider({ trainingLevel: 'resident' }), acute)).toBe(UNMATCHED.SUPERVISION)
+  })
+
+  it('treats a provider with no training level as an independent non-trainee', () => {
+    // A non-academic clinic needs no extra config: undefined trainingLevel is ok.
+    expect(isEligible(provider({}), patient({ riskScore: 3 }))).toBe(true)
+  })
+
+  it('lets a resident see a non-acute patient', () => {
+    expect(isEligible(provider({ trainingLevel: 'resident' }), patient({ riskScore: 2 }))).toBe(true)
+  })
+
+  it('routes an acute patient to the attending, not the resident', () => {
+    const acute = patient({ id: 'acute', riskScore: 3, needs: { prescriber: true, therapy: false } })
+    const providers = [
+      provider({ id: 'res', credential: 'prescriber', trainingLevel: 'resident', capacity: 5 }),
+      provider({ id: 'att', credential: 'prescriber', trainingLevel: 'attending', capacity: 5 }),
+    ]
+    const r = assignCaseload([acute], providers)
+    expect(r.assignments[0].providerId).toBe('att')
+    expect(r.assignments[0].attendingRequired).toBe(true)
+    expect(r.assignments[0].trainingLevel).toBe('attending')
+  })
+
+  it('reports the supervision gap when only residents are available for an acute patient', () => {
+    const acute = patient({ riskScore: 4, needs: { prescriber: true, therapy: false } })
+    const r = assignCaseload([acute], [provider({ credential: 'prescriber', trainingLevel: 'resident', capacity: 3 })])
+    expect(r.summary.placed).toBe(0)
+    expect(r.unmatched[0].reason).toBe(UNMATCHED.SUPERVISION)
+    expect(reasonLabel(UNMATCHED.SUPERVISION)).toMatch(/attending/i)
   })
 })

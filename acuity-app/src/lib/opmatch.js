@@ -30,7 +30,9 @@ export const CREDENTIAL_ROLES = {
 export const UNMATCHED = {
   POPULATION: 'no-provider-for-population',
   CREDENTIAL: 'no-provider-for-required-role',
+  PROGRAM: 'no-provider-in-program',
   SPECIALTY: 'no-provider-with-specialty',
+  SUPERVISION: 'needs-attending-supervision',
   TELEHEALTH: 'no-telehealth-provider',
   CAPACITY: 'eligible-providers-all-at-capacity',
   NOT_OP: 'not-appropriate-for-outpatient',
@@ -39,7 +41,9 @@ export const UNMATCHED = {
 const REASON_LABEL = {
   [UNMATCHED.POPULATION]: 'No provider serves this patient’s population',
   [UNMATCHED.CREDENTIAL]: 'No provider can fill the required role (prescriber / therapy)',
+  [UNMATCHED.PROGRAM]: 'No provider staffs the recommended clinic / program',
   [UNMATCHED.SPECIALTY]: 'No provider carries the required specialty',
+  [UNMATCHED.SUPERVISION]: 'Too acute for a resident — needs an attending, and none is available',
   [UNMATCHED.TELEHEALTH]: 'Patient needs telehealth and no eligible provider offers it',
   [UNMATCHED.CAPACITY]: 'Eligible providers are all at capacity',
   [UNMATCHED.NOT_OP]: 'Screened above the outpatient level — needs a step-up referral',
@@ -47,6 +51,29 @@ const REASON_LABEL = {
 
 export function reasonLabel(code) {
   return REASON_LABEL[code] || code
+}
+
+// Academic / teaching model. A patient at or above this risk level is too acute
+// to be seen by a resident alone and must be routed to an attending (or an
+// independently-licensed non-trainee). Adjustable; risk 3 is the point at which
+// intent is present but the patient is still outpatient-appropriate — exactly
+// the "too acute for a trainee, not yet inpatient" band the academic model
+// exists for. A patient this rule targets who is NOT outpatient-appropriate has
+// already been routed to a step-up before matching.
+export const ATTENDING_RISK_THRESHOLD = 3
+
+// Provider training levels. 'staff' is an independently-licensed non-trainee
+// (e.g., a staff therapist or attending-equivalent); only 'resident' is barred
+// from acute patients. A provider with no training level set is treated as
+// 'staff', so a non-academic clinic needs no extra configuration.
+export const TRAINING_LEVELS = ['attending', 'fellow', 'staff', 'resident']
+
+export function requiresAttending(patient) {
+  return (Number(patient?.riskScore) || 0) >= ATTENDING_RISK_THRESHOLD
+}
+
+function isResident(provider) {
+  return provider.trainingLevel === 'resident'
 }
 
 /* --------------------------------------------------------------- normalizing */
@@ -79,6 +106,17 @@ function specialtyOverlap(provider, patient) {
   return { ok: matched.length === req.length, matched, count: matched.length }
 }
 
+// Which clinic / program the patient is routed to. Empty means unassigned, so
+// the program constraint does not apply — the feature is opt-in per patient.
+function offersProgram(provider, patient) {
+  if (!patient.program) return true
+  return (provider.programs || []).includes(patient.program)
+}
+
+function supervisionOk(provider, patient) {
+  return !requiresAttending(patient) || !isResident(provider)
+}
+
 /* -------------------------------------------------------------- eligibility */
 
 // Why (if at all) a provider cannot take a patient, as a specific reason code.
@@ -88,7 +126,9 @@ export function ineligibilityReason(provider, patient) {
   if (!servesPopulation(provider, patient.population)) return UNMATCHED.POPULATION
   const role = primaryRole(patient)
   if (!providerRoles(provider).includes(role)) return UNMATCHED.CREDENTIAL
+  if (!offersProgram(provider, patient)) return UNMATCHED.PROGRAM
   if (!specialtyOverlap(provider, patient).ok) return UNMATCHED.SPECIALTY
+  if (!supervisionOk(provider, patient)) return UNMATCHED.SUPERVISION
   if (patient.telehealthOnly && !provider.telehealth) return UNMATCHED.TELEHEALTH
   return null
 }
@@ -105,7 +145,12 @@ export function isEligible(provider, patient) {
 function bestUnmatchedReason(providers, patient) {
   const reasons = providers.map((p) => ineligibilityReason(p, patient))
   if (reasons.includes(null)) return UNMATCHED.CAPACITY
-  const order = [UNMATCHED.TELEHEALTH, UNMATCHED.SPECIALTY, UNMATCHED.CREDENTIAL, UNMATCHED.POPULATION]
+  // Most actionable / specific blocker first: a supervision or telehealth gap is
+  // a narrower fix than a whole missing program, specialty, role or population.
+  const order = [
+    UNMATCHED.SUPERVISION, UNMATCHED.TELEHEALTH, UNMATCHED.SPECIALTY,
+    UNMATCHED.PROGRAM, UNMATCHED.CREDENTIAL, UNMATCHED.POPULATION,
+  ]
   for (const code of order) if (reasons.includes(code)) return code
   return UNMATCHED.POPULATION
 }
@@ -203,6 +248,9 @@ export function assignCaseload(patients = [], providers = []) {
       role,
       specialtyMatched: overlap.matched,
       unmetRole,
+      program: patient.program || null,
+      attendingRequired: requiresAttending(patient),
+      trainingLevel: provider.trainingLevel || 'staff',
     })
   }
 

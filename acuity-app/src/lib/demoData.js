@@ -317,7 +317,12 @@ export function samplePatients() {
     { id: 'pt_f', name: 'Case F', population: 'adult', scores: { risk: 4, function: 3, comorbidity: 3, stress: 3, support: 3, engagement: 3 }, needs: { prescriber: true, therapy: true }, specialties: [], program: 'Medication management', telehealthOnly: false, urgencyDays: 1 },
     { id: 'pt_g', name: 'Case G', population: 'adolescent', scores: { risk: 2, function: 2, comorbidity: 2, stress: 3, support: 2, engagement: 2 }, needs: { prescriber: false, therapy: true }, specialties: ['adolescent'], program: 'Therapy only', telehealthOnly: false, urgencyDays: 8 },
   ]
-  return rows.map((r) => ({ ...r, demo: true, createdAt: Date.now() }))
+  // Presenting symptoms consistent with each case's recommended program.
+  const symptomsById = {
+    pt_a: ['depression', 'anxiety'], pt_b: ['substance'], pt_c: ['trauma'],
+    pt_d: ['depression'], pt_e: ['depression'], pt_f: ['psychosis'], pt_g: ['anxiety'],
+  }
+  return rows.map((r) => ({ ...r, symptoms: symptomsById[r.id] || [], demo: true, createdAt: Date.now() }))
 }
 
 export function buildSampleOutpatient() {

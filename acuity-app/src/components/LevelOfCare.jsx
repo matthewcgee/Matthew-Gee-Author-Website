@@ -7,6 +7,7 @@ import {
   anchorsFor, screenLevelOfCare, emptyScores, LEVELS,
 } from '../lib/loc.js'
 import { assignCaseload, reasonLabel, requiresAttending, TRAINING_LEVELS } from '../lib/opmatch.js'
+import { SYMPTOMS, recommendProgram } from '../lib/programs.js'
 import { buildSampleOutpatient } from '../lib/demoData.js'
 
 const PT_KEY = 'bhai:opPatients'
@@ -51,7 +52,11 @@ const num = (v, d = 0) => (v == null ? '—' : Number(v).toFixed(d))
 
 /* ------------------------------------------------------------- score control */
 
-function ScoreScale({ value, onChange, anchorText }) {
+// The scale is self-documenting: every level's definition is shown, with the
+// selected one emphasized, so a rater can see exactly what makes a reading a 4
+// versus a 3 on each standard. Each button also carries its definition as a
+// hover tooltip.
+function ScoreScale({ value, onChange, anchors }) {
   return (
     <div>
       <div style={{ display: 'flex', gap: 4 }}>
@@ -63,6 +68,7 @@ function ScoreScale({ value, onChange, anchorText }) {
               type="button"
               onClick={() => onChange(n)}
               aria-pressed={active}
+              title={`${n} — ${anchors[n - 1]}`}
               style={{
                 flex: 1,
                 padding: '7px 0',
@@ -80,9 +86,29 @@ function ScoreScale({ value, onChange, anchorText }) {
           )
         })}
       </div>
-      {anchorText && (
-        <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 5, lineHeight: 1.4 }}>{anchorText}</div>
-      )}
+      <div style={{ marginTop: 6, display: 'grid', gap: 2 }}>
+        {anchors.map((text, i) => {
+          const n = i + 1
+          const active = value === n
+          return (
+            <div
+              key={n}
+              onClick={() => onChange(n)}
+              style={{
+                display: 'grid', gridTemplateColumns: '1.1rem 1fr', gap: 6, alignItems: 'start',
+                fontSize: 11, lineHeight: 1.35, cursor: 'pointer',
+                color: active ? theme.text : theme.sub,
+                fontWeight: active ? 700 : 400,
+                background: active ? theme.accentSoft : 'transparent',
+                borderRadius: 5, padding: active ? '3px 5px' : '3px 5px',
+              }}
+            >
+              <span style={{ fontWeight: 700, color: active ? theme.accent : theme.sub, fontVariantNumeric: 'tabular-nums' }}>{n}</span>
+              <span>{text}</span>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -170,6 +196,7 @@ function ResultPanel({ result }) {
 function Screener({ onSave, programs }) {
   const [population, setPopulation] = useState('adult')
   const [scores, setScores] = useState(emptyScores)
+  const [symptoms, setSymptoms] = useState([])
   const [name, setName] = useState('')
   const [needs, setNeeds] = useState({ prescriber: false, therapy: true })
   const [specialties, setSpecialties] = useState([])
@@ -177,18 +204,27 @@ function Screener({ onSave, programs }) {
   const [urgencyDays, setUrgencyDays] = useState('')
   const [program, setProgram] = useState('')
   // Whether the clinician has hand-picked a program; until then it tracks the
-  // suggestion so it stays sensible as needs change.
+  // symptom-driven recommendation so it stays sensible as symptoms/needs change.
   const [programTouched, setProgramTouched] = useState(false)
 
   const anchors = anchorsFor(population)
   const result = useMemo(() => screenLevelOfCare(scores, { population }), [scores, population])
-  const suggestedProgram = suggestProgram(needs, programs)
+  const recommendation = useMemo(
+    () => recommendProgram({ symptoms, needs, programs }),
+    [symptoms, needs, programs]
+  )
+  // Fall back to the first configured program when the recommended concept has
+  // no matching clinic, so the selector always holds a valid option; the "no
+  // clinic configured" note below still surfaces the gap.
+  const suggestedProgram = recommendation.program || programs[0] || ''
   const activeProgram = programTouched && program ? program : suggestedProgram
   const needsAttending = requiresAttending({ riskScore: scores.risk })
 
   const setScore = (dim, n) => setScores((s) => ({ ...s, [dim]: n }))
   const toggleSpecialty = (s) =>
     setSpecialties((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))
+  const toggleSymptom = (id) =>
+    setSymptoms((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
 
   const save = () => {
     // No patient-identifying information is required. If no case label is
@@ -206,6 +242,7 @@ function Screener({ onSave, programs }) {
       riskScore: scores.risk,
       needs,
       specialties,
+      symptoms,
       program: activeProgram,
       telehealthOnly,
       urgencyDays: urgencyDays === '' ? 0 : Number(urgencyDays),
@@ -213,6 +250,7 @@ function Screener({ onSave, programs }) {
     })
     // reset for the next patient, keep population
     setScores(emptyScores())
+    setSymptoms([])
     setName('')
     setNeeds({ prescriber: false, therapy: true })
     setSpecialties([])
@@ -233,7 +271,7 @@ function Screener({ onSave, programs }) {
           </select>
         </Field>
 
-        <div style={{ marginTop: 14, display: 'grid', gap: 14 }}>
+        <div style={{ marginTop: 14, display: 'grid', gap: 16 }}>
           {DIMENSIONS.map((dim) => (
             <div key={dim}>
               <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 1 }}>{anchors[dim].label}</div>
@@ -241,10 +279,30 @@ function Screener({ onSave, programs }) {
               <ScoreScale
                 value={scores[dim]}
                 onChange={(n) => setScore(dim, n)}
-                anchorText={anchors[dim].anchors[scores[dim] - 1]}
+                anchors={anchors[dim].anchors}
               />
             </div>
           ))}
+        </div>
+
+        {/* Current symptoms — drive the clinic / program recommendation. */}
+        <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>Current symptoms</div>
+          <div style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
+            Check the presenting symptoms — these drive the recommended clinic / program on the right.
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {SYMPTOMS.map((s) => {
+              const on = symptoms.includes(s.id)
+              return (
+                <button key={s.id} type="button" onClick={() => toggleSymptom(s.id)} title={s.label}
+                  style={{ padding: '5px 11px', borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                    border: `1px solid ${on ? theme.accent : theme.border}`, background: on ? theme.accentSoft : theme.panel, color: on ? theme.accent : theme.sub }}>
+                  {s.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
@@ -308,8 +366,35 @@ function Screener({ onSave, programs }) {
               >
                 {programs.map((p) => <option key={p} value={p}>{p}</option>)}
               </select>
-              {!programTouched && (
-                <div style={{ fontSize: 11, color: theme.sub, marginTop: 4 }}>Suggested from the selected needs — change if indicated.</div>
+
+              {/* Why this program — the symptom evidence behind the suggestion. */}
+              {!programTouched && recommendation.source === 'symptoms' && (
+                <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 6, lineHeight: 1.45 }}>
+                  Suggested from symptoms: <strong style={{ color: theme.text }}>{recommendation.rationale.join(', ')}</strong>
+                  {recommendation.prescriberHint && <> · medication management typically indicated</>}
+                </div>
+              )}
+              {!programTouched && recommendation.source === 'needs' && (
+                <div style={{ fontSize: 11, color: theme.sub, marginTop: 4 }}>
+                  No symptoms checked yet — suggested from service needs. Add symptoms above for a targeted recommendation.
+                </div>
+              )}
+              {programTouched && (
+                <div style={{ fontSize: 11, color: theme.sub, marginTop: 4 }}>Clinician-selected.</div>
+              )}
+
+              {/* The engine has a strong suggestion but the site hasn't named a
+                  matching clinic — say so rather than silently pick another. */}
+              {!programTouched && recommendation.source === 'symptoms' && !recommendation.matched && (
+                <div style={{ fontSize: 11.5, color: '#8a6a10', background: '#e0b34118', borderRadius: 7, padding: '7px 9px', marginTop: 8, lineHeight: 1.45 }}>
+                  Symptoms point to <strong>{recommendation.conceptLabel}</strong>, but no clinic by that name is
+                  configured. Add one in the Caseload tab, or pick the closest fit above.
+                </div>
+              )}
+              {!programTouched && recommendation.secondary.length > 0 && (
+                <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 6 }}>
+                  Also consider: {recommendation.secondary.map((s) => s.program || s.label).join(', ')}
+                </div>
               )}
             </>
           )}
@@ -624,7 +709,7 @@ export default function LevelOfCare() {
       return {
         id: r.id, name: r.name, population: r.population, scores: r.scores,
         level: res.level.id, levelLabel: res.level.label, opAppropriate: res.opAppropriate,
-        riskScore: r.scores.risk, needs: r.needs, specialties: r.specialties,
+        riskScore: r.scores.risk, needs: r.needs, specialties: r.specialties, symptoms: r.symptoms,
         program: r.program, telehealthOnly: r.telehealthOnly, urgencyDays: r.urgencyDays, createdAt: r.createdAt,
       }
     })

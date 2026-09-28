@@ -210,6 +210,22 @@ Caseload tab and stored under `bhai:opPrograms` — so a site can name its own
 programs. A provider is tagged with the programs they staff, and a patient's
 recommended program is a hard matching constraint.
 
+**Symptom-driven program recommendation.** The screen also carries a current-
+symptoms checklist (depressed mood, trauma/PTSD, active substance use, disordered
+eating, psychotic symptoms, treatment-resistant depression, catatonia, perinatal
+onset, and more). Each symptom points at a program *concept*, and the concept is
+matched to whatever clinics the site has actually named — by keyword, so
+"Neuromodulation", "TMS/ECT clinic" and "Interventional psychiatry" all satisfy
+the neuromodulation concept. The most specialized concept wins (treatment-
+resistant depression → Neuromodulation over plain depression → Therapy), the
+driving symptoms are shown as the rationale, and when no configured clinic
+matches the recommended concept the screen says so rather than guessing. The
+logic is in `src/lib/programs.js` and is fully overridable by the clinician.
+
+**Rating definitions are shown, not hidden.** Every dimension displays all five
+anchor definitions with the selected level highlighted, so a rater sees exactly
+what makes a reading a 4 versus a 3 on each standard.
+
 **Academic / teaching model.** Providers carry a training level (attending,
 fellow, staff, resident). A patient at or above a risk threshold
 (`ATTENDING_RISK_THRESHOLD` in `opmatch.js`, default 3 — acute but still

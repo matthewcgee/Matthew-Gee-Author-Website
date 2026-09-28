@@ -26,4 +26,19 @@ describe('AcuiPath renders', () => {
     const html = renderToString(<LevelOfCare />)
     expect(html).toContain('Recommended clinic / program')
   })
+
+  it('shows what each rating means — all five anchor definitions per dimension', () => {
+    const html = renderToString(<LevelOfCare />)
+    // the level-4 risk anchor is visible even though the fresh screen is at 1
+    expect(html).toContain('Active ideation with plan or means')
+    // and the level-5 anchor too
+    expect(html).toContain('Imminent risk: plan and intent')
+  })
+
+  it('shows a current-symptoms checklist that drives the program recommendation', () => {
+    const html = renderToString(<LevelOfCare />)
+    expect(html).toContain('Current symptoms')
+    expect(html).toMatch(/Treatment-resistant depression/)
+    expect(html).toMatch(/Disordered eating/)
+  })
 })

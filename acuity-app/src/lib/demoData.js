@@ -276,3 +276,38 @@ export function buildSampleData(opts = {}) {
     meta: scenario.meta,
   }
 }
+
+/* ------------------------------------------------------- outpatient sample ---
+ * A small outpatient caseload and provider panel for exploring the Level of
+ * Care module. Screened patients carry the six dimension scores so the screener
+ * reproduces their recommended level exactly; the mix is deliberate — some
+ * clearly outpatient, some needing a step-up, one telehealth-only, and a
+ * specialty (trauma) with tight capacity so the assignment surfaces a gap.
+ */
+
+export function sampleProviders() {
+  return [
+    { id: 'prov_rivera', name: 'Dr. Rivera', credential: 'prescriber', population: 'adult', specialties: ['general', 'sud'], telehealth: true, capacity: 3, demo: true },
+    { id: 'prov_shah', name: 'A. Shah, LCSW', credential: 'therapist', population: 'adult', specialties: ['trauma', 'general'], telehealth: true, capacity: 2, demo: true },
+    { id: 'prov_bynum', name: 'Dr. Bynum', credential: 'both', population: 'both', specialties: ['general'], telehealth: false, capacity: 2, demo: true },
+    { id: 'prov_ellis', name: 'J. Ellis, LPC', credential: 'therapist', population: 'adolescent', specialties: ['adolescent', 'general'], telehealth: true, capacity: 3, demo: true },
+  ]
+}
+
+// Each patient's dimension scores are chosen to land on the intended level.
+export function samplePatients() {
+  const rows = [
+    { id: 'pt_ac', name: 'A.C.', population: 'adult', scores: { risk: 2, function: 2, comorbidity: 2, stress: 2, support: 2, engagement: 2 }, needs: { prescriber: false, therapy: true }, specialties: [], telehealthOnly: false, urgencyDays: 6 },
+    { id: 'pt_dm', name: 'D.M.', population: 'adult', scores: { risk: 2, function: 3, comorbidity: 3, stress: 3, support: 3, engagement: 2 }, needs: { prescriber: true, therapy: true }, specialties: ['sud'], telehealthOnly: false, urgencyDays: 12 },
+    { id: 'pt_tk', name: 'T.K.', population: 'adult', scores: { risk: 3, function: 3, comorbidity: 2, stress: 3, support: 3, engagement: 3 }, needs: { prescriber: false, therapy: true }, specialties: ['trauma'], telehealthOnly: false, urgencyDays: 20 },
+    { id: 'pt_rl', name: 'R.L.', population: 'adult', scores: { risk: 2, function: 2, comorbidity: 2, stress: 2, support: 3, engagement: 2 }, needs: { prescriber: true, therapy: false }, specialties: [], telehealthOnly: true, urgencyDays: 3 },
+    { id: 'pt_sv', name: 'S.V.', population: 'adult', scores: { risk: 4, function: 3, comorbidity: 3, stress: 3, support: 3, engagement: 3 }, needs: { prescriber: true, therapy: true }, specialties: [], telehealthOnly: false, urgencyDays: 1 },
+    { id: 'pt_jp', name: 'J.P.', population: 'adolescent', scores: { risk: 2, function: 2, comorbidity: 2, stress: 3, support: 2, engagement: 2 }, needs: { prescriber: false, therapy: true }, specialties: ['adolescent'], telehealthOnly: false, urgencyDays: 8 },
+    { id: 'pt_mn', name: 'M.N.', population: 'adolescent', scores: { risk: 3, function: 3, comorbidity: 2, stress: 4, support: 3, engagement: 3 }, needs: { prescriber: false, therapy: true }, specialties: ['trauma', 'adolescent'], telehealthOnly: false, urgencyDays: 15 },
+  ]
+  return rows.map((r) => ({ ...r, demo: true, createdAt: Date.now() }))
+}
+
+export function buildSampleOutpatient() {
+  return { providers: sampleProviders(), patients: samplePatients() }
+}

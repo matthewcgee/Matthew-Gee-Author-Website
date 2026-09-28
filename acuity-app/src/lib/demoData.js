@@ -285,29 +285,41 @@ export function buildSampleData(opts = {}) {
  * specialty (trauma) with tight capacity so the assignment surfaces a gap.
  */
 
+export const SAMPLE_PROGRAMS = [
+  'Therapy only', 'Medication management', 'Neuromodulation',
+  'Substance use program', 'Eating disorders program',
+]
+
+// Providers carry a training level (academic model) and the clinics/programs
+// they staff. Dr. Okoro is a resident, so acute patients must route around
+// them to an attending — the teaching-model behavior.
 export function sampleProviders() {
   return [
-    { id: 'prov_rivera', name: 'Dr. Rivera', credential: 'prescriber', population: 'adult', specialties: ['general', 'sud'], telehealth: true, capacity: 3, demo: true },
-    { id: 'prov_shah', name: 'A. Shah, LCSW', credential: 'therapist', population: 'adult', specialties: ['trauma', 'general'], telehealth: true, capacity: 2, demo: true },
-    { id: 'prov_bynum', name: 'Dr. Bynum', credential: 'both', population: 'both', specialties: ['general'], telehealth: false, capacity: 2, demo: true },
-    { id: 'prov_ellis', name: 'J. Ellis, LPC', credential: 'therapist', population: 'adolescent', specialties: ['adolescent', 'general'], telehealth: true, capacity: 3, demo: true },
+    { id: 'prov_rivera', name: 'Dr. Rivera', credential: 'prescriber', population: 'adult', trainingLevel: 'attending', specialties: ['general', 'sud'], programs: ['Medication management', 'Substance use program', 'Neuromodulation'], telehealth: true, capacity: 3, demo: true },
+    { id: 'prov_okoro', name: 'Dr. Okoro', credential: 'prescriber', population: 'adult', trainingLevel: 'resident', specialties: ['general'], programs: ['Medication management'], telehealth: true, capacity: 2, demo: true },
+    { id: 'prov_shah', name: 'A. Shah, LCSW', credential: 'therapist', population: 'adult', trainingLevel: 'staff', specialties: ['trauma', 'general'], programs: ['Therapy only'], telehealth: true, capacity: 2, demo: true },
+    { id: 'prov_bynum', name: 'Dr. Bynum', credential: 'both', population: 'both', trainingLevel: 'attending', specialties: ['general'], programs: ['Medication management', 'Therapy only'], telehealth: false, capacity: 2, demo: true },
+    { id: 'prov_ellis', name: 'J. Ellis, LPC', credential: 'therapist', population: 'adolescent', trainingLevel: 'staff', specialties: ['adolescent', 'general'], programs: ['Therapy only'], telehealth: true, capacity: 3, demo: true },
   ]
 }
 
-// Each patient's dimension scores are chosen to land on the intended level.
+// De-identified case labels — no names or MRNs. Dimension scores are chosen to
+// land on the intended level; the mix is deliberate: some clearly outpatient,
+// some needing a step-up, one telehealth-only, and one acute-but-outpatient
+// case (Case E) that must route to an attending rather than the resident.
 export function samplePatients() {
   const rows = [
-    { id: 'pt_ac', name: 'A.C.', population: 'adult', scores: { risk: 2, function: 2, comorbidity: 2, stress: 2, support: 2, engagement: 2 }, needs: { prescriber: false, therapy: true }, specialties: [], telehealthOnly: false, urgencyDays: 6 },
-    { id: 'pt_dm', name: 'D.M.', population: 'adult', scores: { risk: 2, function: 3, comorbidity: 3, stress: 3, support: 3, engagement: 2 }, needs: { prescriber: true, therapy: true }, specialties: ['sud'], telehealthOnly: false, urgencyDays: 12 },
-    { id: 'pt_tk', name: 'T.K.', population: 'adult', scores: { risk: 3, function: 3, comorbidity: 2, stress: 3, support: 3, engagement: 3 }, needs: { prescriber: false, therapy: true }, specialties: ['trauma'], telehealthOnly: false, urgencyDays: 20 },
-    { id: 'pt_rl', name: 'R.L.', population: 'adult', scores: { risk: 2, function: 2, comorbidity: 2, stress: 2, support: 3, engagement: 2 }, needs: { prescriber: true, therapy: false }, specialties: [], telehealthOnly: true, urgencyDays: 3 },
-    { id: 'pt_sv', name: 'S.V.', population: 'adult', scores: { risk: 4, function: 3, comorbidity: 3, stress: 3, support: 3, engagement: 3 }, needs: { prescriber: true, therapy: true }, specialties: [], telehealthOnly: false, urgencyDays: 1 },
-    { id: 'pt_jp', name: 'J.P.', population: 'adolescent', scores: { risk: 2, function: 2, comorbidity: 2, stress: 3, support: 2, engagement: 2 }, needs: { prescriber: false, therapy: true }, specialties: ['adolescent'], telehealthOnly: false, urgencyDays: 8 },
-    { id: 'pt_mn', name: 'M.N.', population: 'adolescent', scores: { risk: 3, function: 3, comorbidity: 2, stress: 4, support: 3, engagement: 3 }, needs: { prescriber: false, therapy: true }, specialties: ['trauma', 'adolescent'], telehealthOnly: false, urgencyDays: 15 },
+    { id: 'pt_a', name: 'Case A', population: 'adult', scores: { risk: 2, function: 2, comorbidity: 2, stress: 2, support: 2, engagement: 2 }, needs: { prescriber: false, therapy: true }, specialties: [], program: 'Therapy only', telehealthOnly: false, urgencyDays: 6 },
+    { id: 'pt_b', name: 'Case B', population: 'adult', scores: { risk: 2, function: 3, comorbidity: 3, stress: 3, support: 3, engagement: 2 }, needs: { prescriber: true, therapy: false }, specialties: ['sud'], program: 'Substance use program', telehealthOnly: false, urgencyDays: 12 },
+    { id: 'pt_c', name: 'Case C', population: 'adult', scores: { risk: 3, function: 3, comorbidity: 2, stress: 3, support: 3, engagement: 3 }, needs: { prescriber: false, therapy: true }, specialties: ['trauma'], program: 'Therapy only', telehealthOnly: false, urgencyDays: 20 },
+    { id: 'pt_d', name: 'Case D', population: 'adult', scores: { risk: 2, function: 2, comorbidity: 2, stress: 2, support: 3, engagement: 2 }, needs: { prescriber: true, therapy: false }, specialties: [], program: 'Medication management', telehealthOnly: true, urgencyDays: 3 },
+    { id: 'pt_e', name: 'Case E', population: 'adult', scores: { risk: 3, function: 3, comorbidity: 2, stress: 2, support: 2, engagement: 2 }, needs: { prescriber: true, therapy: false }, specialties: [], program: 'Medication management', telehealthOnly: false, urgencyDays: 9 },
+    { id: 'pt_f', name: 'Case F', population: 'adult', scores: { risk: 4, function: 3, comorbidity: 3, stress: 3, support: 3, engagement: 3 }, needs: { prescriber: true, therapy: true }, specialties: [], program: 'Medication management', telehealthOnly: false, urgencyDays: 1 },
+    { id: 'pt_g', name: 'Case G', population: 'adolescent', scores: { risk: 2, function: 2, comorbidity: 2, stress: 3, support: 2, engagement: 2 }, needs: { prescriber: false, therapy: true }, specialties: ['adolescent'], program: 'Therapy only', telehealthOnly: false, urgencyDays: 8 },
   ]
   return rows.map((r) => ({ ...r, demo: true, createdAt: Date.now() }))
 }
 
 export function buildSampleOutpatient() {
-  return { providers: sampleProviders(), patients: samplePatients() }
+  return { providers: sampleProviders(), patients: samplePatients(), programs: SAMPLE_PROGRAMS }
 }

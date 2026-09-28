@@ -115,6 +115,19 @@ const ICON_PATHS = {
       <path d="M12 10v4M12 16.5h.01" />
     </>
   ),
+  layers: (
+    <>
+      <path d="M12 3l9 5-9 5-9-5 9-5z" />
+      <path d="M3 13l9 5 9-5" />
+    </>
+  ),
+  route: (
+    <>
+      <circle cx="6" cy="19" r="2.4" />
+      <circle cx="18" cy="5" r="2.4" />
+      <path d="M8.4 19H14a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.6" />
+    </>
+  ),
 }
 
 export function Icon({ name, size = 18, strokeWidth = 2, style }) {

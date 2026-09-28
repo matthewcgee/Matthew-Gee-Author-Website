@@ -186,6 +186,57 @@ the first one or two.
 - "Act on next shift" optimizes against the *forecast* rather than the current
   reading — moving staff before the surge lands.
 
+### The Level of Care module (outpatient)
+
+A second tab, **Level of Care**, extends Acuitas from inpatient units to the
+outpatient continuum. It answers two questions:
+
+1. **Is this patient appropriate for the outpatient setting?** A screener scores
+   six clinical dimensions (risk of harm, functional status, co-occurring
+   complexity, environmental stress, support availability, treatment history &
+   engagement) 1-5 for an adult or an adolescent, and recommends a level of care
+   along the continuum: self-management, Outpatient, IOP, PHP, residential, or
+   acute inpatient.
+2. **Who should see whom?** An assignment view matches the outpatient-appropriate
+   caseload to providers by role (prescriber / therapist), specialty, telehealth,
+   and open capacity, placing the most urgent patients first and reporting every
+   patient it could not place with the reason.
+
+Two files carry the logic, both pure functions with no network use:
+
+| File | Responsibility |
+|---|---|
+| `src/lib/loc.js` | Level-of-care screening, band mapping, and the safety net |
+| `src/lib/opmatch.js` | Outpatient patient-to-provider assignment |
+
+**The safety net is the most important property.** A tool that only summed its
+dimensions could route a patient with imminent suicide risk to "outpatient" if
+the other five dimensions were mild. `loc.js` applies safety *floors*: an acute
+single-dimension risk sets a minimum level the recommendation can exceed but
+never fall below, and each floor is shown to the clinician with its reason. This
+is covered heavily by tests.
+
+**What it is not.** This is decision support a licensed clinician confirms or
+overrides — never an autonomous determination. It is aligned to the concepts
+behind LOCUS, CASII and ASAM, but it is an **original, unvalidated** scale: it
+does not reproduce those copyrighted instruments and does not replace them where
+a payer or regulation requires the real tool. The band cut points are a
+transparent starting calibration, adjustable in `loc.js`, not empirically fitted.
+The app states this on the screen.
+
+**Data storage.** Outpatient patients and the provider panel are kept in the
+browser's local storage (keys `bhai:opPatients`, `bhai:opProviders`) and are not
+yet synced through the backend the way inpatient data is. For a shared,
+multi-user outpatient deployment this would move to the same backend pattern.
+
+The assignment engine is an honest **priority heuristic**, not a proven optimum
+like the inpatient staff optimizer — outpatient matching trades off soft goals
+(specialty fit, panel balance, continuity) with no single correct objective, so
+it enforces the hard constraints exactly and prioritizes transparently rather
+than claiming global optimality.
+
+---
+
 ### Privacy posture
 
 There is **no external model service, no vendor AI API, and no patient data in

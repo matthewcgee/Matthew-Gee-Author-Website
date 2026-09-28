@@ -17,11 +17,13 @@ import SettingsLock from './components/SettingsLock.jsx'
 import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import CommandCenter from './components/CommandCenter.jsx'
+import LevelOfCare from './components/LevelOfCare.jsx'
 import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
   { id: 'command', label: 'Command Center', icon: 'trendUp' },
+  { id: 'levelofcare', label: 'Level of Care', icon: 'route' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
@@ -500,6 +502,7 @@ export default function App() {
             {tab === 'command' && (
               <CommandCenter locations={locations} entries={entries} thresholds={thresholds} caps={caps} />
             )}
+            {tab === 'levelofcare' && <LevelOfCare />}
             {tab === 'entry' && (
               <ShiftEntryForm
                 locations={locations}

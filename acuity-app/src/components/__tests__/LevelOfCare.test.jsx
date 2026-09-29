@@ -14,25 +14,26 @@ describe('AcuiPath renders', () => {
     expect(html).toContain('No patient-identifying information is required')
   })
 
-  it('opens on the screener with all six dimensions', () => {
+  it('opens on the Tier 1 nurse chart review', () => {
     const html = renderToString(<LevelOfCare />)
-    expect(html).toContain('Risk of harm')
-    expect(html).toContain('Recommended level of care')
-    // an all-minimal fresh screen sits below outpatient
-    expect(html).toMatch(/BELOW OP THRESHOLD/)
+    expect(html).toContain('Tier 1 — nurse chart review')
+    // a fresh, unchecked chart review is a clean review — eligible for a direct
+    // placement and offering the escalation path.
+    expect(html).toContain('Eligible for direct placement')
+    expect(html).toContain('Continue to in-depth screen')
   })
 
-  it('shows the prominent recommended clinic / program and the programs list', () => {
+  it('shows the prominent recommended clinic / program on the Tier 1 view', () => {
     const html = renderToString(<LevelOfCare />)
     expect(html).toContain('Recommended clinic / program')
   })
 
-  it('shows what each rating means — all five anchor definitions per dimension', () => {
+  it('lists the editable Tier 1 red-flag triggers on the entry view', () => {
     const html = renderToString(<LevelOfCare />)
-    // the level-4 risk anchor is visible even though the fresh screen is at 1
-    expect(html).toContain('Active ideation with plan or means')
-    // and the level-5 anchor too
-    expect(html).toContain('Imminent risk: plan and intent')
+    expect(html).toContain('Chart-review red flags')
+    // a couple of the default triggers by their wording
+    expect(html).toMatch(/Active substance use or withdrawal risk/)
+    expect(html).toMatch(/Forensic, court-ordered, or guardianship/)
   })
 
   it('shows a current-symptoms checklist that drives the program recommendation', () => {

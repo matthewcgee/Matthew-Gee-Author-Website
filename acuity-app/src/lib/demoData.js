@@ -295,11 +295,11 @@ export const SAMPLE_PROGRAMS = [
 // them to an attending — the teaching-model behavior.
 export function sampleProviders() {
   return [
-    { id: 'prov_rivera', name: 'Dr. Rivera', credential: 'prescriber', population: 'adult', trainingLevel: 'attending', specialties: ['general', 'sud'], programs: ['Medication management', 'Substance use program', 'Neuromodulation'], telehealth: true, capacity: 3, demo: true },
-    { id: 'prov_okoro', name: 'Dr. Okoro', credential: 'prescriber', population: 'adult', trainingLevel: 'resident', specialties: ['general'], programs: ['Medication management'], telehealth: true, capacity: 2, demo: true },
-    { id: 'prov_shah', name: 'A. Shah, LCSW', credential: 'therapist', population: 'adult', trainingLevel: 'staff', specialties: ['trauma', 'general'], programs: ['Therapy only'], telehealth: true, capacity: 2, demo: true },
-    { id: 'prov_bynum', name: 'Dr. Bynum', credential: 'both', population: 'both', trainingLevel: 'attending', specialties: ['general'], programs: ['Medication management', 'Therapy only'], telehealth: false, capacity: 2, demo: true },
-    { id: 'prov_ellis', name: 'J. Ellis, LPC', credential: 'therapist', population: 'adolescent', trainingLevel: 'staff', specialties: ['adolescent', 'general'], programs: ['Therapy only'], telehealth: true, capacity: 3, demo: true },
+    { id: 'prov_rivera', name: 'Dr. Rivera', credential: 'prescriber', population: 'adult', trainingLevel: 'attending', specialties: ['general', 'sud'], programs: ['Medication management', 'Substance use program', 'Neuromodulation'], telehealth: true, capacity: 3, panelLoad: 4, demo: true },
+    { id: 'prov_okoro', name: 'Dr. Okoro', credential: 'prescriber', population: 'adult', trainingLevel: 'resident', specialties: ['general'], programs: ['Medication management'], telehealth: true, capacity: 2, panelLoad: 1, demo: true },
+    { id: 'prov_shah', name: 'A. Shah, LCSW', credential: 'therapist', population: 'adult', trainingLevel: 'staff', specialties: ['trauma', 'general'], programs: ['Therapy only'], telehealth: true, capacity: 2, panelLoad: 3, demo: true },
+    { id: 'prov_bynum', name: 'Dr. Bynum', credential: 'both', population: 'both', trainingLevel: 'attending', specialties: ['general'], programs: ['Medication management', 'Therapy only'], telehealth: false, capacity: 2, panelLoad: 2, demo: true },
+    { id: 'prov_ellis', name: 'J. Ellis, LPC', credential: 'therapist', population: 'adolescent', trainingLevel: 'staff', specialties: ['adolescent', 'general'], programs: ['Therapy only'], telehealth: true, capacity: 3, panelLoad: 1, demo: true },
   ]
 }
 

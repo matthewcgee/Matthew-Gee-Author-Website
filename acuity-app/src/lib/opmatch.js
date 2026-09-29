@@ -36,6 +36,7 @@ export const UNMATCHED = {
   TELEHEALTH: 'no-telehealth-provider',
   CAPACITY: 'eligible-providers-all-at-capacity',
   NOT_OP: 'not-appropriate-for-outpatient',
+  ACUTE: 'acute-urgent-evaluation',
 }
 
 const REASON_LABEL = {
@@ -47,6 +48,7 @@ const REASON_LABEL = {
   [UNMATCHED.TELEHEALTH]: 'Patient needs telehealth and no eligible provider offers it',
   [UNMATCHED.CAPACITY]: 'Eligible providers are all at capacity',
   [UNMATCHED.NOT_OP]: 'Screened above the outpatient level — needs a step-up referral',
+  [UNMATCHED.ACUTE]: 'Acute — not routine outpatient; needs urgent / same-day evaluation',
 }
 
 export function reasonLabel(code) {
@@ -68,8 +70,22 @@ export const ATTENDING_RISK_THRESHOLD = 3
 // 'staff', so a non-academic clinic needs no extra configuration.
 export const TRAINING_LEVELS = ['attending', 'fellow', 'staff', 'resident']
 
+// The attending determination is now made by the screen (loc.js), from a
+// configurable complexity rule, and stored on the patient. When that flag is
+// present it governs; otherwise fall back to the risk-based rule so older
+// records and direct callers still work.
 export function requiresAttending(patient) {
+  if (typeof patient?.requiresAttending === 'boolean') return patient.requiresAttending
   return (Number(patient?.riskScore) || 0) >= ATTENDING_RISK_THRESHOLD
+}
+
+// A case belongs in routine outpatient routing unless it was pulled out for
+// acute safety. A PHP/IOP advisory does NOT exclude it — it is routed with the
+// advisory attached. Back-compat: records without the new flag fall back to the
+// old opAppropriate signal.
+export function isRoutable(patient) {
+  if (typeof patient?.routableOutpatient === 'boolean') return patient.routableOutpatient
+  return patient?.opAppropriate !== false
 }
 
 function isResident(provider) {
@@ -176,12 +192,16 @@ function compareUrgency(a, b) {
 }
 
 // Among eligible providers with capacity, the best fit: strongest specialty
-// overlap first, then the most remaining capacity (load-balancing keeps access
-// open across the panel), then a stable name/id tiebreak.
-function pickProvider(eligible, patient, remaining) {
+// overlap first (clinical fit leads), then the LEAST-loaded provider so patients
+// are distributed evenly, then most remaining capacity, then a stable tiebreak.
+// `load` is each provider's total patient count — existing panel plus what this
+// run has already assigned — which is what "equal distribution" balances on.
+function pickProvider(eligible, patient, remaining, load) {
   return eligible
-    .map((p) => ({ p, spec: specialtyOverlap(p, patient).count, cap: remaining[p.id] }))
-    .sort((a, b) => (b.spec - a.spec) || (b.cap - a.cap) || String(a.p.id).localeCompare(String(b.p.id)))
+    .map((p) => ({ p, spec: specialtyOverlap(p, patient).count, load: load[p.id], cap: remaining[p.id] }))
+    .sort((a, b) =>
+      (b.spec - a.spec) || (a.load - b.load) || (b.cap - a.cap) || String(a.p.id).localeCompare(String(b.p.id))
+    )
     [0]?.p || null
 }
 
@@ -199,16 +219,21 @@ function pickProvider(eligible, patient, remaining) {
 export function assignCaseload(patients = [], providers = []) {
   const remaining = Object.fromEntries(providers.map((p) => [p.id, Math.max(0, Math.floor(p.capacity) || 0)]))
   const totalCapacity = Object.values(remaining).reduce((s, c) => s + c, 0)
+  // Running patient load per provider = existing panel size + assignments made
+  // this run. Balancing on this spreads new patients to the least-loaded.
+  const load = Object.fromEntries(providers.map((p) => [p.id, Math.max(0, Math.floor(p.panelLoad) || 0)]))
+  const baseLoad = { ...load }
+  const assignedCount = Object.fromEntries(providers.map((p) => [p.id, 0]))
 
-  // Only outpatient-appropriate patients are matched here; the rest are reported
-  // so they are not silently dropped from the caseload.
+  // Acute-safety cases are pulled from routine outpatient routing; everyone else
+  // is a candidate. A PHP/IOP advisory does NOT exclude a patient here.
   const eligiblePatients = []
   const assignments = []
   const unmatched = []
 
   for (const patient of patients) {
-    if (!patient.opAppropriate) {
-      unmatched.push({ patientId: patient.id, patient, reason: UNMATCHED.NOT_OP, reasonLabel: reasonLabel(UNMATCHED.NOT_OP) })
+    if (!isRoutable(patient)) {
+      unmatched.push({ patientId: patient.id, patient, reason: UNMATCHED.ACUTE, reasonLabel: reasonLabel(UNMATCHED.ACUTE) })
     } else {
       eligiblePatients.push(patient)
     }
@@ -218,7 +243,7 @@ export function assignCaseload(patients = [], providers = []) {
 
   for (const patient of eligiblePatients) {
     const eligible = providers.filter((p) => isEligible(p, patient) && remaining[p.id] > 0)
-    const provider = pickProvider(eligible, patient, remaining)
+    const provider = pickProvider(eligible, patient, remaining, load)
 
     if (!provider) {
       unmatched.push({
@@ -231,6 +256,8 @@ export function assignCaseload(patients = [], providers = []) {
     }
 
     remaining[provider.id] -= 1
+    load[provider.id] += 1
+    assignedCount[provider.id] += 1
     const overlap = specialtyOverlap(provider, patient)
     const role = primaryRole(patient)
     // The patient needs both prescribing and therapy, but this provider covers
@@ -255,18 +282,51 @@ export function assignCaseload(patients = [], providers = []) {
   }
 
   const placed = assignments.length
+
+  // Per-provider distribution, for equal-distribution oversight. `load` is the
+  // total after this run (panel + assigned); `assigned` is just this run.
+  const distribution = providers.map((p) => ({
+    id: p.id,
+    name: p.name,
+    trainingLevel: p.trainingLevel || 'staff',
+    baseLoad: baseLoad[p.id],
+    assigned: assignedCount[p.id],
+    load: load[p.id],
+    capacity: Math.max(0, Math.floor(p.capacity) || 0),
+    remaining: remaining[p.id],
+  }))
+
+  // Spread of load within each training group — a quick fairness read.
+  const byGroup = {}
+  for (const d of distribution) {
+    const g = d.trainingLevel === 'resident' ? 'resident' : d.trainingLevel === 'attending' ? 'attending' : 'staff'
+    if (!byGroup[g]) byGroup[g] = { providers: 0, assigned: 0, load: 0, min: Infinity, max: 0 }
+    byGroup[g].providers += 1
+    byGroup[g].assigned += d.assigned
+    byGroup[g].load += d.load
+    byGroup[g].min = Math.min(byGroup[g].min, d.load)
+    byGroup[g].max = Math.max(byGroup[g].max, d.load)
+  }
+  for (const g of Object.values(byGroup)) {
+    if (g.min === Infinity) g.min = 0
+    g.spread = g.max - g.min // 0 = perfectly even
+  }
+
   return {
     assignments,
     unmatched,
+    distribution,
     summary: {
       patients: patients.length,
       outpatientCandidates: eligiblePatients.length,
       placed,
       unplaced: unmatched.length,
+      acute: unmatched.filter((u) => u.reason === UNMATCHED.ACUTE).length,
       needStepUp: unmatched.filter((u) => u.reason === UNMATCHED.NOT_OP).length,
       capacityGap: unmatched.filter((u) => u.reason === UNMATCHED.CAPACITY).length,
       remainingCapacity: Object.values(remaining).reduce((s, c) => s + c, 0),
       totalCapacity,
+      loadByGroup: byGroup,
     },
     remaining,
   }

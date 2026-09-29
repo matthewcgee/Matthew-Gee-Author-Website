@@ -189,19 +189,51 @@ the first one or two.
 ### AcuiPath™ — the outpatient module
 
 A second tab, **AcuiPath™**, extends Acuitas from inpatient units to the
-outpatient continuum. It answers two questions:
+outpatient continuum. Screening is **two-tier**, mirroring how intake actually
+works:
 
-1. **Is this patient appropriate for the outpatient setting?** A screener scores
-   six clinical dimensions (risk of harm, functional status, co-occurring
+1. **Tier 1 — nurse chart review (no patient contact).** A quick, conservative
+   pass over the chart against an **editable list of red-flag triggers**
+   (documented risk, recent hospitalization, active substance use, diagnostic
+   uncertainty, forensic involvement, and so on). A completely clean review can
+   be **placed directly** into a clinic and bypasses the deeper screen; **any one
+   flag escalates** to Tier 2. The asymmetry is deliberate — over-referring to
+   the in-depth screen is safe, under-referring is not. The trigger list is
+   org-configurable, edited in the Caseload tab and stored under
+   `bhai:apTier1Triggers`. Logic lives in `src/lib/tier1.js`.
+2. **Tier 2 — in-depth screen (with a phone screen / patient discussion).** The
+   full six-dimension screen (risk of harm, functional status, co-occurring
    complexity, environmental stress, support availability, treatment history &
-   engagement) 1-5 for an adult or an adolescent, and recommends a level of care
-   along the continuum: self-management, Outpatient, IOP, PHP, residential, or
-   acute inpatient.
-2. **Who should see whom?** An assignment view matches the outpatient-appropriate
-   caseload to providers by role (prescriber / therapist), **clinic/program**,
-   specialty, telehealth, **supervision level**, and open capacity, placing the
-   most urgent patients first and reporting every patient it could not place with
-   the reason.
+   engagement), scored 1–5 for an adult or adolescent, plus a manual
+   "diagnostic / treatment complexity" flag. It produces the operational outputs
+   below.
+3. **Who should see whom?** An assignment view matches the routable caseload to
+   providers by role (prescriber / therapist), **clinic/program**, specialty,
+   telehealth, **supervision level**, and open capacity, placing the most urgent
+   patients first and reporting every patient it could not place with the reason.
+
+**What the screen decides — and what it does not.** Per the intended design, the
+screen decides only **(a) which outpatient clinic** the patient is routed to and
+**(b) whether an attending must be the primary treating physician** (vs. a
+resident being eligible). It deliberately **does not** screen patients into PHP
+or IOP on complexity. PHP/IOP is surfaced **only as an advisory** when the overall
+acuity composite crosses an adjustable threshold — never an automatic placement;
+clinic routing still applies. A separate **acute-safety guard** (risk at/above an
+adjustable threshold) pulls a case out of routine outpatient for urgent/same-day
+evaluation; this is a safety floor, kept distinct from complexity routing.
+
+**Adjustable thresholds.** The operational cut points are editable in the Caseload
+tab (stored under `bhai:apThresholds`, defaults in `DEFAULT_AP_THRESHOLDS` in
+`loc.js`): the risk and comorbidity levels that require an attending, the
+manual-complexity flag, the acute-safety risk level, and the PHP/IOP advisory
+composite. A service tunes these without a code change.
+
+**Load balancing for equal distribution.** Each provider carries a current panel
+size (`panelLoad`), and the assignment engine balances new patients toward the
+**least-loaded** provider — measured on total load (existing panel + assigned this
+run) — so patients spread evenly. The Caseload tab shows a **load-distribution
+view**: per-provider bars (current panel vs. newly assigned) and a per-group
+fairness read (attendings / staff / residents) with the load spread in each group.
 
 **Clinic / program routing.** Each screen prominently recommends which clinic or
 program the patient should go to (Therapy only, Medication management,
@@ -227,22 +259,27 @@ anchor definitions with the selected level highlighted, so a rater sees exactly
 what makes a reading a 4 versus a 3 on each standard.
 
 **Academic / teaching model.** Providers carry a training level (attending,
-fellow, staff, resident). A patient at or above a risk threshold
-(`ATTENDING_RISK_THRESHOLD` in `opmatch.js`, default 3 — acute but still
-outpatient) is too acute for a resident and is routed to an attending or an
-independently-licensed non-trainee instead. A provider with no training level
-set is treated as independent, so non-academic clinics need no configuration.
+fellow, staff, resident). The attending-vs-resident determination is made by the
+Tier 2 screen from the configurable complexity rule above (risk ≥ threshold,
+comorbidity ≥ threshold, or the manual complexity flag) and stored on the
+patient; the assignment engine then routes any attending-required case away from
+residents to an attending or independently-licensed non-trainee. For older
+records or direct callers with no stored determination, `opmatch.js` falls back
+to a risk-based rule (`ATTENDING_RISK_THRESHOLD`, default 3). A provider with no
+training level set is treated as independent, so non-academic clinics need no
+configuration.
 
 **No patient-identifying information is required.** The case label is optional
 and discourages names/MRNs; if left blank a non-identifying reference (e.g.
 `Case 3F1A`) is generated. Nothing in the module needs PHI.
 
-Two files carry the logic, both pure functions with no network use:
+Three files carry the logic, all pure functions with no network use:
 
 | File | Responsibility |
 |---|---|
-| `src/lib/loc.js` | Level-of-care screening, band mapping, and the safety net |
-| `src/lib/opmatch.js` | Outpatient patient-to-provider assignment |
+| `src/lib/tier1.js` | Tier 1 chart-review triage (red-flag triggers, direct-vs-escalate) |
+| `src/lib/loc.js` | Level-of-care screening, band mapping, the safety net, and the operational outputs (attending rule, acute guard, PHP/IOP advisory) |
+| `src/lib/opmatch.js` | Outpatient patient-to-provider assignment and load balancing |
 
 **The safety net is the most important property.** A tool that only summed its
 dimensions could route a patient with imminent suicide risk to "outpatient" if
@@ -259,10 +296,12 @@ a payer or regulation requires the real tool. The band cut points are a
 transparent starting calibration, adjustable in `loc.js`, not empirically fitted.
 The app states this on the screen.
 
-**Data storage.** Outpatient patients and the provider panel are kept in the
-browser's local storage (keys `bhai:opPatients`, `bhai:opProviders`) and are not
-yet synced through the backend the way inpatient data is. For a shared,
-multi-user outpatient deployment this would move to the same backend pattern.
+**Data storage.** Outpatient patients, the provider panel, clinics, the editable
+Tier 1 trigger list and the adjustable thresholds are kept in the browser's local
+storage (keys `bhai:opPatients`, `bhai:opProviders`, `bhai:opPrograms`,
+`bhai:apTier1Triggers`, `bhai:apThresholds`) and are not yet synced through the
+backend the way inpatient data is. For a shared, multi-user outpatient deployment
+this would move to the same backend pattern.
 
 The assignment engine is an honest **priority heuristic**, not a proven optimum
 like the inpatient staff optimizer — outpatient matching trades off soft goals
@@ -383,6 +422,7 @@ acuity-app/
 │   │   ├── ErrorBoundary.jsx    # Error handling wrapper
 │   │   ├── HelpGuide.jsx        # Built-in help & training
 │   │   ├── IntroVideo.jsx       # Animated welcome slideshow
+│   │   ├── LevelOfCare.jsx      # AcuiPath™ two-tier outpatient screening & assignment
 │   │   ├── PasswordGate.jsx     # Login screen (SHA-256 auth)
 │   │   ├── Reports.jsx          # Trend reports & data table
 │   │   ├── Settings.jsx         # Admin settings panel
@@ -398,6 +438,10 @@ acuity-app/
 │       ├── model.js             # Acuity scoring logic, thresholds, seed data
 │       ├── optimize.js          # Exact staff-allocation optimizer
 │       ├── risk.js              # Breach probability, drift, attribution
+│       ├── tier1.js             # AcuiPath Tier 1 chart-review triage
+│       ├── loc.js               # AcuiPath level-of-care screen & operational outputs
+│       ├── opmatch.js           # AcuiPath assignment & load balancing
+│       ├── programs.js          # AcuiPath symptom → clinic/program recommendation
 │       ├── stateShapes.js       # US state SVG map shapes
 │       └── storage.js           # localStorage helpers
 ├── public/

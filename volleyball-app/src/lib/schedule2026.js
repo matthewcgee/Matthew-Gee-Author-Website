@@ -21,6 +21,7 @@ export const SCHEDULE_2026 = [
   { date: '2026-09-24', opponent: 'West Forsyth', site: 'Away', jvTime: '5:00', varsityTime: '6:30' },
   { date: '2026-09-29', opponent: 'Parkland', site: 'Home', jvTime: '5:00', varsityTime: '6:30' },
   { date: '2026-10-01', opponent: 'Northwest Guilford', site: 'Home', jvTime: '5:00', varsityTime: '6:30' },
+  { date: '2026-10-05', opponent: 'Triad Baptist Academy', site: 'Home', jvTime: '5:00', varsityTime: '6:00' },
   { date: '2026-10-06', opponent: 'R.J. Reynolds', site: 'Away', jvTime: '5:00', varsityTime: '6:15' },
   { date: '2026-10-08', opponent: 'Ronald W. Reagan', site: 'Home', jvTime: '5:00', varsityTime: '6:15' },
 ]

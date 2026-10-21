@@ -99,6 +99,28 @@ export default function Outcomes({ locations, entries, deployments, thresholds, 
             { label: 'Plan followed', value: adherence.followed.redRate, predicted: adherence.followed.predictedRedRate, n: adherence.followed.moves, color: SERIES.a },
             { label: 'Plan not followed', value: adherence.notFollowed.redRate, predicted: adherence.notFollowed.predictedRedRate, n: adherence.notFollowed.moves, color: SERIES.b },
           ]} />
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5, marginTop: 12 }}>
+            <thead>
+              <tr style={{ textAlign: 'left', color: theme.sub, borderBottom: `1px solid ${theme.border}` }}>
+                <th style={{ padding: '5px 6px' }} />
+                <th style={{ padding: '5px 6px', textAlign: 'right' }}>Moves</th>
+                <th style={{ padding: '5px 6px', textAlign: 'right' }}>Avoided RED</th>
+                <th style={{ padding: '5px 6px', textAlign: 'right' }}>Went RED</th>
+                <th style={{ padding: '5px 6px', textAlign: 'right' }}>Predicted RED</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[['Plan followed', adherence.followed], ['Plan not followed', adherence.notFollowed]].map(([label, g]) => (
+                <tr key={label} style={{ borderBottom: `1px solid ${theme.border}`, fontVariantNumeric: 'tabular-nums' }}>
+                  <td style={{ padding: '6px 6px', fontWeight: 700 }}>{label}</td>
+                  <td style={{ padding: '6px 6px', textAlign: 'right' }}>{g.moves}</td>
+                  <td style={{ padding: '6px 6px', textAlign: 'right', color: '#1f7a54', fontWeight: 700 }}>{g.moves - g.red}</td>
+                  <td style={{ padding: '6px 6px', textAlign: 'right', color: g.red ? '#a5342a' : theme.text, fontWeight: 700 }}>{g.red}</td>
+                  <td style={{ padding: '6px 6px', textAlign: 'right' }}>{pct(g.predictedRedRate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 8, lineHeight: 1.5 }}>
             {adherence.followed.moves} followed and {adherence.notFollowed.moves} unfollowed moves with known outcomes.
             For followed moves, the prediction is the post-move chance of RED. For unfollowed moves, it is the warning

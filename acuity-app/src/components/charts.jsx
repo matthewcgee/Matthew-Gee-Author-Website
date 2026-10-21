@@ -64,7 +64,7 @@ export function ReliabilityChart({ bins, height = 230 }) {
   const [tip, setTip] = useState(null)
   const W = 300
   const H = height
-  const m = { l: 40, r: 12, t: 12, b: 34 }
+  const m = { l: 50, r: 12, t: 12, b: 34 }
   const iw = W - m.l - m.r
   const ih = H - m.t - m.b
   const X = (v) => m.l + v * iw
@@ -96,7 +96,7 @@ export function ReliabilityChart({ bins, height = 230 }) {
           </g>
         ))}
         <text x={m.l + iw / 2} y={H - 4} textAnchor="middle" fontSize="10" fill={ink.secondary}>Predicted chance of RED</text>
-        <text x={11} y={m.t + ih / 2} textAnchor="middle" fontSize="10" fill={ink.secondary} transform={`rotate(-90 11 ${m.t + ih / 2})`}>Actually RED</text>
+        <text x={10} y={m.t + ih / 2} textAnchor="middle" fontSize="10" fill={ink.secondary} transform={`rotate(-90 10 ${m.t + ih / 2})`}>Actually RED</text>
       </svg>
       <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11, color: ink.secondary, marginTop: 2 }}>
         <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" stroke={ink.secondary} strokeWidth="1.2" strokeDasharray="4 4" /></svg>

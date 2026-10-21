@@ -121,7 +121,7 @@ export default function CapacitySafety({ locations, entries, thresholds, caps, r
                   <tbody>
                     {outlook.horizons.map((h) => (
                       <tr key={h.horizon} style={{ borderBottom: `1px solid ${theme.border}`, fontVariantNumeric: 'tabular-nums' }}>
-                        <td style={{ padding: '5px 6px' }}>{h.date} {h.shift}</td>
+                        <td style={{ padding: '5px 6px', whiteSpace: 'nowrap' }}>{h.date} {h.shift}</td>
                         <td style={{ padding: '5px 6px', textAlign: 'right' }}>{h.openBeds.toFixed(1)}</td>
                         <td style={{ padding: '5px 6px', textAlign: 'right' }}>{h.boarders.toFixed(1)}</td>
                         <td style={{ padding: '5px 6px', textAlign: 'right' }}>{pct(h.pBoarding)}</td>

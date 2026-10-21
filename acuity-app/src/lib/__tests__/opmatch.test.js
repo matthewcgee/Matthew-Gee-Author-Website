@@ -17,6 +17,7 @@ function patient(over = {}) {
     population: 'adult',
     level: 'op',
     opAppropriate: true,
+    routableOutpatient: true,
     needs: { prescriber: false, therapy: true },
     specialties: [],
     telehealthOnly: false,
@@ -99,13 +100,23 @@ describe('assignment', () => {
     expect(r.unmatched[0].reason).toBe(UNMATCHED.CAPACITY)
   })
 
-  it('routes non-outpatient patients to a step-up instead of matching them', () => {
-    const patients = [patient({ id: 'op1' }), patient({ id: 'php1', opAppropriate: false, level: 'php' })]
+  it('pulls acute (non-routable) patients from routine routing, not PHP/IOP advisories', () => {
+    const patients = [
+      patient({ id: 'ok' }),
+      patient({ id: 'acute', routableOutpatient: false }),
+    ]
     const r = assignCaseload(patients, [provider({ capacity: 5 })])
     expect(r.summary.placed).toBe(1)
-    expect(r.summary.needStepUp).toBe(1)
-    const stepup = r.unmatched.find((u) => u.patientId === 'php1')
-    expect(stepup.reason).toBe(UNMATCHED.NOT_OP)
+    expect(r.summary.acute).toBe(1)
+    const acute = r.unmatched.find((u) => u.patientId === 'acute')
+    expect(acute.reason).toBe(UNMATCHED.ACUTE)
+  })
+
+  it('still routes a patient carrying a PHP/IOP advisory (advisory does not exclude)', () => {
+    // routableOutpatient true even though PHP/IOP was flagged elsewhere
+    const r = assignCaseload([patient({ id: 'advised', routableOutpatient: true })], [provider({ capacity: 2 })])
+    expect(r.summary.placed).toBe(1)
+    expect(r.summary.acute).toBe(0)
   })
 
   it('gives the most urgent patient first pick of scarce specialty capacity', () => {
@@ -175,7 +186,7 @@ describe('assignment', () => {
     const patients = [
       patient({ id: 'a' }),
       patient({ id: 'b' }),
-      patient({ id: 'php', opAppropriate: false }),
+      patient({ id: 'acute', routableOutpatient: false }),
       patient({ id: 'c', specialties: ['trauma'] }), // no trauma provider
     ]
     const r = assignCaseload(patients, [provider({ capacity: 1 })])
@@ -272,5 +283,65 @@ describe('academic supervision model', () => {
     expect(r.summary.placed).toBe(0)
     expect(r.unmatched[0].reason).toBe(UNMATCHED.SUPERVISION)
     expect(reasonLabel(UNMATCHED.SUPERVISION)).toMatch(/attending/i)
+  })
+})
+
+describe('load tracking and equal distribution', () => {
+  function patient(over = {}) {
+    return { id: 'p', name: 'P', population: 'adult', routableOutpatient: true, needs: { prescriber: false, therapy: true }, specialties: [], telehealthOnly: false, urgencyDays: 0, riskScore: 1, ...over }
+  }
+  function provider(over = {}) {
+    return { id: 'd', name: 'D', credential: 'therapist', population: 'adult', trainingLevel: 'staff', specialties: [], programs: [], telehealth: true, capacity: 10, ...over }
+  }
+
+  it('reports a per-provider distribution with assigned counts', () => {
+    const patients = [1, 2, 3, 4].map((i) => patient({ id: `p${i}` }))
+    const providers = [provider({ id: 'x' }), provider({ id: 'y' })]
+    const r = assignCaseload(patients, providers)
+    const x = r.distribution.find((d) => d.id === 'x')
+    const y = r.distribution.find((d) => d.id === 'y')
+    expect(x.assigned + y.assigned).toBe(4)
+    expect(x.assigned).toBe(2)
+    expect(y.assigned).toBe(2) // evenly split
+  })
+
+  it('sends new patients to the least-loaded provider first (existing panel counts)', () => {
+    // Two equal providers, but y already carries 3 on its panel → x should fill first.
+    const patients = [1, 2].map((i) => patient({ id: `p${i}` }))
+    const providers = [provider({ id: 'x', panelLoad: 0 }), provider({ id: 'y', panelLoad: 3 })]
+    const r = assignCaseload(patients, providers)
+    const x = r.distribution.find((d) => d.id === 'x')
+    const y = r.distribution.find((d) => d.id === 'y')
+    expect(x.assigned).toBe(2) // both go to the lighter panel
+    expect(y.assigned).toBe(0)
+  })
+
+  it('evens out final load across providers with different starting panels', () => {
+    // x starts at 0, y starts at 2; four new patients should end near-even.
+    const patients = [1, 2, 3, 4].map((i) => patient({ id: `p${i}` }))
+    const providers = [provider({ id: 'x', panelLoad: 0 }), provider({ id: 'y', panelLoad: 2 })]
+    const r = assignCaseload(patients, providers)
+    const loads = r.distribution.map((d) => d.load)
+    expect(Math.max(...loads) - Math.min(...loads)).toBeLessThanOrEqual(1)
+  })
+
+  it('tracks distribution grouped by training level', () => {
+    const patients = [1, 2, 3].map((i) => patient({ id: `p${i}`, riskScore: 1 }))
+    const providers = [
+      provider({ id: 'att', trainingLevel: 'attending' }),
+      provider({ id: 'res', trainingLevel: 'resident' }),
+    ]
+    const r = assignCaseload(patients, providers)
+    expect(r.summary.loadByGroup.attending).toBeTruthy()
+    expect(r.summary.loadByGroup.resident).toBeTruthy()
+    const total = r.summary.loadByGroup.attending.assigned + r.summary.loadByGroup.resident.assigned
+    expect(total).toBe(3)
+  })
+
+  it('reports zero spread when load is perfectly even', () => {
+    const patients = [1, 2].map((i) => patient({ id: `p${i}` }))
+    const providers = [provider({ id: 'x' }), provider({ id: 'y' })]
+    const r = assignCaseload(patients, providers)
+    expect(r.summary.loadByGroup.staff.spread).toBe(0)
   })
 })

@@ -18,6 +18,8 @@ export function readStorage(key, fallback) {
 }
 
 export function writeStorage(key, value) {
+  // No browser storage (server render, tests): nothing to persist, nothing to report.
+  if (typeof localStorage === 'undefined') return false
   try {
     localStorage.setItem(key, JSON.stringify(value))
     return true

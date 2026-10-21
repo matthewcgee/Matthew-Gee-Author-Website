@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { Card, Field, Button, Badge, StatCard, Icon, theme, grid } from './ui.jsx'
 import AcuitasLogo from './AcuitasLogo.jsx'
-import { readStorage, writeStorage, uid } from '../lib/storage.js'
+import { uid } from '../lib/storage.js'
 import {
   POPULATIONS, DIMENSIONS, SCORE_MIN, SCORE_MAX,
   anchorsFor, screenLevelOfCare, emptyScores,
@@ -10,25 +10,17 @@ import {
 import { assignCaseload, requiresAttending, TRAINING_LEVELS } from '../lib/opmatch.js'
 import { SYMPTOMS, recommendProgram } from '../lib/programs.js'
 import { DEFAULT_TIER1_TRIGGERS, evaluateTier1, directPlacementDefaults } from '../lib/tier1.js'
-import { buildSampleOutpatient } from '../lib/demoData.js'
-
-const PT_KEY = 'bhai:opPatients'
-const PROV_KEY = 'bhai:opProviders'
-const PROG_KEY = 'bhai:opPrograms'
-const TH_KEY = 'bhai:apThresholds'
-const TRIG_KEY = 'bhai:apTier1Triggers'
+import { can } from '../lib/roles.js'
+import { useOutpatientData, loadOutpatientSample, clearOutpatientData } from '../lib/opData.js'
+import DischargeBridge from './acuipath/DischargeBridge.jsx'
+import MbcPanel from './acuipath/MbcPanel.jsx'
+import OpOutcomes from './acuipath/OpOutcomes.jsx'
 const SPECIALTIES = ['general', 'trauma', 'sud', 'adolescent', 'eating-disorders']
 const SPECIALTY_LABEL = {
   general: 'General', trauma: 'Trauma', sud: 'Substance use',
   adolescent: 'Child / adolescent', 'eating-disorders': 'Eating disorders',
 }
 
-// The clinic / program list is org-configurable — edited in the Caseload view
-// and persisted. These are only the starting defaults.
-const DEFAULT_PROGRAMS = [
-  'Therapy only', 'Medication management', 'Neuromodulation',
-  'Substance use program', 'Eating disorders program',
-]
 const TRAINING_LABEL = { attending: 'Attending', fellow: 'Fellow', staff: 'Staff (non-trainee)', resident: 'Resident' }
 
 const slug = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `t_${Math.random().toString(36).slice(2, 6)}`
@@ -306,23 +298,26 @@ function ResultPanel({ result }) {
 // screen; any red flag escalates to Tier 2, the in-depth screen with a phone
 // screen / patient discussion. Tier 2 produces the full operational output —
 // clinic, attending-vs-resident, and the acute / PHP-IOP advisories.
-function Screener({ onSave, programs, thresholds, triggers }) {
-  const [step, setStep] = useState('tier1')
+// `initialCase` reopens an existing case for a fresh Tier 2 screen (for
+// example after a worsening PHQ-9). Saving then updates that case in place.
+function Screener({ onSave, programs, thresholds, triggers, initialCase = null, onCancelRescreen }) {
+  const ic = initialCase
+  const [step, setStep] = useState(ic ? 'tier2' : 'tier1')
   // shared across both tiers
-  const [population, setPopulation] = useState('adult')
-  const [symptoms, setSymptoms] = useState([])
-  const [name, setName] = useState('')
-  const [needs, setNeeds] = useState({ prescriber: false, therapy: true })
-  const [specialties, setSpecialties] = useState([])
-  const [telehealthOnly, setTelehealthOnly] = useState(false)
-  const [urgencyDays, setUrgencyDays] = useState('')
-  const [program, setProgram] = useState('')
-  const [programTouched, setProgramTouched] = useState(false)
+  const [population, setPopulation] = useState(ic?.population || 'adult')
+  const [symptoms, setSymptoms] = useState(ic?.symptoms || [])
+  const [name, setName] = useState(ic?.name || '')
+  const [needs, setNeeds] = useState(ic?.needs || { prescriber: false, therapy: true })
+  const [specialties, setSpecialties] = useState(ic?.specialties || [])
+  const [telehealthOnly, setTelehealthOnly] = useState(!!ic?.telehealthOnly)
+  const [urgencyDays, setUrgencyDays] = useState(ic?.urgencyDays != null ? String(ic.urgencyDays) : '')
+  const [program, setProgram] = useState(ic?.program || '')
+  const [programTouched, setProgramTouched] = useState(!!ic?.program)
   // tier 1
   const [tier1Checked, setTier1Checked] = useState([])
   // tier 2
-  const [scores, setScores] = useState(emptyScores)
-  const [complexityFlag, setComplexityFlag] = useState(false)
+  const [scores, setScores] = useState(() => ic?.scores || emptyScores())
+  const [complexityFlag, setComplexityFlag] = useState(!!ic?.complexityFlag)
 
   const anchors = anchorsFor(population)
   const t1 = useMemo(() => evaluateTier1(tier1Checked, triggers), [tier1Checked, triggers])
@@ -353,8 +348,9 @@ function Screener({ onSave, programs, thresholds, triggers }) {
   }
 
   const baseRecord = () => {
-    const id = uid()
+    const id = ic?.id || uid()
     return {
+      ...(ic || {}),
       id,
       name: name.trim() || `Case ${id.slice(0, 4).toUpperCase()}`,
       population,
@@ -364,7 +360,8 @@ function Screener({ onSave, programs, thresholds, triggers }) {
       program: activeProgram,
       telehealthOnly,
       urgencyDays: urgencyDays === '' ? 0 : Number(urgencyDays),
-      createdAt: Date.now(),
+      createdAt: ic?.createdAt || Date.now(),
+      ...(ic ? { rescreenedAt: Date.now() } : {}),
     }
   }
 
@@ -516,7 +513,16 @@ function Screener({ onSave, programs, thresholds, triggers }) {
         sub="Full six-dimension screen with a phone screen / patient discussion. Rate each dimension 1 (minimal) to 5 (severe)."
       >
         <div style={{ marginBottom: 12 }}>
-          <Button variant="ghost" onClick={() => setStep('tier1')}>← Back to chart review</Button>
+          {ic ? (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Button variant="ghost" onClick={onCancelRescreen}>Cancel re-screen</Button>
+              <span style={{ fontSize: 12, color: '#8a6a10', fontWeight: 700 }}>
+                Re-screening {ic.name}. Saving updates this case in place.
+              </span>
+            </div>
+          ) : (
+            <Button variant="ghost" onClick={() => setStep('tier1')}>← Back to chart review</Button>
+          )}
         </div>
 
         <Field label="Population">
@@ -844,7 +850,7 @@ function Caseload({
   patients, providers, programs, thresholds, triggers,
   onAddProvider, onRemoveProvider, onRemovePatient, onAddProgram, onRemoveProgram,
   onSetThresholds, onResetThresholds, onAddTrigger, onRemoveTrigger, onResetTriggers,
-  onLoadSample, onClear,
+  onLoadSample, onClear, canManage = true, canEdit = true,
 }) {
   const result = useMemo(() => assignCaseload(patients, providers), [patients, providers])
   const patientById = Object.fromEntries(patients.map((p) => [p.id, p]))
@@ -862,12 +868,14 @@ function Caseload({
           icon="building" color={result.summary.capacityGap ? '#e0584a' : theme.accent} />
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <Button variant="ghost" onClick={onLoadSample}><Icon name="play" size={14} />Load sample caseload</Button>
-        {(patients.length > 0 || providers.length > 0) && (
-          <Button variant="danger" onClick={onClear}>Clear caseload</Button>
-        )}
-      </div>
+      {canManage && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <Button variant="ghost" onClick={onLoadSample}><Icon name="play" size={14} />Load sample caseload</Button>
+          {(patients.length > 0 || providers.length > 0) && (
+            <Button variant="danger" onClick={onClear}>Clear caseload</Button>
+          )}
+        </div>
+      )}
 
       <Card title="Recommended assignments" sub="Most urgent patients placed first, within each provider's open slots">
         {result.assignments.length === 0 ? (
@@ -955,12 +963,12 @@ function Caseload({
                       {(p.specialties || []).length ? ` · ${(p.specialties).map((s) => SPECIALTY_LABEL[s] || s).join(', ')}` : ''} · {used}/{p.capacity} slots used{p.panelLoad ? ` · ${p.panelLoad} on panel` : ''}
                     </div>
                   </div>
-                  <Button variant="danger" onClick={() => onRemoveProvider(p.id)}>Remove</Button>
+                  {canManage && <Button variant="danger" onClick={() => onRemoveProvider(p.id)}>Remove</Button>}
                 </div>
               )
             })}
           </div>
-          <ProviderForm onAdd={onAddProvider} programs={programs} />
+          {canManage && <ProviderForm onAdd={onAddProvider} programs={programs} />}
         </Card>
 
         <Card title="Screened patients" sub={`${patients.length} on the caseload`}>
@@ -973,6 +981,9 @@ function Caseload({
                   <div>
                     <span style={{ fontWeight: 700 }}>{p.name}</span>
                     <Badge color={p.opAppropriate ? '#3fb37f' : '#e0584a'}>{(p.level || '').toUpperCase()}</Badge>
+                    {p.bridge && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#a5342a', marginLeft: 6 }}>Post-discharge bridge · priority</span>
+                    )}
                     {p.tier === '1-direct' && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#1f7a54', marginLeft: 6 }}>Tier 1 direct</span>
                     )}
@@ -985,7 +996,7 @@ function Caseload({
                       {p.telehealthOnly ? ' · telehealth only' : ''} · waiting {p.urgencyDays}d
                     </div>
                   </div>
-                  <Button variant="danger" onClick={() => onRemovePatient(p.id)}>Remove</Button>
+                  {canEdit && <Button variant="danger" onClick={() => onRemovePatient(p.id)}>Remove</Button>}
                 </div>
               ))}
             </div>
@@ -993,70 +1004,59 @@ function Caseload({
         </Card>
       </div>
 
-      <div style={{ ...grid(2, 16), marginTop: 16 }}>
-        <Tier1TriggersEditor triggers={triggers} onAdd={onAddTrigger} onRemove={onRemoveTrigger} onReset={onResetTriggers} />
-        <ThresholdsEditor thresholds={thresholds} onChange={onSetThresholds} onReset={onResetThresholds} />
-      </div>
+      {canManage && (
+        <>
+          <div style={{ ...grid(2, 16), marginTop: 16 }}>
+            <Tier1TriggersEditor triggers={triggers} onAdd={onAddTrigger} onRemove={onRemoveTrigger} onReset={onResetTriggers} />
+            <ThresholdsEditor thresholds={thresholds} onChange={onSetThresholds} onReset={onResetThresholds} />
+          </div>
 
-      <div style={{ marginTop: 16 }}>
-        <ProgramsEditor programs={programs} onAdd={onAddProgram} onRemove={onRemoveProgram} />
-      </div>
+          <div style={{ marginTop: 16 }}>
+            <ProgramsEditor programs={programs} onAdd={onAddProgram} onRemove={onRemoveProgram} />
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
 /* -------------------------------------------------------------------- screen */
 
-export default function LevelOfCare() {
-  const [view, setView] = useState('screen')
-  const [patients, setPatients] = useState(() => readStorage(PT_KEY, []))
-  const [providers, setProviders] = useState(() => readStorage(PROV_KEY, []))
-  const [programs, setPrograms] = useState(() => readStorage(PROG_KEY, DEFAULT_PROGRAMS))
-  const [thresholds, setThresholds] = useState(() => normalizeApThresholds(readStorage(TH_KEY, DEFAULT_AP_THRESHOLDS)))
-  const [triggers, setTriggers] = useState(() => readStorage(TRIG_KEY, DEFAULT_TIER1_TRIGGERS))
+const VIEWS = [
+  { id: 'screen', label: 'Screen a patient', perm: 'op-screen' },
+  { id: 'caseload', label: 'Caseload & assignment', perm: 'op-view' },
+  { id: 'bridge', label: 'Discharge bridge', perm: 'op-view' },
+  { id: 'mbc', label: 'PHQ-9 / GAD-7', perm: 'op-view' },
+  { id: 'outcomes', label: 'Outcomes', perm: 'op-view' },
+]
 
-  const persistPatients = (next) => { setPatients(next); writeStorage(PT_KEY, next) }
-  const persistProviders = (next) => { setProviders(next); writeStorage(PROV_KEY, next) }
-  const persistPrograms = (next) => { setPrograms(next); writeStorage(PROG_KEY, next) }
-  const persistThresholds = (next) => { const n = normalizeApThresholds(next); setThresholds(n); writeStorage(TH_KEY, n) }
-  const persistTriggers = (next) => { setTriggers(next); writeStorage(TRIG_KEY, next) }
+export default function LevelOfCare({ role = 'admin', locations = [] }) {
+  const d = useOutpatientData()
+  const views = VIEWS.filter((v) => can(role, v.perm))
+  const [view, setView] = useState(views[0]?.id || 'caseload')
+  const [rescreen, setRescreen] = useState(null)
+  const { patients, providers, programs, thresholds, triggers } = d
 
-  const addPatient = (pt) => persistPatients([...patients, pt])
-  const removePatient = (id) => persistPatients(patients.filter((p) => p.id !== id))
-  const addProvider = (pv) => persistProviders([...providers, pv])
-  const removeProvider = (id) => persistProviders(providers.filter((p) => p.id !== id))
-  const addProgram = (name) => persistPrograms([...programs, name])
-  const removeProgram = (name) => persistPrograms(programs.filter((p) => p !== name))
-  const addTrigger = (t) => persistTriggers([...triggers, t])
-  const removeTrigger = (id) => persistTriggers(triggers.filter((t) => t.id !== id))
-  const resetTriggers = () => persistTriggers(DEFAULT_TIER1_TRIGGERS)
-  const resetThresholds = () => persistThresholds(DEFAULT_AP_THRESHOLDS)
+  const canEdit = can(role, 'op-screen')
+  const canManage = can(role, 'op-manage')
 
-  const loadSample = () => {
-    const { providers: sp, patients: raw, programs: pr } = buildSampleOutpatient()
-    if (pr && pr.length) persistPrograms(pr)
-    // Re-screen each sample patient so the stored level, attending determination
-    // and routability always match the current engine and thresholds rather than
-    // a hardcoded value.
-    const screened = raw.map((r) => {
-      const res = screenLevelOfCare(r.scores, { population: r.population, thresholds })
-      return {
-        id: r.id, name: r.name, population: r.population, scores: r.scores, tier: '2-full',
-        level: res.level.id, levelLabel: res.level.label, opAppropriate: res.opAppropriate,
-        riskScore: r.scores.risk, requiresAttending: res.attending.required, attendingReasons: res.attending.reasons,
-        routableOutpatient: res.routableOutpatient, phpIopConsider: res.phpIop.consider, acuteSafety: res.acuteSafety.flag,
-        needs: r.needs, specialties: r.specialties, symptoms: r.symptoms,
-        program: r.program, telehealthOnly: r.telehealthOnly, urgencyDays: r.urgencyDays, createdAt: r.createdAt,
-      }
-    })
-    persistPatients(screened)
-    persistProviders(sp)
+  const savePatient = (pt) => {
+    if (rescreen) {
+      d.patientsApi.upsert(pt)
+      setRescreen(null)
+      setView('caseload')
+    } else {
+      d.patientsApi.add(pt)
+    }
+  }
+  const startRescreen = (patient) => {
+    setRescreen(patient)
+    setView('screen')
   }
 
   const clearAll = () => {
-    if (window.confirm('Clear the outpatient caseload and provider panel?')) {
-      persistPatients([])
-      persistProviders([])
+    if (window.confirm('Clear the outpatient caseload, provider panel, discharges, PHQ-9/GAD-7 scores and outcomes?')) {
+      clearOutpatientData(d)
     }
   }
 
@@ -1067,16 +1067,19 @@ export default function LevelOfCare() {
           <AcuitasLogo size={26} dark={false} showWordmark={false} />
           <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>AcuiPath&trade;</div>
           <Badge color={theme.accent}>OUTPATIENT</Badge>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-            <Button variant={view === 'screen' ? 'primary' : 'ghost'} onClick={() => setView('screen')}>Screen a patient</Button>
-            <Button variant={view === 'caseload' ? 'primary' : 'ghost'} onClick={() => setView('caseload')}>Caseload &amp; assignment</Button>
-          </div>
         </div>
-        <div style={{ fontSize: 12.5, color: theme.sub, maxWidth: 820 }}>
+        <div style={{ fontSize: 12.5, color: theme.sub, maxWidth: 860 }}>
           Two-tier outpatient screening and routing. A Tier 1 nurse chart review places straightforward cases directly
-          or escalates them to a Tier 2 in-depth screen. The screen decides which clinic and whether an attending must
-          be the primary physician; PHP/IOP is an adjustable advisory, never an automatic placement. Assignments are
-          balanced across residents and attendings.
+          or escalates them to a Tier 2 in-depth screen, which decides the clinic and whether an attending must be the
+          primary physician. Discharges are bridged into care and tracked against the 7- and 30-day follow-up windows,
+          and PHQ-9 and GAD-7 scores flag patients who need a fresh screen. Outcomes feed back into the thresholds.
+        </div>
+        <div role="tablist" aria-label="AcuiPath views" style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+          {views.map((v) => (
+            <Button key={v.id} variant={view === v.id ? 'primary' : 'ghost'} onClick={() => { setView(v.id); if (v.id !== 'screen') setRescreen(null) }}>
+              {v.label}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -1095,16 +1098,50 @@ export default function LevelOfCare() {
         </span>
       </div>
 
-      {view === 'screen'
-        ? <Screener onSave={addPatient} programs={programs} thresholds={thresholds} triggers={triggers} />
-        : <Caseload
-            patients={patients} providers={providers} programs={programs} thresholds={thresholds} triggers={triggers}
-            onAddProvider={addProvider} onRemoveProvider={removeProvider}
-            onRemovePatient={removePatient} onAddProgram={addProgram} onRemoveProgram={removeProgram}
-            onSetThresholds={persistThresholds} onResetThresholds={resetThresholds}
-            onAddTrigger={addTrigger} onRemoveTrigger={removeTrigger} onResetTriggers={resetTriggers}
-            onLoadSample={loadSample} onClear={clearAll}
-          />}
+      {view === 'screen' && canEdit && (
+        <Screener
+          key={rescreen?.id || 'new'}
+          onSave={savePatient}
+          programs={programs}
+          thresholds={thresholds}
+          triggers={triggers}
+          initialCase={rescreen}
+          onCancelRescreen={() => { setRescreen(null); setView('mbc') }}
+        />
+      )}
+      {view === 'caseload' && (
+        <Caseload
+          patients={patients} providers={providers} programs={programs} thresholds={thresholds} triggers={triggers}
+          canManage={canManage} canEdit={canEdit}
+          onAddProvider={(pv) => d.providersApi.add(pv)} onRemoveProvider={(id) => d.providersApi.remove(id)}
+          onRemovePatient={(id) => d.patientsApi.remove(id)}
+          onAddProgram={(name) => d.setPrograms([...programs, name])}
+          onRemoveProgram={(name) => d.setPrograms(programs.filter((p) => p !== name))}
+          onSetThresholds={(next) => d.setThresholds(normalizeApThresholds(next))}
+          onResetThresholds={() => d.setThresholds(DEFAULT_AP_THRESHOLDS)}
+          onAddTrigger={(t) => d.setTriggers([...triggers, t])}
+          onRemoveTrigger={(id) => d.setTriggers(triggers.filter((t) => t.id !== id))}
+          onResetTriggers={() => d.setTriggers(DEFAULT_TIER1_TRIGGERS)}
+          onLoadSample={() => loadOutpatientSample(d)}
+          onClear={clearAll}
+        />
+      )}
+      {view === 'bridge' && (
+        <DischargeBridge
+          discharges={d.discharges} dischargesApi={d.dischargesApi} patientsApi={d.patientsApi}
+          programs={programs} locations={locations} canEdit={can(role, 'discharge')}
+          onOpenCaseload={() => setView('caseload')}
+        />
+      )}
+      {view === 'mbc' && (
+        <MbcPanel
+          patients={patients} assessments={d.assessments} assessmentsApi={d.assessmentsApi}
+          canEdit={can(role, 'mbc')} onRescreen={canEdit ? startRescreen : null}
+        />
+      )}
+      {view === 'outcomes' && (
+        <OpOutcomes patients={patients} outcomes={d.outcomes} outcomesApi={d.outcomesApi} canEdit={can(role, 'op-outcomes')} />
+      )}
     </div>
   )
 }

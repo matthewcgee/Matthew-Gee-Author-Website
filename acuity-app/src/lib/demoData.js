@@ -13,8 +13,12 @@
 // because the point is to show what the engine says when it knows something
 // *and* what it says when it doesn't.
 
-import { dayIndex, slotToDateShift, SHIFTS } from './forecast.js'
+import { dayIndex, dateFromDayIndex, slotIndex, slotToDateShift, forecastLocation, SHIFTS } from './forecast.js'
 import { today, uid } from './storage.js'
+import { DEFAULT_THRESHOLDS, entryStage } from './model.js'
+import { recommendDeployment } from './optimize.js'
+import { snapshotPlan, placementSnapshot } from './outcomes.js'
+import { scoreAssessment } from './mbc.js'
 
 // Mulberry32 — small, fast, and deterministic, so the same scenario renders
 // identically for everyone looking at it.
@@ -46,7 +50,7 @@ const DEMO_UNITS = [
     id: 'demo_1sa',
     name: '1 South A',
     type: 'inpatient',
-    censusCap: 18,
+    censusCap: 17,
     staff: 5,
     // Climbing steadily — the case the tool is built to catch before it breaks.
     pattern: { uaiStart: 1.15, uaiEnd: 2.7, mondayAm: 0.3, weekendDip: -0.1, noise: 0.13, census: 15 },
@@ -55,7 +59,7 @@ const DEMO_UNITS = [
     id: 'demo_2n',
     name: '2 North',
     type: 'inpatient',
-    censusCap: 16,
+    censusCap: 14,
     staff: 5,
     // Comfortably stable: the donor unit a good plan should draw from.
     pattern: { uaiStart: 1.05, uaiEnd: 1.1, mondayAm: 0.08, weekendDip: -0.05, noise: 0.08, census: 12 },
@@ -64,7 +68,7 @@ const DEMO_UNITS = [
     id: 'demo_3w',
     name: '3 West',
     type: 'inpatient',
-    censusCap: 20,
+    censusCap: 19,
     staff: 6,
     // Strong weekly rhythm — Monday AM lands hard after weekend admissions.
     pattern: { uaiStart: 1.25, uaiEnd: 1.35, mondayAm: 0.85, weekendDip: -0.25, noise: 0.12, census: 17 },
@@ -73,7 +77,7 @@ const DEMO_UNITS = [
     id: 'demo_4e',
     name: '4 East',
     type: 'inpatient',
-    censusCap: 14,
+    censusCap: 12,
     staff: 4,
     // Genuinely erratic. The engine should decline to claim confidence here.
     pattern: { uaiStart: 1.6, uaiEnd: 1.6, mondayAm: 0.05, weekendDip: 0, noise: 0.55, census: 11 },
@@ -116,6 +120,9 @@ const DEMO_UNITS = [
  */
 export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
   const next = rng(seed)
+  // A separate stream for the ED capacity fields, so adding them never shifts
+  // the random sequence that produces every other value in the scenario.
+  const nextCap = rng(seed ^ 0x5bd1e995)
   const totalShifts = weeks * 7 * SHIFTS.length
   const endDay = dayIndex(today())
   // The newest reading is today's PM shift, so forecasts start from now.
@@ -162,6 +169,16 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
         if (weekday === 5 && shift === 'PM') points += p.fridayPm
         if (isWeekend) points += p.weekendDip
         points += gauss(next) * p.noise
+        // Boarding: BH patients held in the ED awaiting an inpatient bed. It
+        // climbs slowly over the scenario as the region fills, and spikes on
+        // the same Monday-morning and Friday-evening rush as ED acuity.
+        let boarders = 1.6 + age * 0.02
+        if (weekday === 1 && shift === 'AM') boarders += 1.4
+        if (weekday === 5 && shift === 'PM') boarders += 2.9
+        if (isWeekend) boarders -= 0.6
+        boarders = Math.max(0, Math.round(boarders + gauss(nextCap) * 0.8))
+        const bhArrivals = Math.max(0, Math.round(Math.max(0, points) / 2.6 + gauss(nextCap) * 1.1))
+        const boardingHours = boarders === 0 ? 0 : Math.max(1, Math.round(boarders * (6.5 + gauss(nextCap) * 1.6)))
         entries.push({
           id: `demo_${unit.id}_${age}`,
           locId: unit.id,
@@ -170,6 +187,9 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
           census: null,
           points: Math.max(0, Math.round(points)),
           staff: null,
+          bhArrivals,
+          boarders,
+          boardingHours,
           capInPlace: false,
           notes: '',
           pilot: false,
@@ -267,14 +287,128 @@ function sampleDeployments() {
  */
 export function buildSampleData(opts = {}) {
   const scenario = buildDemoScenario(opts)
+  const history = sampleOutcomeHistory(scenario)
   return {
     locations: scenario.locations,
-    entries: scenario.entries,
-    deployments: sampleDeployments(),
+    entries: history.entries,
+    deployments: [...sampleDeployments(), ...history.deployments],
     caps: scenario.caps,
     thresholds: null, // caller applies its own defaults
+    planLog: history.planLog,
+    safetyEvents: sampleSafetyEvents(history.entries, scenario.locations),
     meta: scenario.meta,
   }
+}
+
+/* ---------------------------------------------------- outcome-loop history ---
+ * A record of past deployment plans, as if a house supervisor had recorded
+ * the Command Center's recommendation over the last few weeks and followed
+ * about two-thirds of the moves. Each plan is produced by the real optimizer,
+ * fed only the shifts before it. A followed move changes the target shift's
+ * logged staffing, because following the plan really did add staff there.
+ * Unfollowed moves leave the logged shift untouched. The outcome loop can
+ * then measure what following the plan was worth, the way it would with real
+ * data.
+ */
+export function sampleOutcomeHistory(scenario, { plans = 18, followRate = 0.68, seed = 424242 } = {}) {
+  const next = rng(seed)
+  const entries = scenario.entries.map((e) => ({ ...e }))
+  const slotOf = (e) => slotIndex(e.date, e.shift)
+  const lastSlot = entries.reduce((m, e) => Math.max(m, slotOf(e)), -Infinity)
+  const planLog = []
+  const deployments = []
+  let staffNo = 1
+
+  for (let k = 0; k < plans; k++) {
+    // Cut-offs every other shift, ending two shifts before now so the present
+    // board is left exactly as the live scenario draws it.
+    const cutoff = lastSlot - 3 - 2 * (plans - 1 - k)
+    const target = cutoff + 1
+    const hist = entries.filter((e) => slotOf(e) <= cutoff)
+    const forecasts = {}
+    for (const loc of scenario.locations) {
+      forecasts[loc.id] = forecastLocation(hist, loc, DEFAULT_THRESHOLDS, { horizon: 1 })
+    }
+    const plan = recommendDeployment({
+      locations: scenario.locations, entries: hist, thresholds: DEFAULT_THRESHOLDS,
+      forecasts, floatStaff: 2, mode: 'forecast',
+    })
+    const { date, shift } = slotToDateShift(target)
+    const snap = snapshotPlan({
+      plan, target: { date, shift }, mode: 'forecast', floatStaff: 2,
+      recordedBy: 'House supervisor (demo)', now: (dayIndex(date) * 86400000) - 3600000,
+    })
+    if (!snap) continue
+    snap.demo = true
+    planLog.push(snap)
+
+    snap.moves.forEach((m, mi) => {
+      if (next() >= followRate) return
+      for (let i = 0; i < m.staff; i++) {
+        deployments.push({
+          id: `demo_dep_plan_${k}_${mi}_${i}`,
+          date, shift,
+          staffName: `Float RN ${String(staffNo++).padStart(2, '0')}`,
+          role: 'RN',
+          fromLocId: m.fromLocId,
+          toLocId: m.toLocId,
+          hours: 12,
+          reason: 'Acuitas recommended plan',
+          source: m.fromLocId ? 'internal' : (next() < 0.25 ? 'overtime' : 'float'),
+          notes: '',
+          demo: true,
+          createdAt: dayIndex(date) * 86400000,
+        })
+      }
+      const recv = entries.find((e) => e.locId === m.toLocId && slotOf(e) === target)
+      if (recv && recv.staff) recv.staff += m.staff
+      if (m.fromLocId) {
+        const donor = entries.find((e) => e.locId === m.fromLocId && slotOf(e) === target)
+        if (donor && donor.staff) donor.staff = Math.max(2, donor.staff - m.staff)
+      }
+    })
+  }
+  return { entries, deployments, planLog }
+}
+
+/* --------------------------------------------------------- safety events ---
+ * Synthetic safety events whose frequency rises with the acuity of the shift
+ * they land on: rare on GREEN shifts, more common on YELLOW, most common on
+ * RED. That is the relationship the safety module is built to measure from
+ * real logs. Unit, date, shift and type only; no names.
+ */
+const EVENT_MIX = [
+  ['restraint', 0.22], ['assault-staff', 0.16], ['behavioral-code', 0.16], ['seclusion', 0.12],
+  ['assault-patient', 0.12], ['staff-injury', 0.08], ['self-harm', 0.08], ['elopement', 0.06],
+]
+const EVENT_RATE = { GREEN: 0.035, YELLOW: 0.085, RED: 0.2, NONE: 0 }
+
+export function sampleSafetyEvents(entries, locations, { seed = 77017 } = {}) {
+  const next = rng(seed)
+  const locById = new Map((locations || []).map((l) => [l.id, l]))
+  const pick = () => {
+    let r = next()
+    for (const [type, w] of EVENT_MIX) {
+      if ((r -= w) <= 0) return type
+    }
+    return EVENT_MIX[0][0]
+  }
+  const out = []
+  for (const e of entries || []) {
+    const loc = locById.get(e.locId)
+    if (!loc || loc.type === 'ed') continue
+    const stage = entryStage(e, loc, DEFAULT_THRESHOLDS)
+    let n = 0
+    // Up to two events in one shift, each with the stage's probability.
+    for (let i = 0; i < 2; i++) if (next() < EVENT_RATE[stage] * (i === 0 ? 1 : 0.35)) n++
+    for (let i = 0; i < n; i++) {
+      out.push({
+        id: `demo_evt_${e.id}_${i}`, locId: e.locId, date: e.date, shift: e.shift,
+        type: pick(), severity: next() < 0.2 ? 2 : 1, notes: '', demo: true, createdAt: e.createdAt,
+      })
+    }
+  }
+  return out
 }
 
 /* ------------------------------------------------------- outpatient sample ---
@@ -325,6 +459,143 @@ export function samplePatients() {
   return rows.map((r) => ({ ...r, symptoms: symptomsById[r.id] || [], demo: true, createdAt: Date.now() }))
 }
 
+const daysAgo = (n) => dateFromDayIndex(dayIndex(today()) - n)
+
+/* ------------------------------------------------------------- discharges ---
+ * Recent inpatient discharges at every stage of the follow-up windows: seen
+ * inside 7 days, seen at 8–30 days, missed, excluded, and still open (some
+ * booked in time, some booked too late, some not booked). Three are already
+ * bridged into AcuiPath, so they appear on the outpatient caseload.
+ */
+export function sampleDischarges() {
+  const rows = [
+    ['D01', 'demo_1sa', 45, { done: 4 }], ['D02', 'demo_3w', 42, { done: 6 }],
+    ['D03', 'demo_2n', 40, { done: 12 }], ['D04', 'demo_4e', 38, {}],
+    ['D05', 'demo_1sa', 36, { done: 3 }], ['D06', 'demo_3w', 34, { excluded: 'Readmitted within the window' }],
+    ['D07', 'demo_2n', 31, { done: 7 }], ['D08', 'demo_4e', 28, { done: 9 }],
+    ['D09', 'demo_1sa', 25, { done: 5 }], ['D10', 'demo_3w', 20, {}],
+    ['D11', 'demo_5ped', 14, { done: 2, population: 'adolescent' }], ['D12', 'demo_2n', 10, { sched: 12 }],
+    ['D13', 'demo_1sa', 5, { bridged: true }], ['D14', 'demo_4e', 4, { sched: 6 }],
+    ['D15', 'demo_3w', 2, { sched: 11, bridged: true, complex: true }], ['D16', 'demo_1sa', 1, { bridged: true }],
+  ]
+  return rows.map(([code, unitId, ago, o]) => {
+    const dischargeDate = daysAgo(ago)
+    const at = (d) => dateFromDayIndex(dayIndex(dischargeDate) + d)
+    return {
+      id: `demo_dc_${code}`,
+      caseLabel: `Discharge ${code}`,
+      unitId,
+      population: o.population || 'adult',
+      dischargeDate,
+      followUpScheduled: o.sched != null ? at(o.sched) : (o.done != null ? at(o.done) : null),
+      followUpCompleted: o.done != null ? at(o.done) : null,
+      excluded: !!o.excluded,
+      excludeReason: o.excluded || '',
+      complex: !!o.complex,
+      bridged: !!o.bridged,
+      program: 'Medication management',
+      needs: { prescriber: true, therapy: true },
+      demo: true,
+      createdAt: dayIndex(dischargeDate) * 86400000,
+    }
+  })
+}
+
+/* -------------------------------------------------- PHQ-9 / GAD-7 scores ---
+ * Score histories for the sample caseload covering each pattern the module
+ * reads: improving to response or remission, meaningful worsening, a positive
+ * self-harm item, severe, and overdue for a repeat.
+ */
+function itemsFor(instrument, total, { item9 = 0 } = {}) {
+  const n = instrument === 'PHQ-9' ? 9 : 7
+  const items = Array(n).fill(0)
+  let left = total
+  if (instrument === 'PHQ-9') { items[8] = item9; left -= item9 }
+  const slots = instrument === 'PHQ-9' ? 8 : 7
+  for (let round = 0; round < 3 && left > 0; round++) {
+    for (let i = 0; i < slots && left > 0; i++) {
+      if (items[i] < 3) { items[i] += 1; left -= 1 }
+    }
+  }
+  return items
+}
+
+export function sampleAssessments() {
+  const plan = {
+    pt_a: { 'PHQ-9': [[44, 14], [22, 9], [5, 6]], 'GAD-7': [[44, 12], [5, 7]] },
+    pt_b: { 'PHQ-9': [[60, 11], [36, 10]] },
+    pt_c: { 'PHQ-9': [[30, 12], [3, 17, 1]], 'GAD-7': [[30, 13], [3, 15]] },
+    pt_d: { 'PHQ-9': [[40, 16], [12, 7]] },
+    pt_e: { 'PHQ-9': [[28, 10], [6, 9]], 'GAD-7': [[28, 8], [6, 14]] },
+    pt_f: { 'PHQ-9': [[2, 22]] },
+    pt_g: { 'GAD-7': [[50, 9], [10, 4]] },
+  }
+  const out = []
+  for (const [patientId, byInst] of Object.entries(plan)) {
+    for (const [instrument, points] of Object.entries(byInst)) {
+      points.forEach(([ago, total, item9 = 0], i) => {
+        const items = itemsFor(instrument, total, { item9 })
+        out.push({
+          id: `demo_mbc_${patientId}_${instrument}_${i}`,
+          patientId, instrument, date: daysAgo(ago), items,
+          ...scoreAssessment(instrument, items),
+          demo: true, createdAt: (dayIndex(today()) - ago) * 86400000,
+        })
+      })
+    }
+  }
+  return out
+}
+
+/* ------------------------------------------------------- placement outcomes ---
+ * Outcomes for past AcuiPath placements that have since closed, each carrying
+ * a snapshot of how it was placed. The cohort is built to show the review
+ * prompts at work: Tier 1 direct placements step up noticeably more often than
+ * fully screened cases, and one clinic has a high first-visit no-show rate.
+ */
+export function sampleOpOutcomes() {
+  const cohort = [
+    // [count, tier, attending, program, stepUps, noShows]
+    [8, '1-direct', false, 'Therapy only', 2, 1],
+    [8, '1-direct', false, 'Medication management', 2, 1],
+    [6, '2-full', false, 'Substance use program', 0, 3],
+    [6, '2-full', false, 'Therapy only', 0, 1],
+    [4, '2-full', true, 'Substance use program', 1, 1],
+    [6, '2-full', true, 'Medication management', 0, 0],
+    [4, 'bridge', false, 'Medication management', 0, 1],
+    [2, 'bridge', true, 'Medication management', 0, 0],
+  ]
+  const out = []
+  let n = 1
+  for (const [count, tier, attending, program, stepUps, noShows] of cohort) {
+    for (let i = 0; i < count; i++) {
+      const id = `demo_hist_${String(n++).padStart(2, '0')}`
+      const noShow = i < noShows
+      out.push({
+        id: `demo_out_${id}`,
+        patientId: id,
+        placement: placementSnapshot({ tier, bridge: tier === 'bridge', requiresAttending: attending, program }),
+        firstVisit: noShow ? 'no-show' : 'attended',
+        retained30: !noShow && i % 5 !== 4,
+        steppedUp: i >= count - stepUps,
+        recordedAt: (dayIndex(today()) - 20 - n) * 86400000,
+        demo: true,
+      })
+    }
+  }
+  // Two live caseload patients already seen.
+  out.push({ id: 'demo_out_pt_a', patientId: 'pt_a', firstVisit: 'attended', retained30: true, steppedUp: false, demo: true, recordedAt: Date.now() })
+  out.push({ id: 'demo_out_pt_d', patientId: 'pt_d', firstVisit: 'attended', retained30: null, steppedUp: null, demo: true, recordedAt: Date.now() })
+  return out
+}
+
 export function buildSampleOutpatient() {
-  return { providers: sampleProviders(), patients: samplePatients(), programs: SAMPLE_PROGRAMS }
+  return {
+    providers: sampleProviders(),
+    patients: samplePatients(),
+    programs: SAMPLE_PROGRAMS,
+    discharges: sampleDischarges(),
+    assessments: sampleAssessments(),
+    outcomes: sampleOpOutcomes(),
+  }
 }

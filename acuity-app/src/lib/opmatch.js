@@ -183,6 +183,11 @@ function urgencyKey(patient) {
 }
 
 function compareUrgency(a, b) {
+  // Post-discharge bridge cases go first: the 7-day follow-up window started
+  // at discharge, so every day they wait counts against it.
+  const ba = a.bridge ? 1 : 0
+  const bb = b.bridge ? 1 : 0
+  if (bb !== ba) return bb - ba
   const ka = urgencyKey(a)
   const kb = urgencyKey(b)
   if (kb.risk !== ka.risk) return kb.risk - ka.risk

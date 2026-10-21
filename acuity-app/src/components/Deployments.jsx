@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Card, Field, Button, theme } from './ui.jsx'
 import { uid, today } from '../lib/storage.js'
+import { DEPLOYMENT_SOURCES } from '../lib/cost.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
 
 const emptyForm = () => ({
@@ -11,6 +12,7 @@ const emptyForm = () => ({
   fromLocId: '',
   toLocId: '',
   hours: '',
+  source: '',
   reason: '',
   notes: '',
 })
@@ -37,6 +39,9 @@ export default function Deployments({ locations, deployments, onAdd, onRemove })
       fromLocId: form.fromLocId || null,
       toLocId: form.toLocId,
       hours: form.hours === '' ? null : Number(form.hours),
+      // Where the staff member came from, for cost reporting. Reassignment is
+      // implied by a "from" unit; otherwise float pool unless set.
+      source: form.fromLocId ? 'internal' : (form.source || 'float'),
       reason: form.reason,
       notes: form.notes,
       createdAt: Date.now(),
@@ -103,6 +108,14 @@ export default function Deployments({ locations, deployments, onAdd, onRemove })
             <Field label="Hours" hint="Optional">
               <input type="number" min="0" step="0.5" value={form.hours} onChange={set('hours')} />
             </Field>
+            <Field label="Source" hint="For cost reporting">
+              <select value={form.fromLocId ? 'internal' : form.source} onChange={set('source')} disabled={!!form.fromLocId}>
+                <option value="">Float pool</option>
+                <option value="overtime">{DEPLOYMENT_SOURCES.overtime}</option>
+                <option value="agency">{DEPLOYMENT_SOURCES.agency}</option>
+                {form.fromLocId && <option value="internal">{DEPLOYMENT_SOURCES.internal}</option>}
+              </select>
+            </Field>
             <Field label="Reason" hint="Optional">
               <input type="text" value={form.reason} onChange={set('reason')} placeholder="e.g. acuity surge, census cap" />
             </Field>
@@ -149,7 +162,7 @@ export default function Deployments({ locations, deployments, onAdd, onRemove })
                     <td style={{ padding: '6px 8px' }}>{d.hours ?? '—'}</td>
                     <td style={{ padding: '6px 8px' }}>{d.reason || '—'}</td>
                     <td style={{ padding: '6px 8px' }}>
-                      <Button variant="danger" onClick={() => remove(d.id)}>Remove</Button>
+                      {onRemove && <Button variant="danger" onClick={() => remove(d.id)}>Remove</Button>}
                     </td>
                   </tr>
                 ))}

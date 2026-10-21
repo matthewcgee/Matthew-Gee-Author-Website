@@ -121,6 +121,10 @@ export const METRICS = {
   census: { key: 'census', label: 'Census', decimals: 1 },
   points: { key: 'points', label: 'Acuity points', decimals: 1 },
   staff: { key: 'staff', label: 'Staff', decimals: 1 },
+  // Emergency department capacity fields, logged per shift.
+  bhArrivals: { key: 'bhArrivals', label: 'BH arrivals', decimals: 1 },
+  boarders: { key: 'boarders', label: 'BH patients boarding', decimals: 1 },
+  boardingHours: { key: 'boardingHours', label: 'Boarding hours', decimals: 0 },
 }
 
 function metricValue(entry, loc, thresholds, metric) {
@@ -128,6 +132,12 @@ function metricValue(entry, loc, thresholds, metric) {
     case 'census': return entry.census == null ? null : Number(entry.census)
     case 'points': return entry.points == null ? null : Number(entry.points)
     case 'staff': return entry.staff == null ? null : Number(entry.staff)
+    case 'bhArrivals':
+    case 'boarders':
+    case 'boardingHours': {
+      const v = entry[metric]
+      return v == null || v === '' ? null : Number(v)
+    }
     case 'acuity':
     default: {
       const v = computeEntryValue(entry, loc, thresholds)

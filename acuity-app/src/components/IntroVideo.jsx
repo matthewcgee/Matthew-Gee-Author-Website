@@ -38,7 +38,7 @@ const SCENES = [
   {
     icon: 'route',
     eyebrow: 'AcuiPath™ Outpatient',
-    title: 'The right clinic, the right physician',
+    title: 'The right location, the right physician',
     body: 'A two-tier screen places simple referrals and escalates complex ones. Discharges are bridged into care against the 7-day follow-up window, and PHQ-9 and GAD-7 flag who needs a fresh look.',
   },
   {

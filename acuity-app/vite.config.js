@@ -12,4 +12,7 @@ export default defineConfig({
     outDir: '../acuity',
     emptyOutDir: true,
   },
+  test: {
+    setupFiles: ['./src/test/fixedClock.js'],
+  },
 })

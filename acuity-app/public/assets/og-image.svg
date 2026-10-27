@@ -62,11 +62,11 @@
   <text x="622" y="368"
         font-family="Avenir Next, Montserrat, Segoe UI, Arial, sans-serif"
         font-size="28" font-weight="400" letter-spacing="0.5"
-        fill="rgba(255,255,255,0.78)">Behavioral Health Acuity Dashboard</text>
+        fill="rgba(255,255,255,0.78)">Behavioral Health Acuity Intelligence</text>
 
   <!-- Descriptor line -->
   <text x="622" y="410"
         font-family="Avenir Next, Montserrat, Segoe UI, Arial, sans-serif"
         font-size="20" font-weight="400"
-        fill="rgba(255,255,255,0.45)">Real-time acuity · Census · Staffing · Every shift.</text>
+        fill="rgba(255,255,255,0.45)">Predict · Staff · Screen · Route · Prove it.</text>
 </svg>

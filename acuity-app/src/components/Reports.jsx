@@ -464,7 +464,7 @@ export default function Reports({ locations, entries, deployments, thresholds, o
                         </div>
                       </td>
                       <td style={{ padding: '6px 8px' }}>
-                        <Button variant="danger" onClick={() => onDeleteEntry(e.id)}>Remove</Button>
+                        {onDeleteEntry && <Button variant="danger" onClick={() => onDeleteEntry(e.id)}>Remove</Button>}
                       </td>
                     </tr>
                   )

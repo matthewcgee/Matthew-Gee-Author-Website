@@ -1,54 +1,29 @@
 import React, { useMemo, useState } from 'react'
 import { Card, Field, Button, Badge, StatCard, Icon, theme, grid } from './ui.jsx'
 import AcuitasLogo from './AcuitasLogo.jsx'
-import { readStorage, writeStorage, uid } from '../lib/storage.js'
+import { uid } from '../lib/storage.js'
 import {
   POPULATIONS, DIMENSIONS, SCORE_MIN, SCORE_MAX,
-  anchorsFor, screenLevelOfCare, emptyScores, LEVELS,
+  anchorsFor, screenLevelOfCare, emptyScores,
+  DEFAULT_AP_THRESHOLDS, normalizeApThresholds,
 } from '../lib/loc.js'
-import { assignCaseload, reasonLabel, requiresAttending, TRAINING_LEVELS } from '../lib/opmatch.js'
+import { assignCaseload, requiresAttending, TRAINING_LEVELS } from '../lib/opmatch.js'
 import { SYMPTOMS, recommendProgram } from '../lib/programs.js'
-import { buildSampleOutpatient } from '../lib/demoData.js'
-
-const PT_KEY = 'bhai:opPatients'
-const PROV_KEY = 'bhai:opProviders'
-const PROG_KEY = 'bhai:opPrograms'
+import { DEFAULT_TIER1_TRIGGERS, evaluateTier1, directPlacementDefaults } from '../lib/tier1.js'
+import { can } from '../lib/roles.js'
+import { useOutpatientData, loadOutpatientSample, clearOutpatientData } from '../lib/opData.js'
+import DischargeBridge from './acuipath/DischargeBridge.jsx'
+import MbcPanel from './acuipath/MbcPanel.jsx'
+import OpOutcomes from './acuipath/OpOutcomes.jsx'
 const SPECIALTIES = ['general', 'trauma', 'sud', 'adolescent', 'eating-disorders']
 const SPECIALTY_LABEL = {
   general: 'General', trauma: 'Trauma', sud: 'Substance use',
   adolescent: 'Child / adolescent', 'eating-disorders': 'Eating disorders',
 }
 
-// The clinic / program list is org-configurable — edited in the Caseload view
-// and persisted. These are only the starting defaults.
-const DEFAULT_PROGRAMS = [
-  'Therapy only', 'Medication management', 'Neuromodulation',
-  'Substance use program', 'Eating disorders program',
-]
 const TRAINING_LABEL = { attending: 'Attending', fellow: 'Fellow', staff: 'Staff (non-trainee)', resident: 'Resident' }
 
-// Transparent default suggestion, always chosen from the current program list so
-// it works with whatever clinics an org has configured. The clinician can change
-// it — the tool never locks a program in.
-function suggestProgram(needs, programs) {
-  if (!programs.length) return ''
-  const find = (name) => programs.find((p) => p.toLowerCase() === name)
-  if (needs.prescriber && !needs.therapy) return find('medication management') || programs[0]
-  if (needs.therapy && !needs.prescriber) return find('therapy only') || programs[0]
-  return find('medication management') || programs[0]
-}
-
-// Colour a level by how far up the continuum it sits — green while it is within
-// the outpatient continuum, amber at the step-up boundary, red above it.
-function levelColor(level) {
-  if (!level) return theme.sub
-  if (level.setting === 'below-op') return theme.sub
-  if (level.setting === 'outpatient' || level.setting === 'outpatient-intensive') return '#3fb37f'
-  if (level.setting === 'step-up') return '#e0b341'
-  return '#e0584a'
-}
-
-const num = (v, d = 0) => (v == null ? '—' : Number(v).toFixed(d))
+const slug = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || `t_${Math.random().toString(36).slice(2, 6)}`
 
 /* ------------------------------------------------------------- score control */
 
@@ -113,60 +88,184 @@ function ScoreScale({ value, onChange, anchors }) {
   )
 }
 
+/* --------------------------------------------------------- shared sub-blocks */
+
+// Presenting symptoms — drive the clinic / program recommendation. Shared by
+// both screening tiers.
+function SymptomPicker({ symptoms, onToggle }) {
+  return (
+    <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
+      <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>Current symptoms</div>
+      <div style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
+        Check the presenting symptoms — these drive the recommended clinic / program on the right.
+      </div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {SYMPTOMS.map((s) => {
+          const on = symptoms.includes(s.id)
+          return (
+            <button key={s.id} type="button" onClick={() => onToggle(s.id)} title={s.label}
+              style={{ padding: '5px 11px', borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                border: `1px solid ${on ? theme.accent : theme.border}`, background: on ? theme.accentSoft : theme.panel, color: on ? theme.accent : theme.sub }}>
+              {s.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// The routing fields both tiers collect before saving to the caseload.
+function CaseFields({ name, setName, urgencyDays, setUrgencyDays, needs, setNeeds, telehealthOnly, setTelehealthOnly, specialties, setSpecialties }) {
+  const toggleSpecialty = (s) =>
+    setSpecialties((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))
+  return (
+    <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
+      <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>Add to caseload</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+        <Field label="Case label (optional)" hint="No names or MRNs — use a case number. Left blank, one is generated.">
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Case 12" />
+        </Field>
+        <Field label="Days waiting" hint="For prioritization"><input type="number" min="0" value={urgencyDays} onChange={(e) => setUrgencyDays(e.target.value)} /></Field>
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10, fontSize: 12.5 }}>
+        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+          <input type="checkbox" checked={needs.prescriber} onChange={(e) => setNeeds((n) => ({ ...n, prescriber: e.target.checked }))} />
+          Needs prescriber
+        </label>
+        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+          <input type="checkbox" checked={needs.therapy} onChange={(e) => setNeeds((n) => ({ ...n, therapy: e.target.checked }))} />
+          Needs therapy
+        </label>
+        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
+          <input type="checkbox" checked={telehealthOnly} onChange={(e) => setTelehealthOnly(e.target.checked)} />
+          Telehealth only
+        </label>
+      </div>
+      <div style={{ fontSize: 11.5, color: theme.sub, marginBottom: 6 }}>Required specialties</div>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        {SPECIALTIES.map((s) => {
+          const on = specialties.includes(s)
+          return (
+            <button key={s} type="button" onClick={() => toggleSpecialty(s)}
+              style={{
+                padding: '4px 10px', borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
+                border: `1px solid ${on ? theme.accent : theme.border}`,
+                background: on ? theme.accentSoft : theme.panel, color: on ? theme.accent : theme.sub,
+              }}>
+              {SPECIALTY_LABEL[s]}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// Recommended clinic / program — the prominent routing output, shared by both
+// tiers. Clinic routing is symptom-driven and never blocked by acuity.
+function RoutingPanel({ programs, recommendation, activeProgram, onSelect, programTouched, footer }) {
+  return (
+    <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${theme.border}` }}>
+      <div style={{ fontSize: 10.5, color: theme.sub, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 5 }}>
+        Recommended clinic / program
+      </div>
+      {programs.length === 0 ? (
+        <div style={{ fontSize: 12.5, color: theme.sub }}>
+          No programs configured. Add clinics in the Caseload tab.
+        </div>
+      ) : (
+        <>
+          <select
+            value={activeProgram}
+            onChange={(e) => onSelect(e.target.value)}
+            style={{ fontFamily: theme.display, fontSize: 19, fontWeight: 800, color: theme.accent, width: '100%', padding: '6px 8px', border: `1px solid ${theme.border}`, borderRadius: 8, background: theme.panel }}
+          >
+            {programs.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+
+          {!programTouched && recommendation.source === 'symptoms' && (
+            <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 6, lineHeight: 1.45 }}>
+              Suggested from symptoms: <strong style={{ color: theme.text }}>{recommendation.rationale.join(', ')}</strong>
+              {recommendation.prescriberHint && <> · medication management typically indicated</>}
+            </div>
+          )}
+          {!programTouched && recommendation.source === 'needs' && (
+            <div style={{ fontSize: 11, color: theme.sub, marginTop: 4 }}>
+              No symptoms checked yet — suggested from service needs. Add symptoms for a targeted recommendation.
+            </div>
+          )}
+          {programTouched && (
+            <div style={{ fontSize: 11, color: theme.sub, marginTop: 4 }}>Clinician-selected.</div>
+          )}
+
+          {!programTouched && recommendation.source === 'symptoms' && !recommendation.matched && (
+            <div style={{ fontSize: 11.5, color: '#8a6a10', background: '#e0b34118', borderRadius: 7, padding: '7px 9px', marginTop: 8, lineHeight: 1.45 }}>
+              Symptoms point to <strong>{recommendation.conceptLabel}</strong>, but no clinic by that name is
+              configured. Add one in the Caseload tab, or pick the closest fit above.
+            </div>
+          )}
+          {!programTouched && recommendation.secondary.length > 0 && (
+            <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 6 }}>
+              Also consider: {recommendation.secondary.map((s) => s.program || s.label).join(', ')}
+            </div>
+          )}
+        </>
+      )}
+      {footer}
+    </div>
+  )
+}
+
 /* --------------------------------------------------------------- result panel */
 
+// Operational output of the in-depth screen: primary-physician level (attending
+// vs resident) and any advisories. Clinic routing is shown above this panel.
 function ResultPanel({ result }) {
-  const level = result.level
-  const color = levelColor(level)
-  const opBadge =
-    result.opClassification === 'outpatient-appropriate'
-      ? { label: 'OUTPATIENT APPROPRIATE', color: '#3fb37f' }
-      : result.opClassification === 'below-outpatient'
-        ? { label: 'BELOW OP THRESHOLD', color: theme.sub }
-        : { label: 'EXCEEDS OUTPATIENT — STEP UP', color: '#e0584a' }
-
+  const att = result.attending
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, flexWrap: 'wrap', marginBottom: 4 }}>
-        <div style={{ fontSize: 10.5, color: theme.sub, textTransform: 'uppercase', letterSpacing: 0.6 }}>
-          Recommended level of care
+      {/* Attending vs resident — the second operational decision. */}
+      <div style={{ fontSize: 10.5, color: theme.sub, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 5 }}>
+        Primary physician
+      </div>
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10,
+        background: att.required ? '#e0b34120' : '#3fb37f18',
+        color: att.required ? '#8a6a10' : '#1f7a54', fontWeight: 800, fontSize: 15,
+      }}>
+        <Icon name="shield" size={16} />
+        {att.required ? 'Attending required' : 'Resident-eligible'}
+      </div>
+      {att.required && att.reasons.length > 0 && (
+        <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 6, lineHeight: 1.45 }}>
+          Because: {att.reasons.join('; ')}.
         </div>
-        <Badge color={opBadge.color}>{opBadge.label}</Badge>
-      </div>
-      <div style={{ fontFamily: theme.display, fontSize: 26, fontWeight: 800, color, lineHeight: 1.1 }}>
-        {level.label}
-      </div>
-      <div style={{ fontSize: 12, color: theme.sub, marginTop: 3 }}>{level.detail}</div>
-
-      {result.overridden && (
-        <div style={{ fontSize: 11.5, color: '#a5342a', fontWeight: 700, marginTop: 8 }}>
-          Raised above the score-based band by a safety rule below.
+      )}
+      {!att.required && (
+        <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 6 }}>
+          Complexity is below the attending threshold — a resident may be the primary treating physician.
         </div>
       )}
 
-      {result.flags.length > 0 && (
-        <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
-          {result.flags.map((f) => (
-            <div
-              key={f.id}
-              style={{
-                display: 'flex', gap: 7, alignItems: 'flex-start',
-                padding: '8px 10px', borderRadius: 8,
-                background: `${'#e0584a'}14`, color: '#a5342a',
-                fontSize: 11.5, fontWeight: 600, lineHeight: 1.4,
-              }}
-            >
-              <Icon name="alert" size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-              <span>{f.label}</span>
-            </div>
-          ))}
+      {/* Advisories: acute-safety and PHP/IOP consideration. */}
+      {result.acuteSafety.flag && (
+        <div style={{ marginTop: 12, display: 'flex', gap: 7, alignItems: 'flex-start', padding: '9px 11px', borderRadius: 9, background: '#e0584a16', color: '#a5342a', fontSize: 11.5, fontWeight: 700, lineHeight: 1.45 }}>
+          <Icon name="alert" size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>{result.acuteSafety.reason}</span>
+        </div>
+      )}
+      {result.phpIop.consider && (
+        <div style={{ marginTop: 10, display: 'flex', gap: 7, alignItems: 'flex-start', padding: '9px 11px', borderRadius: 9, background: '#e0b34118', color: '#8a6a10', fontSize: 11.5, fontWeight: 600, lineHeight: 1.45 }}>
+          <Icon name="layers" size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>{result.phpIop.reason} <em>(advisory — clinic routing still applies)</em></span>
         </div>
       )}
 
       {/* composite + glass-box contributions */}
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, color: theme.sub, marginBottom: 5 }}>
-          <span>Composite score</span>
+          <span>Acuity composite</span>
           <span style={{ fontWeight: 700, color: theme.text }}>{result.total} / {result.maxTotal}</span>
         </div>
         <div style={{ display: 'grid', gap: 6 }}>
@@ -184,7 +283,8 @@ function ResultPanel({ result }) {
           ))}
         </div>
         <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 8, lineHeight: 1.5 }}>
-          The recommendation is the more intensive of this score band and any safety rule above it — nothing is hidden.
+          Screening decides the clinic and the primary-physician level. It does not place into PHP/IOP — that is only an
+          advisory when the composite crosses the set threshold.
         </div>
       </div>
     </div>
@@ -193,76 +293,238 @@ function ResultPanel({ result }) {
 
 /* ------------------------------------------------------------- screener view */
 
-function Screener({ onSave, programs }) {
-  const [population, setPopulation] = useState('adult')
-  const [scores, setScores] = useState(emptyScores)
-  const [symptoms, setSymptoms] = useState([])
-  const [name, setName] = useState('')
-  const [needs, setNeeds] = useState({ prescriber: false, therapy: true })
-  const [specialties, setSpecialties] = useState([])
-  const [telehealthOnly, setTelehealthOnly] = useState(false)
-  const [urgencyDays, setUrgencyDays] = useState('')
-  const [program, setProgram] = useState('')
-  // Whether the clinician has hand-picked a program; until then it tracks the
-  // symptom-driven recommendation so it stays sensible as symptoms/needs change.
-  const [programTouched, setProgramTouched] = useState(false)
+// Two-tier screening. Tier 1 is a nurse chart review (no patient contact): a
+// clean review can be placed directly into a clinic and bypass the deeper
+// screen; any red flag escalates to Tier 2, the in-depth screen with a phone
+// screen / patient discussion. Tier 2 produces the full operational output —
+// clinic, attending-vs-resident, and the acute / PHP-IOP advisories.
+// `initialCase` reopens an existing case for a fresh Tier 2 screen (for
+// example after a worsening PHQ-9). Saving then updates that case in place.
+function Screener({ onSave, programs, thresholds, triggers, initialCase = null, onCancelRescreen }) {
+  const ic = initialCase
+  const [step, setStep] = useState(ic ? 'tier2' : 'tier1')
+  // shared across both tiers
+  const [population, setPopulation] = useState(ic?.population || 'adult')
+  const [symptoms, setSymptoms] = useState(ic?.symptoms || [])
+  const [name, setName] = useState(ic?.name || '')
+  const [needs, setNeeds] = useState(ic?.needs || { prescriber: false, therapy: true })
+  const [specialties, setSpecialties] = useState(ic?.specialties || [])
+  const [telehealthOnly, setTelehealthOnly] = useState(!!ic?.telehealthOnly)
+  const [urgencyDays, setUrgencyDays] = useState(ic?.urgencyDays != null ? String(ic.urgencyDays) : '')
+  const [program, setProgram] = useState(ic?.program || '')
+  const [programTouched, setProgramTouched] = useState(!!ic?.program)
+  // tier 1
+  const [tier1Checked, setTier1Checked] = useState([])
+  // tier 2
+  const [scores, setScores] = useState(() => ic?.scores || emptyScores())
+  const [complexityFlag, setComplexityFlag] = useState(!!ic?.complexityFlag)
 
   const anchors = anchorsFor(population)
-  const result = useMemo(() => screenLevelOfCare(scores, { population }), [scores, population])
+  const t1 = useMemo(() => evaluateTier1(tier1Checked, triggers), [tier1Checked, triggers])
+  const result = useMemo(
+    () => screenLevelOfCare(scores, { population, thresholds, complexityFlag }),
+    [scores, population, thresholds, complexityFlag]
+  )
   const recommendation = useMemo(
     () => recommendProgram({ symptoms, needs, programs }),
     [symptoms, needs, programs]
   )
-  // Fall back to the first configured program when the recommended concept has
-  // no matching clinic, so the selector always holds a valid option; the "no
-  // clinic configured" note below still surfaces the gap.
   const suggestedProgram = recommendation.program || programs[0] || ''
   const activeProgram = programTouched && program ? program : suggestedProgram
-  const needsAttending = requiresAttending({ riskScore: scores.risk })
 
   const setScore = (dim, n) => setScores((s) => ({ ...s, [dim]: n }))
-  const toggleSpecialty = (s) =>
-    setSpecialties((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]))
   const toggleSymptom = (id) =>
     setSymptoms((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
+  const toggleTrigger = (id) =>
+    setTier1Checked((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]))
+  const selectProgram = (v) => { setProgram(v); setProgramTouched(true) }
 
-  const save = () => {
-    // No patient-identifying information is required. If no case label is
-    // entered, generate a non-identifying reference so the caseload is usable
-    // without ever holding a name or MRN.
-    const id = uid()
-    onSave({
+  const resetAll = () => {
+    setStep('tier1')
+    setSymptoms([]); setName(''); setNeeds({ prescriber: false, therapy: true })
+    setSpecialties([]); setTelehealthOnly(false); setUrgencyDays('')
+    setProgram(''); setProgramTouched(false)
+    setTier1Checked([]); setScores(emptyScores()); setComplexityFlag(false)
+  }
+
+  const baseRecord = () => {
+    const id = ic?.id || uid()
+    return {
+      ...(ic || {}),
       id,
       name: name.trim() || `Case ${id.slice(0, 4).toUpperCase()}`,
       population,
-      scores,
-      level: result.level.id,
-      levelLabel: result.level.label,
-      opAppropriate: result.opAppropriate,
-      riskScore: scores.risk,
       needs,
       specialties,
       symptoms,
       program: activeProgram,
       telehealthOnly,
       urgencyDays: urgencyDays === '' ? 0 : Number(urgencyDays),
-      createdAt: Date.now(),
-    })
-    // reset for the next patient, keep population
-    setScores(emptyScores())
-    setSymptoms([])
-    setName('')
-    setNeeds({ prescriber: false, therapy: true })
-    setSpecialties([])
-    setTelehealthOnly(false)
-    setUrgencyDays('')
-    setProgram('')
-    setProgramTouched(false)
+      createdAt: ic?.createdAt || Date.now(),
+      ...(ic ? { rescreenedAt: Date.now() } : {}),
+    }
   }
 
+  // Tier 1 direct placement — a clean chart review, resident-eligible, routine
+  // outpatient. No dimension scoring; the clinic comes from symptoms.
+  const saveDirect = () => {
+    const d = directPlacementDefaults()
+    onSave({
+      ...baseRecord(),
+      tier: d.tier,
+      requiresAttending: d.requiresAttending,
+      routableOutpatient: d.routableOutpatient,
+      level: 'op',
+      levelLabel: 'Outpatient',
+      opAppropriate: true,
+      riskScore: 0,
+      tier1Triggers: [],
+    })
+    resetAll()
+  }
+
+  // Tier 2 in-depth screen — full operational output stored on the record.
+  const saveFull = () => {
+    onSave({
+      ...baseRecord(),
+      tier: '2-full',
+      scores,
+      complexityFlag,
+      level: result.level.id,
+      levelLabel: result.level.label,
+      opAppropriate: result.opAppropriate,
+      riskScore: scores.risk,
+      requiresAttending: result.attending.required,
+      attendingReasons: result.attending.reasons,
+      routableOutpatient: result.routableOutpatient,
+      phpIopConsider: result.phpIop.consider,
+      acuteSafety: result.acuteSafety.flag,
+      tier1Triggers: t1.triggered.map((t) => t.id),
+    })
+    resetAll()
+  }
+
+  /* --------------------------------------------------------------- Tier 1 UI */
+  if (step === 'tier1') {
+    return (
+      <div style={grid(2, 18)}>
+        <Card title="Tier 1 — nurse chart review" sub="Chart review only, no patient contact. Check any red flag found in the chart.">
+          <Field label="Population">
+            <select value={population} onChange={(e) => setPopulation(e.target.value)}>
+              {Object.values(POPULATIONS).map((p) => (
+                <option key={p.id} value={p.id}>{p.label} · {p.framework}</option>
+              ))}
+            </select>
+          </Field>
+
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>Chart-review red flags</div>
+            <div style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
+              Any one flag routes the case to the in-depth Tier 2 screen. A completely clean review can be placed
+              directly. Edit this list in the Caseload tab.
+            </div>
+            <div style={{ display: 'grid', gap: 5 }}>
+              {triggers.map((t) => {
+                const on = tier1Checked.includes(t.id)
+                return (
+                  <label key={t.id} style={{
+                    display: 'flex', gap: 9, alignItems: 'flex-start', cursor: 'pointer',
+                    padding: '8px 10px', borderRadius: 8, lineHeight: 1.4, fontSize: 12,
+                    border: `1px solid ${on ? '#e0b341' : theme.border}`,
+                    background: on ? '#e0b34112' : theme.panel,
+                  }}>
+                    <input type="checkbox" checked={on} onChange={() => toggleTrigger(t.id)} style={{ marginTop: 2 }} />
+                    <span style={{ color: on ? '#8a6a10' : theme.text, fontWeight: on ? 700 : 400 }}>{t.label}</span>
+                  </label>
+                )
+              })}
+            </div>
+          </div>
+
+          <SymptomPicker symptoms={symptoms} onToggle={toggleSymptom} />
+          <CaseFields
+            name={name} setName={setName} urgencyDays={urgencyDays} setUrgencyDays={setUrgencyDays}
+            needs={needs} setNeeds={setNeeds} telehealthOnly={telehealthOnly} setTelehealthOnly={setTelehealthOnly}
+            specialties={specialties} setSpecialties={setSpecialties}
+          />
+
+          <div style={{ marginTop: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Button onClick={saveDirect} disabled={t1.escalate}>
+              <Icon name="plusCircle" size={15} />Place directly
+            </Button>
+            <Button variant={t1.escalate ? 'primary' : 'ghost'} onClick={() => setStep('tier2')}>
+              Continue to in-depth screen <Icon name="route" size={15} />
+            </Button>
+          </div>
+        </Card>
+
+        <Card>
+          <RoutingPanel
+            programs={programs} recommendation={recommendation} activeProgram={activeProgram}
+            onSelect={selectProgram} programTouched={programTouched}
+          />
+          {/* Tier 1 disposition */}
+          <div style={{ fontSize: 10.5, color: theme.sub, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 5 }}>
+            Tier 1 disposition
+          </div>
+          {t1.escalate ? (
+            <>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10,
+                background: '#e0b34120', color: '#8a6a10', fontWeight: 800, fontSize: 15,
+              }}>
+                <Icon name="route" size={16} />
+                Escalate to in-depth screen
+              </div>
+              <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 8, lineHeight: 1.5 }}>
+                {t1.count} red flag{t1.count === 1 ? '' : 's'} found on chart review — a Tier 2 screen (with a phone
+                screen / patient discussion) is needed before placement.
+              </div>
+              <ul style={{ margin: '8px 0 0', paddingLeft: 18, fontSize: 11.5, color: theme.text, lineHeight: 1.5 }}>
+                {t1.triggered.map((t) => <li key={t.id}>{t.label}</li>)}
+              </ul>
+            </>
+          ) : (
+            <>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 12px', borderRadius: 10,
+                background: '#3fb37f18', color: '#1f7a54', fontWeight: 800, fontSize: 15,
+              }}>
+                <Icon name="shield" size={16} />
+                Eligible for direct placement
+              </div>
+              <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 8, lineHeight: 1.5 }}>
+                Clean chart review — no red flags. The case can be placed directly into the recommended clinic as
+                <strong> resident-eligible, routine outpatient</strong>, bypassing the in-depth screen. You may still
+                continue to a full screen if you want the deeper look.
+              </div>
+            </>
+          )}
+        </Card>
+      </div>
+    )
+  }
+
+  /* --------------------------------------------------------------- Tier 2 UI */
   return (
     <div style={grid(2, 18)}>
-      <Card title="Screen a patient" sub="Rate each dimension 1 (minimal) to 5 (severe)">
+      <Card
+        title="Tier 2 — in-depth screen"
+        sub="Full six-dimension screen with a phone screen / patient discussion. Rate each dimension 1 (minimal) to 5 (severe)."
+      >
+        <div style={{ marginBottom: 12 }}>
+          {ic ? (
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <Button variant="ghost" onClick={onCancelRescreen}>Cancel re-screen</Button>
+              <span style={{ fontSize: 12, color: '#8a6a10', fontWeight: 700 }}>
+                Re-screening {ic.name}. Saving updates this case in place.
+              </span>
+            </div>
+          ) : (
+            <Button variant="ghost" onClick={() => setStep('tier1')}>← Back to chart review</Button>
+          )}
+        </div>
+
         <Field label="Population">
           <select value={population} onChange={(e) => setPopulation(e.target.value)}>
             {Object.values(POPULATIONS).map((p) => (
@@ -270,6 +532,12 @@ function Screener({ onSave, programs }) {
             ))}
           </select>
         </Field>
+
+        {t1.count > 0 && (
+          <div style={{ marginTop: 12, fontSize: 11.5, color: '#8a6a10', background: '#e0b34114', borderRadius: 8, padding: '8px 10px', lineHeight: 1.45 }}>
+            Escalated from Tier 1 for: {t1.triggered.map((t) => t.label).join('; ')}.
+          </div>
+        )}
 
         <div style={{ marginTop: 14, display: 'grid', gap: 16 }}>
           {DIMENSIONS.map((dim) => (
@@ -285,130 +553,35 @@ function Screener({ onSave, programs }) {
           ))}
         </div>
 
-        {/* Current symptoms — drive the clinic / program recommendation. */}
-        <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>Current symptoms</div>
-          <div style={{ fontSize: 11, color: theme.sub, marginBottom: 8 }}>
-            Check the presenting symptoms — these drive the recommended clinic / program on the right.
-          </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {SYMPTOMS.map((s) => {
-              const on = symptoms.includes(s.id)
-              return (
-                <button key={s.id} type="button" onClick={() => toggleSymptom(s.id)} title={s.label}
-                  style={{ padding: '5px 11px', borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
-                    border: `1px solid ${on ? theme.accent : theme.border}`, background: on ? theme.accentSoft : theme.panel, color: on ? theme.accent : theme.sub }}>
-                  {s.label}
-                </button>
-              )
-            })}
-          </div>
+        {/* Manual complexity flag — feeds the attending-required rule. */}
+        <div style={{ marginTop: 16 }}>
+          <label style={{ display: 'flex', gap: 9, alignItems: 'flex-start', cursor: 'pointer', fontSize: 12.5, lineHeight: 1.4,
+            padding: '9px 11px', borderRadius: 8, border: `1px solid ${complexityFlag ? '#e0b341' : theme.border}`, background: complexityFlag ? '#e0b34112' : theme.panel }}>
+            <input type="checkbox" checked={complexityFlag} onChange={(e) => setComplexityFlag(e.target.checked)} style={{ marginTop: 2 }} />
+            <span style={{ color: complexityFlag ? '#8a6a10' : theme.text, fontWeight: complexityFlag ? 700 : 400 }}>
+              Diagnostic / treatment complexity — clinician judgment that this case needs an attending as primary
+              physician, independent of the scored dimensions.
+            </span>
+          </label>
         </div>
 
-        <div style={{ marginTop: 18, paddingTop: 14, borderTop: `1px solid ${theme.border}` }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 10 }}>Add to caseload (optional)</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <Field label="Case label (optional)" hint="No names or MRNs — use a case number. Left blank, one is generated.">
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Case 12" />
-            </Field>
-            <Field label="Days waiting" hint="For prioritization"><input type="number" min="0" value={urgencyDays} onChange={(e) => setUrgencyDays(e.target.value)} /></Field>
-          </div>
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10, fontSize: 12.5 }}>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-              <input type="checkbox" checked={needs.prescriber} onChange={(e) => setNeeds((n) => ({ ...n, prescriber: e.target.checked }))} />
-              Needs prescriber
-            </label>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-              <input type="checkbox" checked={needs.therapy} onChange={(e) => setNeeds((n) => ({ ...n, therapy: e.target.checked }))} />
-              Needs therapy
-            </label>
-            <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}>
-              <input type="checkbox" checked={telehealthOnly} onChange={(e) => setTelehealthOnly(e.target.checked)} />
-              Telehealth only
-            </label>
-          </div>
-          <div style={{ fontSize: 11.5, color: theme.sub, marginBottom: 6 }}>Required specialties</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-            {SPECIALTIES.map((s) => {
-              const on = specialties.includes(s)
-              return (
-                <button key={s} type="button" onClick={() => toggleSpecialty(s)}
-                  style={{
-                    padding: '4px 10px', borderRadius: 999, fontSize: 11.5, fontWeight: 600, cursor: 'pointer',
-                    border: `1px solid ${on ? theme.accent : theme.border}`,
-                    background: on ? theme.accentSoft : theme.panel, color: on ? theme.accent : theme.sub,
-                  }}>
-                  {SPECIALTY_LABEL[s]}
-                </button>
-              )
-            })}
-          </div>
-          <Button onClick={save}><Icon name="plusCircle" size={15} />Save to caseload</Button>
+        <SymptomPicker symptoms={symptoms} onToggle={toggleSymptom} />
+        <CaseFields
+          name={name} setName={setName} urgencyDays={urgencyDays} setUrgencyDays={setUrgencyDays}
+          needs={needs} setNeeds={setNeeds} telehealthOnly={telehealthOnly} setTelehealthOnly={setTelehealthOnly}
+          specialties={specialties} setSpecialties={setSpecialties}
+        />
+
+        <div style={{ marginTop: 16 }}>
+          <Button onClick={saveFull}><Icon name="plusCircle" size={15} />Save to caseload</Button>
         </div>
       </Card>
 
       <Card>
-        {/* Recommended clinic / program — the prominent routing output. */}
-        <div style={{ marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${theme.border}` }}>
-          <div style={{ fontSize: 10.5, color: theme.sub, textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 5 }}>
-            Recommended clinic / program
-          </div>
-          {programs.length === 0 ? (
-            <div style={{ fontSize: 12.5, color: theme.sub }}>
-              No programs configured. Add clinics in the Caseload tab.
-            </div>
-          ) : (
-            <>
-              <select
-                value={activeProgram}
-                onChange={(e) => { setProgram(e.target.value); setProgramTouched(true) }}
-                style={{ fontFamily: theme.display, fontSize: 19, fontWeight: 800, color: theme.accent, width: '100%', padding: '6px 8px', border: `1px solid ${theme.border}`, borderRadius: 8, background: theme.panel }}
-              >
-                {programs.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-
-              {/* Why this program — the symptom evidence behind the suggestion. */}
-              {!programTouched && recommendation.source === 'symptoms' && (
-                <div style={{ fontSize: 11.5, color: theme.sub, marginTop: 6, lineHeight: 1.45 }}>
-                  Suggested from symptoms: <strong style={{ color: theme.text }}>{recommendation.rationale.join(', ')}</strong>
-                  {recommendation.prescriberHint && <> · medication management typically indicated</>}
-                </div>
-              )}
-              {!programTouched && recommendation.source === 'needs' && (
-                <div style={{ fontSize: 11, color: theme.sub, marginTop: 4 }}>
-                  No symptoms checked yet — suggested from service needs. Add symptoms above for a targeted recommendation.
-                </div>
-              )}
-              {programTouched && (
-                <div style={{ fontSize: 11, color: theme.sub, marginTop: 4 }}>Clinician-selected.</div>
-              )}
-
-              {/* The engine has a strong suggestion but the site hasn't named a
-                  matching clinic — say so rather than silently pick another. */}
-              {!programTouched && recommendation.source === 'symptoms' && !recommendation.matched && (
-                <div style={{ fontSize: 11.5, color: '#8a6a10', background: '#e0b34118', borderRadius: 7, padding: '7px 9px', marginTop: 8, lineHeight: 1.45 }}>
-                  Symptoms point to <strong>{recommendation.conceptLabel}</strong>, but no clinic by that name is
-                  configured. Add one in the Caseload tab, or pick the closest fit above.
-                </div>
-              )}
-              {!programTouched && recommendation.secondary.length > 0 && (
-                <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 6 }}>
-                  Also consider: {recommendation.secondary.map((s) => s.program || s.label).join(', ')}
-                </div>
-              )}
-            </>
-          )}
-          {needsAttending && (
-            <div style={{
-              marginTop: 10, display: 'inline-flex', gap: 6, alignItems: 'center',
-              padding: '5px 10px', borderRadius: 999, fontSize: 11.5, fontWeight: 700,
-              background: '#e0b34122', color: '#8a6a10',
-            }}>
-              <Icon name="shield" size={13} />
-              Acuity requires an attending — not a resident alone
-            </div>
-          )}
-        </div>
+        <RoutingPanel
+          programs={programs} recommendation={recommendation} activeProgram={activeProgram}
+          onSelect={selectProgram} programTouched={programTouched}
+        />
         <ResultPanel result={result} />
       </Card>
     </div>
@@ -418,7 +591,7 @@ function Screener({ onSave, programs }) {
 /* ------------------------------------------------------------- provider form */
 
 function ProviderForm({ onAdd, programs }) {
-  const empty = { name: '', credential: 'therapist', population: 'adult', trainingLevel: 'staff', telehealth: true, capacity: 3 }
+  const empty = { name: '', credential: 'therapist', population: 'adult', trainingLevel: 'staff', telehealth: true, capacity: 3, panelLoad: 0 }
   const [f, setF] = useState(empty)
   const [specialties, setSpecialties] = useState(['general'])
   const [progs, setProgs] = useState([])
@@ -432,7 +605,7 @@ function ProviderForm({ onAdd, programs }) {
     onAdd({
       id: uid(), name: f.name.trim(), credential: f.credential, population: f.population,
       trainingLevel: f.trainingLevel, specialties, programs: progs,
-      telehealth: f.telehealth, capacity: Number(f.capacity) || 0,
+      telehealth: f.telehealth, capacity: Number(f.capacity) || 0, panelLoad: Number(f.panelLoad) || 0,
     })
     setF(empty); setSpecialties(['general']); setProgs([])
   }
@@ -461,6 +634,7 @@ function ProviderForm({ onAdd, programs }) {
           </select>
         </Field>
         <Field label="Open slots"><input type="number" min="0" value={f.capacity} onChange={set('capacity')} /></Field>
+        <Field label="Current panel" hint="Patients already on this provider — balances distribution"><input type="number" min="0" value={f.panelLoad} onChange={set('panelLoad')} /></Field>
       </div>
       {programs.length > 0 && (
         <>
@@ -501,7 +675,7 @@ function ProviderForm({ onAdd, programs }) {
   )
 }
 
-/* ------------------------------------------------------------- caseload view */
+/* --------------------------------------------------------------- editors */
 
 function ProgramsEditor({ programs, onAdd, onRemove }) {
   const [name, setName] = useState('')
@@ -531,17 +705,162 @@ function ProgramsEditor({ programs, onAdd, onRemove }) {
   )
 }
 
-function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvider, onRemovePatient, onAddProgram, onRemoveProgram, onLoadSample, onClear }) {
+// Editable red-flag trigger list for Tier 1. Removing / adding here changes what
+// the chart-review checklist offers and what escalates.
+function Tier1TriggersEditor({ triggers, onAdd, onRemove, onReset }) {
+  const [label, setLabel] = useState('')
+  const add = (e) => {
+    e.preventDefault()
+    const v = label.trim()
+    if (!v) return
+    let id = slug(v)
+    const existing = new Set(triggers.map((t) => t.id))
+    while (existing.has(id)) id = `${id}_x`
+    onAdd({ id, label: v })
+    setLabel('')
+  }
+  return (
+    <Card title="Tier 1 red-flag triggers" sub="Chart-review flags — any one escalates a case to the in-depth screen">
+      <div style={{ display: 'grid', gap: 5, marginBottom: 12 }}>
+        {triggers.length === 0 && <div style={{ fontSize: 12.5, color: theme.sub }}>No triggers — every case would place directly. Add at least one.</div>}
+        {triggers.map((t) => (
+          <div key={t.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', fontSize: 12, padding: '7px 9px', border: `1px solid ${theme.border}`, borderRadius: 8 }}>
+            <span style={{ lineHeight: 1.4 }}>{t.label}</span>
+            <button type="button" onClick={() => onRemove(t.id)} aria-label={`Remove ${t.label}`}
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#a5342a', lineHeight: 1, padding: '0 4px', fontSize: 16, flexShrink: 0 }}>×</button>
+          </div>
+        ))}
+      </div>
+      <form onSubmit={add} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Active eating-disorder medical instability" style={{ flex: 1 }} />
+        <Button type="submit" variant="ghost"><Icon name="plusCircle" size={15} />Add</Button>
+      </form>
+      <Button variant="ghost" onClick={onReset}>Reset to defaults</Button>
+    </Card>
+  )
+}
+
+// Adjustable operational thresholds. These tune when an attending is required,
+// when the acute-safety guard fires, and the advisory-only PHP/IOP threshold —
+// without a code change.
+function ThresholdsEditor({ thresholds, onChange, onReset }) {
+  const th = normalizeApThresholds(thresholds)
+  const set = (k, min, max) => (e) => {
+    const n = Math.round(Number(e.target.value))
+    if (!Number.isFinite(n)) return
+    onChange({ ...th, [k]: Math.min(max, Math.max(min, n)) })
+  }
+  return (
+    <Card title="Screening thresholds" sub="Tune the operational cut points — attending rule, acute guard, and the PHP/IOP advisory">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12 }}>
+        <Field label="Attending — risk ≥" hint="Risk-of-harm score that requires an attending (1–5)">
+          <input type="number" min="1" max="5" value={th.attendingRisk} onChange={set('attendingRisk', 1, 5)} />
+        </Field>
+        <Field label="Attending — comorbidity ≥" hint="Co-occurring complexity that requires an attending (1–5)">
+          <input type="number" min="1" max="5" value={th.attendingComorbidity} onChange={set('attendingComorbidity', 1, 5)} />
+        </Field>
+        <Field label="Acute guard — risk ≥" hint="At/above this risk, not routine outpatient — urgent eval (1–5)">
+          <input type="number" min="1" max="5" value={th.acuteRisk} onChange={set('acuteRisk', 1, 5)} />
+        </Field>
+        <Field label="PHP/IOP advisory — composite ≥" hint="Overall acuity (6–30) that raises the advisory only">
+          <input type="number" min="6" max="30" value={th.phpIopComposite} onChange={set('phpIopComposite', 6, 30)} />
+        </Field>
+      </div>
+      <div style={{ fontSize: 11, color: theme.sub, marginTop: 10, lineHeight: 1.5 }}>
+        PHP/IOP is never an automatic placement — crossing its threshold only surfaces a recommendation for a clinician
+        to weigh. Clinic routing always still applies.
+      </div>
+      <div style={{ marginTop: 12 }}>
+        <Button variant="ghost" onClick={onReset}>Reset to defaults</Button>
+      </div>
+    </Card>
+  )
+}
+
+/* ---------------------------------------------------------- load distribution */
+
+const GROUP_ORDER = ['attending', 'staff', 'resident']
+const GROUP_LABEL = { attending: 'Attendings', staff: 'Staff (non-trainee)', resident: 'Residents' }
+
+// Per-provider and per-group load view, so a service can see patients are being
+// distributed evenly across residents and attendings and even them out.
+function LoadDistribution({ distribution, loadByGroup }) {
+  if (!distribution.length) return null
+  const maxLoad = Math.max(1, ...distribution.map((d) => d.load))
+  const groups = GROUP_ORDER.filter((g) => loadByGroup[g])
+  return (
+    <Card title="Load distribution" sub="Patients per provider (current panel + newly assigned) — for equal distribution across residents and attendings">
+      <div style={{ display: 'grid', gap: 6, marginBottom: 14 }}>
+        {distribution
+          .slice()
+          .sort((a, b) => (GROUP_ORDER.indexOf(groupOf(a)) - GROUP_ORDER.indexOf(groupOf(b))) || (b.load - a.load) || String(a.name).localeCompare(String(b.name)))
+          .map((d) => (
+            <div key={d.id} style={{ display: 'grid', gridTemplateColumns: '11rem 1fr auto', gap: 10, alignItems: 'center', fontSize: 12 }}>
+              <span>
+                <strong>{d.name}</strong>
+                <span style={{ color: theme.sub }}> · {TRAINING_LABEL[d.trainingLevel] || d.trainingLevel}</span>
+              </span>
+              <div style={{ height: 16, background: theme.panelAlt, borderRadius: 6, overflow: 'hidden', display: 'flex' }}>
+                <div title={`${d.baseLoad} on panel`} style={{ width: `${(d.baseLoad / maxLoad) * 100}%`, height: '100%', background: theme.sub, opacity: 0.5 }} />
+                <div title={`${d.assigned} newly assigned`} style={{ width: `${(d.assigned / maxLoad) * 100}%`, height: '100%', background: theme.accent }} />
+              </div>
+              <span style={{ fontVariantNumeric: 'tabular-nums', color: theme.sub }}>
+                <strong style={{ color: theme.text }}>{d.load}</strong> total
+                {d.assigned > 0 && <span style={{ color: theme.accent }}> (+{d.assigned})</span>}
+                {' '}· {d.remaining}/{d.capacity} open
+              </span>
+            </div>
+          ))}
+      </div>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', fontSize: 11.5, alignItems: 'center' }}>
+        <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', color: theme.sub }}>
+          <span style={{ width: 12, height: 12, borderRadius: 3, background: theme.sub, opacity: 0.5, display: 'inline-block' }} /> current panel
+        </span>
+        <span style={{ display: 'inline-flex', gap: 5, alignItems: 'center', color: theme.sub }}>
+          <span style={{ width: 12, height: 12, borderRadius: 3, background: theme.accent, display: 'inline-block' }} /> newly assigned
+        </span>
+      </div>
+      {groups.length > 0 && (
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${theme.border}`, display: 'grid', gridTemplateColumns: `repeat(${groups.length}, 1fr)`, gap: 10 }}>
+          {groups.map((g) => {
+            const s = loadByGroup[g]
+            return (
+              <div key={g} style={{ fontSize: 11.5, padding: '8px 10px', border: `1px solid ${theme.border}`, borderRadius: 8 }}>
+                <div style={{ fontWeight: 700, marginBottom: 3 }}>{GROUP_LABEL[g]} · {s.providers}</div>
+                <div style={{ color: theme.sub }}>{s.assigned} newly assigned</div>
+                <div style={{ color: s.spread <= 1 ? '#1f7a54' : '#8a6a10', fontWeight: 600 }}>
+                  spread {s.spread} {s.spread === 0 ? '· perfectly even' : s.spread <= 1 ? '· even' : '· uneven'}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+function groupOf(d) {
+  return d.trainingLevel === 'resident' ? 'resident' : d.trainingLevel === 'attending' ? 'attending' : 'staff'
+}
+
+/* ------------------------------------------------------------- caseload view */
+
+function Caseload({
+  patients, providers, programs, thresholds, triggers,
+  onAddProvider, onRemoveProvider, onRemovePatient, onAddProgram, onRemoveProgram,
+  onSetThresholds, onResetThresholds, onAddTrigger, onRemoveTrigger, onResetTriggers,
+  onLoadSample, onClear, canManage = true, canEdit = true,
+}) {
   const result = useMemo(() => assignCaseload(patients, providers), [patients, providers])
-  const providerById = Object.fromEntries(providers.map((p) => [p.id, p]))
   const patientById = Object.fromEntries(patients.map((p) => [p.id, p]))
 
   return (
     <div>
       <div style={{ ...grid(4), marginBottom: 18 }}>
         <StatCard label="On the caseload" value={patients.length} icon="users" color={theme.navy} />
-        <StatCard label="Outpatient-appropriate" value={result.summary.outpatientCandidates}
-          sub={`${result.summary.needStepUp} need a step-up`} icon="route" color="#3fb37f" />
+        <StatCard label="Routable to a clinic" value={result.summary.outpatientCandidates}
+          sub={`${result.summary.acute} acute — urgent eval`} icon="route" color="#3fb37f" />
         <StatCard label="Matched" value={result.summary.placed}
           sub={`${result.summary.unplaced} unplaced`} icon="shield" color={theme.accent} />
         <StatCard label="Open slots left" value={`${result.summary.remainingCapacity} / ${result.summary.totalCapacity}`}
@@ -549,12 +868,14 @@ function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvid
           icon="building" color={result.summary.capacityGap ? '#e0584a' : theme.accent} />
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        <Button variant="ghost" onClick={onLoadSample}><Icon name="play" size={14} />Load sample caseload</Button>
-        {(patients.length > 0 || providers.length > 0) && (
-          <Button variant="danger" onClick={onClear}>Clear caseload</Button>
-        )}
-      </div>
+      {canManage && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <Button variant="ghost" onClick={onLoadSample}><Icon name="play" size={14} />Load sample caseload</Button>
+          {(patients.length > 0 || providers.length > 0) && (
+            <Button variant="danger" onClick={onClear}>Clear caseload</Button>
+          )}
+        </div>
+      )}
 
       <Card title="Recommended assignments" sub="Most urgent patients placed first, within each provider's open slots">
         {result.assignments.length === 0 ? (
@@ -610,7 +931,7 @@ function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvid
                 <div key={u.patientId} style={{
                   display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap',
                   padding: '8px 10px', borderRadius: 8,
-                  background: u.reason === 'not-appropriate-for-outpatient' ? '#e0b34118' : '#e0584a12',
+                  background: u.reason === 'acute-urgent-evaluation' ? '#e0584a1a' : u.reason === 'not-appropriate-for-outpatient' ? '#e0b34118' : '#e0584a12',
                   fontSize: 11.5,
                 }}>
                   <span style={{ fontWeight: 700 }}>{patientById[u.patientId]?.name} · {patientById[u.patientId]?.level?.toUpperCase()}</span>
@@ -622,7 +943,11 @@ function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvid
         )}
       </Card>
 
-      <div style={grid(2, 16)}>
+      <div style={{ marginTop: 16 }}>
+        <LoadDistribution distribution={result.distribution} loadByGroup={result.summary.loadByGroup} />
+      </div>
+
+      <div style={{ ...grid(2, 16), marginTop: 16 }}>
         <Card title="Providers" sub={`${providers.length} in the panel`}>
           {providers.length === 0 && <div style={{ fontSize: 12.5, color: theme.sub, marginBottom: 10 }}>No providers yet.</div>}
           <div style={{ display: 'grid', gap: 6, marginBottom: 14 }}>
@@ -635,15 +960,15 @@ function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvid
                     <span style={{ color: theme.sub }}> · {p.credential} · {TRAINING_LABEL[p.trainingLevel] || 'Staff'} · {p.population}{p.telehealth ? ' · telehealth' : ''}</span>
                     <div style={{ fontSize: 11, color: theme.sub }}>
                       {(p.programs || []).join(', ') || 'no programs'}
-                      {(p.specialties || []).length ? ` · ${(p.specialties).map((s) => SPECIALTY_LABEL[s] || s).join(', ')}` : ''} · {used}/{p.capacity} slots used
+                      {(p.specialties || []).length ? ` · ${(p.specialties).map((s) => SPECIALTY_LABEL[s] || s).join(', ')}` : ''} · {used}/{p.capacity} slots used{p.panelLoad ? ` · ${p.panelLoad} on panel` : ''}
                     </div>
                   </div>
-                  <Button variant="danger" onClick={() => onRemoveProvider(p.id)}>Remove</Button>
+                  {canManage && <Button variant="danger" onClick={() => onRemoveProvider(p.id)}>Remove</Button>}
                 </div>
               )
             })}
           </div>
-          <ProviderForm onAdd={onAddProvider} programs={programs} />
+          {canManage && <ProviderForm onAdd={onAddProvider} programs={programs} />}
         </Card>
 
         <Card title="Screened patients" sub={`${patients.length} on the caseload`}>
@@ -656,6 +981,12 @@ function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvid
                   <div>
                     <span style={{ fontWeight: 700 }}>{p.name}</span>
                     <Badge color={p.opAppropriate ? '#3fb37f' : '#e0584a'}>{(p.level || '').toUpperCase()}</Badge>
+                    {p.bridge && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#a5342a', marginLeft: 6 }}>Post-discharge bridge · priority</span>
+                    )}
+                    {p.tier === '1-direct' && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#1f7a54', marginLeft: 6 }}>Tier 1 direct</span>
+                    )}
                     {requiresAttending(p) && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#8a6a10', marginLeft: 6 }}>attending req’d</span>
                     )}
@@ -665,7 +996,7 @@ function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvid
                       {p.telehealthOnly ? ' · telehealth only' : ''} · waiting {p.urgencyDays}d
                     </div>
                   </div>
-                  <Button variant="danger" onClick={() => onRemovePatient(p.id)}>Remove</Button>
+                  {canEdit && <Button variant="danger" onClick={() => onRemovePatient(p.id)}>Remove</Button>}
                 </div>
               ))}
             </div>
@@ -673,54 +1004,59 @@ function Caseload({ patients, providers, programs, onAddProvider, onRemoveProvid
         </Card>
       </div>
 
-      <div style={{ marginTop: 16 }}>
-        <ProgramsEditor programs={programs} onAdd={onAddProgram} onRemove={onRemoveProgram} />
-      </div>
+      {canManage && (
+        <>
+          <div style={{ ...grid(2, 16), marginTop: 16 }}>
+            <Tier1TriggersEditor triggers={triggers} onAdd={onAddTrigger} onRemove={onRemoveTrigger} onReset={onResetTriggers} />
+            <ThresholdsEditor thresholds={thresholds} onChange={onSetThresholds} onReset={onResetThresholds} />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <ProgramsEditor programs={programs} onAdd={onAddProgram} onRemove={onRemoveProgram} />
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
 /* -------------------------------------------------------------------- screen */
 
-export default function LevelOfCare() {
-  const [view, setView] = useState('screen')
-  const [patients, setPatients] = useState(() => readStorage(PT_KEY, []))
-  const [providers, setProviders] = useState(() => readStorage(PROV_KEY, []))
-  const [programs, setPrograms] = useState(() => readStorage(PROG_KEY, DEFAULT_PROGRAMS))
+const VIEWS = [
+  { id: 'screen', label: 'Screen a patient', perm: 'op-screen' },
+  { id: 'caseload', label: 'Caseload & assignment', perm: 'op-view' },
+  { id: 'bridge', label: 'Discharge bridge', perm: 'op-view' },
+  { id: 'mbc', label: 'PHQ-9 / GAD-7', perm: 'op-view' },
+  { id: 'outcomes', label: 'Outcomes', perm: 'op-view' },
+]
 
-  const persistPatients = (next) => { setPatients(next); writeStorage(PT_KEY, next) }
-  const persistProviders = (next) => { setProviders(next); writeStorage(PROV_KEY, next) }
-  const persistPrograms = (next) => { setPrograms(next); writeStorage(PROG_KEY, next) }
+export default function LevelOfCare({ role = 'admin', locations = [] }) {
+  const d = useOutpatientData()
+  const views = VIEWS.filter((v) => can(role, v.perm))
+  const [view, setView] = useState(views[0]?.id || 'caseload')
+  const [rescreen, setRescreen] = useState(null)
+  const { patients, providers, programs, thresholds, triggers } = d
 
-  const addPatient = (pt) => persistPatients([...patients, pt])
-  const removePatient = (id) => persistPatients(patients.filter((p) => p.id !== id))
-  const addProvider = (pv) => persistProviders([...providers, pv])
-  const removeProvider = (id) => persistProviders(providers.filter((p) => p.id !== id))
-  const addProgram = (name) => persistPrograms([...programs, name])
-  const removeProgram = (name) => persistPrograms(programs.filter((p) => p !== name))
+  const canEdit = can(role, 'op-screen')
+  const canManage = can(role, 'op-manage')
 
-  const loadSample = () => {
-    const { providers: sp, patients: raw, programs: pr } = buildSampleOutpatient()
-    if (pr && pr.length) persistPrograms(pr)
-    // Re-screen each sample patient so the stored level/appropriateness always
-    // matches the current engine rather than a hardcoded value.
-    const screened = raw.map((r) => {
-      const res = screenLevelOfCare(r.scores, { population: r.population })
-      return {
-        id: r.id, name: r.name, population: r.population, scores: r.scores,
-        level: res.level.id, levelLabel: res.level.label, opAppropriate: res.opAppropriate,
-        riskScore: r.scores.risk, needs: r.needs, specialties: r.specialties, symptoms: r.symptoms,
-        program: r.program, telehealthOnly: r.telehealthOnly, urgencyDays: r.urgencyDays, createdAt: r.createdAt,
-      }
-    })
-    persistPatients(screened)
-    persistProviders(sp)
+  const savePatient = (pt) => {
+    if (rescreen) {
+      d.patientsApi.upsert(pt)
+      setRescreen(null)
+      setView('caseload')
+    } else {
+      d.patientsApi.add(pt)
+    }
+  }
+  const startRescreen = (patient) => {
+    setRescreen(patient)
+    setView('screen')
   }
 
   const clearAll = () => {
-    if (window.confirm('Clear the outpatient caseload and provider panel?')) {
-      persistPatients([])
-      persistProviders([])
+    if (window.confirm('Clear the outpatient caseload, provider panel, discharges, PHQ-9/GAD-7 scores and outcomes?')) {
+      clearOutpatientData(d)
     }
   }
 
@@ -731,15 +1067,19 @@ export default function LevelOfCare() {
           <AcuitasLogo size={26} dark={false} showWordmark={false} />
           <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>AcuiPath&trade;</div>
           <Badge color={theme.accent}>OUTPATIENT</Badge>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
-            <Button variant={view === 'screen' ? 'primary' : 'ghost'} onClick={() => setView('screen')}>Screen a patient</Button>
-            <Button variant={view === 'caseload' ? 'primary' : 'ghost'} onClick={() => setView('caseload')}>Caseload &amp; assignment</Button>
-          </div>
         </div>
-        <div style={{ fontSize: 12.5, color: theme.sub, maxWidth: 780 }}>
-          Level-of-care screening and outpatient routing: whether the outpatient setting fits, which clinic or program
-          the patient should go to, and which provider — by role, program, specialty, supervision level, capacity and
-          urgency.
+        <div style={{ fontSize: 12.5, color: theme.sub, maxWidth: 860 }}>
+          Two-tier outpatient screening and routing. A Tier 1 nurse chart review places straightforward cases directly
+          or escalates them to a Tier 2 in-depth screen, which decides the clinic and whether an attending must be the
+          primary physician. Discharges are bridged into care and tracked against the 7- and 30-day follow-up windows,
+          and PHQ-9 and GAD-7 scores flag patients who need a fresh screen. Outcomes feed back into the thresholds.
+        </div>
+        <div role="tablist" aria-label="AcuiPath views" style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+          {views.map((v) => (
+            <Button key={v.id} variant={view === v.id ? 'primary' : 'ghost'} onClick={() => { setView(v.id); if (v.id !== 'screen') setRescreen(null) }}>
+              {v.label}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -758,14 +1098,50 @@ export default function LevelOfCare() {
         </span>
       </div>
 
-      {view === 'screen'
-        ? <Screener onSave={addPatient} programs={programs} />
-        : <Caseload
-            patients={patients} providers={providers} programs={programs}
-            onAddProvider={addProvider} onRemoveProvider={removeProvider}
-            onRemovePatient={removePatient} onAddProgram={addProgram} onRemoveProgram={removeProgram}
-            onLoadSample={loadSample} onClear={clearAll}
-          />}
+      {view === 'screen' && canEdit && (
+        <Screener
+          key={rescreen?.id || 'new'}
+          onSave={savePatient}
+          programs={programs}
+          thresholds={thresholds}
+          triggers={triggers}
+          initialCase={rescreen}
+          onCancelRescreen={() => { setRescreen(null); setView('mbc') }}
+        />
+      )}
+      {view === 'caseload' && (
+        <Caseload
+          patients={patients} providers={providers} programs={programs} thresholds={thresholds} triggers={triggers}
+          canManage={canManage} canEdit={canEdit}
+          onAddProvider={(pv) => d.providersApi.add(pv)} onRemoveProvider={(id) => d.providersApi.remove(id)}
+          onRemovePatient={(id) => d.patientsApi.remove(id)}
+          onAddProgram={(name) => d.setPrograms([...programs, name])}
+          onRemoveProgram={(name) => d.setPrograms(programs.filter((p) => p !== name))}
+          onSetThresholds={(next) => d.setThresholds(normalizeApThresholds(next))}
+          onResetThresholds={() => d.setThresholds(DEFAULT_AP_THRESHOLDS)}
+          onAddTrigger={(t) => d.setTriggers([...triggers, t])}
+          onRemoveTrigger={(id) => d.setTriggers(triggers.filter((t) => t.id !== id))}
+          onResetTriggers={() => d.setTriggers(DEFAULT_TIER1_TRIGGERS)}
+          onLoadSample={() => loadOutpatientSample(d)}
+          onClear={clearAll}
+        />
+      )}
+      {view === 'bridge' && (
+        <DischargeBridge
+          discharges={d.discharges} dischargesApi={d.dischargesApi} patientsApi={d.patientsApi}
+          programs={programs} locations={locations} canEdit={can(role, 'discharge')}
+          onOpenCaseload={() => setView('caseload')}
+        />
+      )}
+      {view === 'mbc' && (
+        <MbcPanel
+          patients={patients} assessments={d.assessments} assessmentsApi={d.assessmentsApi}
+          canEdit={can(role, 'mbc')} onRescreen={canEdit ? startRescreen : null}
+        />
+      )}
+      {view === 'outcomes' && (
+        <OpOutcomes patients={patients} outcomes={d.outcomes} outcomesApi={d.outcomesApi} canEdit={can(role, 'op-outcomes')} />
+      )}
     </div>
   )
 }

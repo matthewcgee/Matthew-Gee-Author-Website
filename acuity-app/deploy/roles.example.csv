@@ -1,0 +1,8 @@
+email,role
+# One person per line. Roles: admin, supervisor, charge, screener, analyst, viewer
+# Copy to roles.csv and keep it in your internal repository. No passwords in it.
+it.lead@yourhospital.org,admin
+house.supervisor@yourhospital.org,supervisor
+charge.rn@yourhospital.org,charge
+op.clinician@yourhospital.org,screener
+quality.analyst@yourhospital.org,analyst

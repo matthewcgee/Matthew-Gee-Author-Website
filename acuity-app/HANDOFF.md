@@ -4,6 +4,16 @@
 
 ---
 
+> ### Start here (IT / Innovations)
+> Three sections cover everything needed to bring Acuitas in-house:
+> 1. **[Moving Acuitas to your internal GitHub](#moving-acuitas-to-your-internal-github)** — one copy-paste block of commands.
+> 2. **[Going service-line wide: the shared database](#going-service-line-wide-the-shared-database)** — what to connect so every unit sees the same live data.
+> 3. **[Day-one checklist](#day-one-checklist)** — the whole job on one page, in order.
+>
+> Nothing in the source code needs to change for any of it. Every setting lives in one file, `.env.production`, made from the commented template `.env.example`.
+
+---
+
 ## What Is This
 
 Acuitas™ is a real-time, predictive behavioral health acuity dashboard. It allows charge nurses and clinical staff to:
@@ -34,7 +44,7 @@ The application is a **React single-page app** that builds to plain static files
 | Styling | Inline styles (no CSS framework) |
 | Real-time database | Optional — Firebase Firestore, supplied at build time (swappable, see below) |
 | Build output | Static HTML/CSS/JS |
-| Node.js required | v18 or higher (build-time only) |
+| Node.js required | v18 or higher, v20 recommended (build-time only) |
 
 ---
 
@@ -54,7 +64,8 @@ npm test
 
 # 4. Build for production
 npm run build
-# Output goes to ../acuity/ (configurable — see vite.config.js)
+# Output goes to ../acuity/ for the public site; set ACUITAS_OUT_DIR=dist
+# in .env.production for an internal copy (see .env.example)
 ```
 
 ---
@@ -70,21 +81,226 @@ The build output is a folder of static files. Deploy them to any static file hos
 
 ### Important: Base Path
 
-The app is currently configured for the path `/acuity/`, which is where it sits on the custom domain in `/CNAME`.  
-**Change this before deployment** to match your institution's URL structure.
+The base path is the URL path the app is served from. It is set in
+`.env.production`, not in code:
 
-Edit `vite.config.js`:
-```js
-export default defineConfig({
-  base: '/your-internal-path/',   // ← change this
-  ...
-})
+```bash
+ACUITAS_BASE=/            # app has its own hostname, e.g. https://acuitas.yourhospital.org/
+ACUITAS_BASE=/acuitas/    # app sits under a path, e.g. https://intranet.yourhospital.org/acuitas/
 ```
 
-If deploying at the root of a domain (e.g. `https://acuitas.yourhospital.org/`):
-```js
-base: '/'
+With nothing set, it defaults to `/acuity/` — the public demonstration site. A
+wrong base path shows as a blank page with every asset returning 404.
+
+No server-side rewrite rules are needed: the app has a single page and no
+client-side routes.
+
+---
+
+## Moving Acuitas to your internal GitHub
+
+Acuitas currently lives in the `acuity-app/` folder of the developer's website
+repository (`github.com/matthewcgee/Matthew-Gee-Author-Website`). Moving it
+gives it a repository of its own on your internal GitHub (GitHub Enterprise,
+or any git server: GitLab, Azure DevOps and Bitbucket take the same commands).
+
+**Before you start:** create an **empty** repository on your internal git
+server (no README, no license), for example `acuitas`. You need git and
+Node.js 20 on the machine you run this from.
+
+### Option A — keep the full change history (recommended)
+
+Copy, paste, and replace the one URL on the last line:
+
+```bash
+git clone https://github.com/matthewcgee/Matthew-Gee-Author-Website.git
+cd Matthew-Gee-Author-Website
+git subtree split --prefix=acuity-app -b acuitas-only
+git push https://<your-internal-git>/<org>/acuitas.git acuitas-only:main
 ```
+
+That is the whole move. The internal repository now holds only Acuitas, with
+the app at its root and its history intact. Nothing else from the website
+comes with it.
+
+> If the developer's repository is private for you, ask the developer for
+> read access or use Option B. If the latest changes are still on a branch
+> rather than `main`, add `git checkout <branch-name>` after the `cd` line.
+
+### Option B — no history (simplest)
+
+1. Get the `acuity-app` folder as a ZIP (from the developer, or GitHub →
+   Code → Download ZIP and take the `acuity-app` folder out of it).
+2. Unzip it, and from inside the folder:
+
+```bash
+git init -b main
+git add .
+git commit -m "Acuitas: initial import"
+git push https://<your-internal-git>/<org>/acuitas.git main
+```
+
+### After the move — build it once to prove it works
+
+```bash
+git clone https://<your-internal-git>/<org>/acuitas.git
+cd acuitas
+cp .env.example .env.production    # leave it as-is for a first test build
+npm ci
+npm test                           # 331 tests should pass
+npm run build                      # the site is now in dist/
+```
+
+`dist/` is the whole application: about 1 MB of static files. Copy it to any
+internal web server — IIS, Nginx, Apache, Azure Static Web Apps, or an existing
+intranet host. There is no application server, no runtime, and nothing to
+install on the web server.
+
+The included workflow (`.github/workflows/build.yml`) now runs the tests and
+builds the site on every push, and keeps the built site as a downloadable
+artifact. To have it build your real configuration, save the contents of your
+`.env.production` as a repository secret named `ACUITAS_ENV`.
+
+> Keep `.env.production` out of the repository; `.gitignore` already does.
+> Its values identify your database project, and they belong in the build
+> secret, not in the code history.
+
+---
+
+## Going service-line wide: the shared database
+
+Out of the box Acuitas keeps its data in each browser ("local mode"). That
+is right for a demo or training, but each person sees only their own entries.
+For a whole service line, every unit, supervisor and clinician must read and
+write the **same** data, live. That is the one thing to connect: a **shared
+database**, plus **sign-in** so the database knows who each person is.
+
+The "memory" Acuitas needs is this database. It does not need server RAM,
+an application server or a data warehouse.
+
+### What to connect (recommended, works today with no code changes)
+
+| Piece | What to use | Why |
+|---|---|---|
+| **Database** | **Google Cloud Firestore**, Native mode, one project owned by the organization, US region | It is what the app is built and tested on. Changes appear on every screen in real time. |
+| **Sign-in** | **Firebase Authentication, upgraded to Identity Platform**, connected to your existing single sign-on (Microsoft Entra ID, Okta, or any OIDC / SAML provider) | People sign in with their normal hospital account; no new passwords. The Identity Platform upgrade is what enables SSO providers. |
+| **Access control** | The included `firestore.rules`, deployed as-is | Enforces the six Acuitas roles on the server, for every read and write; makes the audit log append-only. |
+| **Roles** | The included `deploy/set-role.mjs` | Assigns each person's role (one at a time or from a CSV). |
+| **Backups** | Firestore point-in-time recovery plus scheduled daily backups | Lets you restore if data is entered wrongly or deleted. |
+
+One Firestore project serves the entire service line: every inpatient unit,
+the ED, and every AcuiPath outpatient clinic. Units, clinics and programs are
+configured inside the app (Settings), not by adding databases.
+
+**Compliance.** Acuitas is designed to run without PHI: shift-level numbers,
+staffing and de-identified outpatient records. It is still confidential
+operational data. Put the project under your organization's Google Cloud
+agreement and, if you hold one, its Business Associate Agreement, and have
+compliance confirm that Firestore and Identity Platform are covered services
+for your use.
+
+### How big does it get?
+
+Small. A shift entry is about 1 KB. A 10-unit service line logging two shifts
+a day creates about 7,300 entries a year, roughly 7 MB, and with deployments,
+the audit log and AcuiPath records the total stays well under 100 MB a year.
+No capacity planning is needed.
+
+Cost is driven by **reads**, not storage: each time someone opens Acuitas it
+loads the shared history. Expect to be on the pay-as-you-go (Blaze) plan; at
+service-line scale this is typically a small monthly amount. Estimate with the
+Google Cloud pricing calculator using your number of daily users.
+
+### Set-up, step by step
+
+1. **Create the project.** In the Firebase console, add a project (or add
+   Firebase to an existing Google Cloud project your organization owns).
+2. **Create the database.** Build → Firestore Database → Create → **Native
+   mode**, US region. Turn on point-in-time recovery and a daily backup
+   schedule.
+3. **Turn on sign-in.** Build → Authentication → Get started → upgrade to
+   **Identity Platform**. Under Sign-in method, add your SSO as an **OpenID
+   Connect** or **SAML** provider. Note its provider id (for example
+   `oidc.entra` or `saml.okta`). Register the redirect URL the console shows
+   (`https://<project-id>.firebaseapp.com/__/auth/handler`) in your identity
+   provider.
+4. **Allow your web address.** Authentication → Settings → Authorized domains
+   → add the hostname Acuitas will be served from.
+5. **Register the web app.** Project settings → Your apps → Add app → Web.
+   Copy the config object it shows.
+6. **Fill in `.env.production`:**
+
+   ```bash
+   ACUITAS_BASE=/
+   ACUITAS_OUT_DIR=dist
+   VITE_FIREBASE_CONFIG={"apiKey":"…","authDomain":"…","projectId":"…","storageBucket":"…","messagingSenderId":"…","appId":"…"}
+   VITE_AUTH_MODE=firebase
+   VITE_AUTH_PROVIDER_ID=oidc.entra
+   ```
+
+7. **Deploy the access rules:**
+
+   ```bash
+   npm install -g firebase-tools
+   firebase login
+   firebase deploy --only firestore:rules --project <project-id>
+   ```
+
+8. **Build and publish:** `npm ci && npm test && npm run build`, then copy
+   `dist/` to the web server.
+9. **Assign roles.** Each person signs in once (that creates their account;
+   until a role is assigned they are a read-only Viewer). Then:
+
+   ```bash
+   gcloud auth application-default login
+   npm install --no-save firebase-admin
+   node deploy/set-role.mjs --project <project-id> --file deploy/roles.csv
+   ```
+
+   Start from `deploy/roles.example.csv`. People sign out and back in to pick
+   up a new role. `--list` shows everyone and their current role.
+10. **Network.** If your network filters outbound traffic, allow
+    `firestore.googleapis.com`, `identitytoolkit.googleapis.com`,
+    `securetoken.googleapis.com` and `<project-id>.firebaseapp.com`.
+
+**Important:** use `VITE_AUTH_MODE=firebase` with the shared database. The
+security rules check the signed-in Firebase user, so the other sign-in modes
+(local, gateway) cannot read or write a protected Firestore.
+
+### If Google Cloud is not permitted
+
+If policy requires the data to stay entirely on your own servers, Acuitas can
+use a database you host, such as self-hosted Supabase (PostgreSQL with real-time
+updates) or PostgreSQL on Azure. This is the one path that needs development
+work: see [Swapping the Backend](#swapping-the-backend). The data to replicate
+is listed under [Database / Backend](#database--backend).
+
+---
+
+## Day-one checklist
+
+**Move it in** (about an hour)
+- [ ] Create an empty `acuitas` repository on the internal git server
+- [ ] Run the four Option A commands (or Option B)
+- [ ] `npm ci && npm test && npm run build` passes on a clean clone
+- [ ] Copy `dist/` to an internal web server and open it (local mode, demo data)
+
+**Make it service-line wide** (the shared database)
+- [ ] Firestore project created under the organization's Google Cloud account; compliance sign-off on coverage
+- [ ] Firestore in Native mode, US region; point-in-time recovery and daily backups on
+- [ ] Identity Platform enabled; SSO provider added; redirect URL registered with the IdP
+- [ ] Acuitas hostname added to Authorized domains
+- [ ] `.env.production` filled in (`VITE_FIREBASE_CONFIG`, `VITE_AUTH_MODE=firebase`, `VITE_AUTH_PROVIDER_ID`, `ACUITAS_BASE`)
+- [ ] `firebase deploy --only firestore:rules`
+- [ ] Rebuilt with the real settings and redeployed
+- [ ] Pilot users sign in once; roles assigned with `deploy/set-role.mjs`
+- [ ] `.env.production` saved as the `ACUITAS_ENV` repository secret, so CI builds the real configuration
+
+**Confirm it works**
+- [ ] Two people on two computers: a shift entry saved by one appears for the other within seconds
+- [ ] A Viewer cannot save an entry; a Charge nurse can
+- [ ] Settings → Audit log → **Verify chain** reports the chain intact
+- [ ] Add every unit, the ED and the AcuiPath clinics in Settings
 
 ---
 
@@ -171,8 +387,16 @@ strict sequence should append server-side (e.g. a Cloud Function).
 
 `firestore.rules` (in this folder) is the access-control template for a Firebase
 backend: per-collection read/write by role, append-only audit log, everything
-else closed. Deploy with `firebase deploy --only firestore:rules` and set each
-user's role with the Admin SDK (`setCustomUserClaims(uid, { acuitasRole })`).
+else closed. Deploy with `firebase deploy --only firestore:rules` (the included
+`firebase.json` points at it) and set each user's role with the included script:
+
+```bash
+node deploy/set-role.mjs --project <project-id> charge.rn@yourhospital.org charge
+node deploy/set-role.mjs --project <project-id> --file deploy/roles.csv   # many at once
+```
+
+The script uses the Admin SDK (`setCustomUserClaims(uid, { acuitasRole })`);
+see the comments at the top of `deploy/set-role.mjs`.
 
 ---
 
@@ -564,19 +788,38 @@ All Firebase calls are isolated in three files:
 - `src/App.jsx` — read/write calls for locations, entries, deployments and caps
 - `src/lib/store.js` — one generic synced-collection layer used by every newer feature
 
-A developer familiar with your institution's stack can replace those calls with calls to your chosen backend in a few hours.
+Replacing those calls with your chosen backend, and porting `firestore.rules`
+to that backend's access rules (for PostgreSQL, row-level security), is a
+contained development task: three files and one rules file, not a rebuild. The
+test suite does not touch the database, so it confirms the rest of the app
+still works after the swap.
 
 ---
 
 ## Receiving Updates
 
-This application is actively maintained. When updates are needed:
+Updates arrive through git, the same way the app was moved in.
 
-1. The developer makes changes to the source code
-2. A new ZIP package is provided to IT
-3. IT runs `npm install && npm run build` and redeploys the output
+**If your copy was made with `git subtree split`** (Option A below), repeat the
+same commands. The split is repeatable, so the new history continues the old one
+and the push simply adds the new commits:
 
-No database migrations are required for UI/feature updates. Backend schema changes (if any) will be documented with each update.
+```bash
+cd Matthew-Gee-Author-Website
+git pull
+git subtree split --prefix=acuity-app -b acuitas-only
+git push https://<your-internal-git>/<org>/acuitas.git acuitas-only:main
+```
+
+If your team has committed its own changes to the internal repository, push to
+a branch instead (`acuitas-only:upstream`) and merge it there with a pull request.
+
+**If your copy was made from a ZIP** (Option B), the developer provides a new
+ZIP; copy its contents over your working copy, review the diff, and commit.
+
+Then rebuild and redeploy (`npm ci && npm test && npm run build`). No database
+migrations are required for UI/feature updates. Backend schema changes (if any)
+will be documented with each update.
 
 ---
 
@@ -639,9 +882,15 @@ acuity-app/
 │       └── whatif.js            # Scenario projection and re-optimization
 ├── public/
 │   └── assets/                  # Logo SVGs, OG image
+├── .github/workflows/build.yml  # CI: test + build (runs once this is its own repository)
+├── deploy/
+│   ├── set-role.mjs             # Give people their Acuitas role (Firebase custom claim)
+│   └── roles.example.csv        # Template for assigning many roles at once
+├── .env.example                 # Every build setting, commented — copy to .env.production
+├── firebase.json                # Points the Firebase CLI at firestore.rules
 ├── firestore.rules              # Server-side access control template (Firebase)
 ├── index.html                   # App entry point
-├── vite.config.js               # Build configuration (set base path here)
+├── vite.config.js               # Build configuration (reads ACUITAS_BASE / ACUITAS_OUT_DIR)
 └── package.json                 # Dependencies
 ```
 

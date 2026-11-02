@@ -51,6 +51,7 @@
       <ul class="nav-links" id="navLinks">
         <li><a href="#about">About</a></li>
         <li><a href="#books">Books</a></li>
+        <li><a href="#study">Study Guide</a></li>
         <li><a href="#speaking">Speaking</a></li>
         <li><a href="#instagram">Instagram</a></li>
         <li><a href="#contact">Contact</a></li>
@@ -63,6 +64,13 @@
     <!-- ===================== HERO ===================== -->
     <section class="hero" id="top">
       <img src="images/roots-illustration.svg" alt="" class="hero-bg-tree">
+      <!-- Autumn leaf accents -->
+      <div class="autumn-leaves" aria-hidden="true">
+        <svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg"><path d="M40 5 C20 20 5 40 10 70 C15 90 35 95 40 95 C45 95 65 90 70 70 C75 40 60 20 40 5Z M40 5 L40 95 M40 30 C30 35 20 45 15 55 M40 30 C50 35 60 45 65 55" fill="#c97a2a" stroke="none"/></svg>
+        <svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg"><path d="M40 5 C20 20 5 40 10 70 C15 90 35 95 40 95 C45 95 65 90 70 70 C75 40 60 20 40 5Z M40 5 L40 95 M40 30 C30 35 20 45 15 55 M40 30 C50 35 60 45 65 55" fill="#a0522d" stroke="none"/></svg>
+        <svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg"><path d="M40 5 C20 20 5 40 10 70 C15 90 35 95 40 95 C45 95 65 90 70 70 C75 40 60 20 40 5Z" fill="#c9a454" stroke="none"/></svg>
+        <svg viewBox="0 0 80 100" xmlns="http://www.w3.org/2000/svg"><path d="M40 5 C20 20 5 40 10 70 C15 90 35 95 40 95 C45 95 65 90 70 70 C75 40 60 20 40 5Z M40 5 L40 95" fill="#8b4513" stroke="none"/></svg>
+      </div>
       <div class="container hero-content">
         <img src="images/tree-mark.svg" alt="" class="tree-mark">
         <h1 class="hero-name">Matthew C. Gee</h1>
@@ -288,6 +296,64 @@
       </div>
     </section>
 
+    <!-- ===================== STUDY GUIDE ===================== -->
+    <section id="study" class="study-section">
+      <div class="container">
+        <span class="eyebrow">Free Resource</span>
+        <h2 class="section-heading">The God Who Sees: Six-Week Bible Study</h2>
+        <p class="section-intro">
+          A companion workbook and leader guide for small groups, churches, and individuals — completely free to download.
+        </p>
+
+        <div class="study-grid" style="margin-top:48px;">
+
+          <div class="study-cover">
+            <img src="images/the-god-who-sees-cover.png" alt="The God Who Sees study guide cover" class="study-cover-img">
+            <div class="study-free-badge">
+              <span>100%</span>
+              <span>Free</span>
+            </div>
+          </div>
+
+          <div class="study-details">
+            <p class="eyebrow" style="margin-bottom:6px;">Participant Workbook &amp; Leader Guide</p>
+            <h3 class="section-heading" style="font-size:clamp(1.4rem,3vw,2rem); margin-bottom:16px;">Six Weeks. Six Sessions. One Invitation.</h3>
+            <p style="color:var(--color-muted); margin-bottom:20px; line-height:1.7;">
+              This workbook brings <em>The God Who Sees</em> into your small group or personal study.
+              Six sessions of scripture, reflection, discussion, and daily practice — designed for
+              adult small groups, Sunday school classes, and individual readers who want to go deeper.
+            </p>
+
+            <div class="study-what-includes">
+              <span class="study-tag">Scripture</span>
+              <span class="study-tag">Discussion Questions</span>
+              <span class="study-tag">Daily Practice</span>
+              <span class="study-tag">Leader Guide Included</span>
+              <span class="study-tag">6 Sessions</span>
+            </div>
+
+            <ul class="study-weeks">
+              <li><span class="week-num">Week 1</span> <div><strong>When We Stop Seeing</strong> &mdash; Psalm 139:1-18, 23-24</div></li>
+              <li><span class="week-num">Week 2</span> <div><strong>The People We Write Off</strong> &mdash; Chapters 3-4</div></li>
+              <li><span class="week-num">Week 3</span> <div><strong>Seen in the Wilderness</strong> &mdash; El Roi and The Garden</div></li>
+              <li><span class="week-num">Week 4</span> <div><strong>Jesus Sees the Whole Person</strong> &mdash; Chapters 7-8</div></li>
+              <li><span class="week-num">Week 5</span> <div><strong>A Place at the Table</strong> &mdash; Chapters 9-10</div></li>
+              <li><span class="week-num">Week 6</span> <div><strong>Seeing the Nearest Face</strong> &mdash; Chapters 11-13</div></li>
+            </ul>
+
+            <div class="btn-row">
+              <a href="downloads/tgws-bible-study.pdf" download class="btn btn-download">Download Free Study Guide</a>
+              <a href="https://a.co/d/0eSD9vbY" class="btn btn-ghost" target="_blank" rel="noopener noreferrer">Get the Book</a>
+            </div>
+            <p style="font-size:0.8rem; color:var(--color-muted); margin-top:14px; line-height:1.5;">
+              Free PDF download &mdash; print it, share it, or study it digitally. No sign-up required.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <!-- ===================== SPEAKING ===================== -->
     <section id="speaking">
       <div class="container">
@@ -433,12 +499,56 @@
 
   <!-- ===================== ANNOUNCEMENT MODAL ===================== -->
   <div class="modal-overlay" id="announcementModal" role="dialog" aria-modal="true" aria-labelledby="announcementTitle" hidden>
-    <div class="modal-card modal-card--announcement">
+    <div class="modal-card modal-card--autumn">
       <button class="modal-close" id="announcementClose" aria-label="Close announcement">&times;</button>
-      <a href="the-god-who-sees.html" id="announcementCta" aria-label="Learn more about The God Who Sees">
-        <img src="images/tgws-announcement.png" alt="The Countdown Has Begun — The God Who Sees, Coming Very Soon. Available at Amazon and Barnes &amp; Noble. Audiobook Coming October 2026. matthewcgee.com">
-      </a>
-      <h2 id="announcementTitle" class="sr-only">The God Who Sees — Coming Very Soon</h2>
+
+      <div class="modal-autumn">
+
+        <!-- Left: cover panel -->
+        <div class="modal-autumn-left">
+          <div class="modal-autumn-bg">
+            <img src="images/the-god-who-sees-cover.png" alt="" aria-hidden="true">
+          </div>
+          <div class="modal-autumn-cover">
+            <img src="images/the-god-who-sees-cover.png" alt="Cover of The God Who Sees by Matthew C. Gee">
+          </div>
+          <p class="modal-autumn-badge">Matthew C. Gee</p>
+        </div>
+
+        <!-- Right: copy + CTAs -->
+        <div class="modal-autumn-right">
+          <div class="modal-autumn-eyebrow">
+            <span class="modal-autumn-eyebrow-line"></span>
+            Now Available
+          </div>
+          <h2 id="announcementTitle" class="modal-autumn-title">The God Who Sees</h2>
+          <p class="modal-autumn-subtitle">Recovering Our Sight in a World That Has Stopped Looking</p>
+          <hr class="modal-autumn-rule">
+          <p class="modal-autumn-body">
+            In a world of endless distraction, we have quietly lost the art of truly seeing one another.
+            This powerful new book invites you to recover attention, dignity, and hope.
+          </p>
+          <a href="https://a.co/d/0eSD9vbY" class="modal-autumn-cta" id="announcementCta" target="_blank" rel="noopener noreferrer">
+            Buy on Amazon &rarr;
+          </a>
+
+          <div class="modal-autumn-divider"><span>Also Available</span></div>
+
+          <div class="modal-autumn-study">
+            <div class="modal-autumn-study-icon">
+              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
+            </div>
+            <div class="modal-autumn-study-text">
+              <strong>Free Six-Week Bible Study</strong>
+              <span>Participant workbook &amp; leader guide &mdash; free PDF download</span>
+            </div>
+            <a href="downloads/tgws-bible-study.pdf" download class="modal-autumn-study-link">Download&nbsp;&rarr;</a>
+          </div>
+
+          <p class="modal-autumn-footer">matthewcgee.com</p>
+        </div>
+
+      </div>
     </div>
   </div>
 

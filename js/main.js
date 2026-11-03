@@ -37,17 +37,20 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Pick modal: September 11 memorial today only, otherwise standard TGWS modal.
+  // Pick modal by date: special modals for Sept 11 and Election Day, otherwise standard TGWS.
   var now = new Date();
-  var isSept11 = (now.getMonth() === 8 && now.getDate() === 11); // month is 0-indexed
-  var modalId = isSept11 ? 'sept11Modal' : 'announcementModal';
-  var closeId = isSept11 ? 'sept11Close' : 'announcementClose';
+  var isSept11    = (now.getMonth() === 8  && now.getDate() === 11); // Sep 11
+  var isElection  = (now.getMonth() === 10 && now.getDate() === 3);  // Nov 3
+  var modalId, closeId;
+  if (isSept11)   { modalId = 'sept11Modal';   closeId = 'sept11Close'; }
+  else if (isElection) { modalId = 'electionModal'; closeId = 'electionClose'; }
+  else            { modalId = 'announcementModal'; closeId = 'announcementClose'; }
 
   var modal = document.getElementById(modalId);
   if (modal) {
     var closeBtn = document.getElementById(closeId);
     var dismissBtn = document.getElementById('announcementDismiss');
-    var ctaLink = document.getElementById('announcementCta');
+    var ctaLink = document.getElementById(isElection ? 'electionCta' : 'announcementCta');
 
     function closeModal() {
       modal.classList.remove('is-visible');

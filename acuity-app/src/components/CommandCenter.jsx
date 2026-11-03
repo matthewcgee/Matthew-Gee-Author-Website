@@ -17,6 +17,11 @@ import { forecastLocation, buildSeries } from '../lib/forecast.js'
 import { assessForecast, driftSignal, explainForecast, assessCensus, decomposeUai, riskBand } from '../lib/risk.js'
 import { recommendDeployment } from '../lib/optimize.js'
 import { buildDemoScenario } from '../lib/demoData.js'
+import { planTarget, snapshotPlan } from '../lib/outcomes.js'
+import { planValue, formatMoney, DEFAULT_COST_RATES } from '../lib/cost.js'
+import { useCollection, useConfigValue } from '../lib/store.js'
+import { can } from '../lib/roles.js'
+import WhatIfPlanner from './WhatIf.jsx'
 
 const HORIZON = 6
 const HISTORY_SHOWN = 16
@@ -467,7 +472,7 @@ function MoveCard({ move, decimals = 2 }) {
   )
 }
 
-function DeploymentPlan({ plan, mode, onModeChange, floatStaff, onFloatChange }) {
+function DeploymentPlan({ plan, mode, onModeChange, floatStaff, onFloatChange, value, record }) {
   const summary = plan?.summary
 
   return (
@@ -591,6 +596,35 @@ function DeploymentPlan({ plan, mode, onModeChange, floatStaff, onFloatChange })
             </div>
           )}
 
+          {plan.moves.length > 0 && value && (
+            <div style={{ marginTop: 12, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between',
+              padding: '11px 14px', borderRadius: 10, border: `1px solid ${theme.border}` }}>
+              <div style={{ fontSize: 12.5, lineHeight: 1.5 }}>
+                <div>
+                  <Icon name="dollar" size={13} /> Expected to avoid <strong>{value.expectedRedAvoided.toFixed(2)}</strong> RED shift
+                  {value.expectedRedAvoided === 1 ? '' : 's'} — <strong style={{ color: '#1f7a54' }}>{formatMoney(value.riskValue)}</strong> of risk
+                  {value.laborCost > 0
+                    ? <> for <strong>{formatMoney(value.laborCost)}</strong> in added labor</>
+                    : <> with no added labor — staff already on shift</>}
+                </div>
+                <div style={{ fontSize: 11, color: theme.sub }}>
+                  Priced at your cost rates (Outcomes &amp; ROI). Record the plan when you act on it, and Acuitas will score it against what happens next.
+                </div>
+              </div>
+              {record && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {record.recorded && <span style={{ fontSize: 11.5, color: '#1f7a54', fontWeight: 700 }}>Recorded for {record.target.date} {record.target.shift}</span>}
+                  <Button onClick={record.onRecord} disabled={!record.enabled} title={record.reason || ''}>
+                    <Icon name="loop" size={14} />{record.recorded ? 'Record again' : 'Record this plan'}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          {record?.reason && plan.moves.length > 0 && (
+            <div style={{ fontSize: 11, color: theme.sub, marginTop: 6 }}>{record.reason}</div>
+          )}
+
           <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 10, lineHeight: 1.5 }}>
             Exact optimum across {plan.states.length} staffed unit{plan.states.length === 1 ? '' : 's'}, weighted by
             patients exposed. Donor units are only tapped when they can drop a staff member and still hold GREEN.
@@ -680,7 +714,7 @@ function VolumeOutlook({ units }) {
 
 /* -------------------------------------------------------------------- screen */
 
-export default function CommandCenter({ locations, entries, thresholds, caps }) {
+export default function CommandCenter({ locations, entries, thresholds, caps, role = 'admin', identity = null }) {
   const [demo, setDemo] = useState(false)
   const [mode, setMode] = useState('forecast')
   const [floatStaff, setFloatStaff] = useState(2)
@@ -717,7 +751,7 @@ export default function CommandCenter({ locations, entries, thresholds, caps }) 
       const prevPoint = series.length >= 2 ? series[series.length - 2] : null
       const change = !isEd && prevPoint && latest ? decomposeUai(prevPoint, latest) : null
 
-      return { loc, isEd, th, series, forecast, assessment, drift, latest, censusOutlook, change }
+      return { loc, isEd, th, series, forecast, assessment, drift, latest, censusForecast, censusOutlook, change }
     })
   }, [activeLocations, activeEntries, thresholds, activeCaps])
 
@@ -738,6 +772,30 @@ export default function CommandCenter({ locations, entries, thresholds, caps }) 
       }),
     [activeLocations, activeEntries, thresholds, forecastsById, floatStaff, mode]
   )
+
+  const censusById = useMemo(
+    () => Object.fromEntries(units.filter((u) => u.censusForecast).map((u) => [u.loc.id, u.censusForecast])),
+    [units]
+  )
+
+  // Outcome loop: record the plan a supervisor acts on, so it can be scored
+  // against the shift that follows. Demo data is never recorded.
+  const [planLog, planApi] = useCollection('planLog', { localKey: 'bhai:planLog', auditAs: 'planLog' })
+  const [rates] = useConfigValue('costRates', { localKey: 'bhai:costRates', initial: DEFAULT_COST_RATES })
+  const value = useMemo(() => planValue(plan, rates), [plan, rates])
+  const target = useMemo(() => planTarget(activeEntries, mode), [activeEntries, mode])
+  const recorded = !!target && planLog.some((p) => p.targetDate === target.date && p.targetShift === target.shift && p.mode === mode)
+  const canRecord = can(role, 'plan-record')
+  const record = canRecord ? {
+    target,
+    recorded,
+    enabled: !demo && !!target,
+    reason: demo ? 'Demo data is never saved — switch it off to record real plans.' : null,
+    onRecord: () => {
+      const snap = snapshotPlan({ plan, target, mode, floatStaff, recordedBy: identity?.name || null })
+      if (snap) planApi.add(snap)
+    },
+  } : null
 
   // Headline numbers.
   const atRisk = units.filter((u) => u.assessment.ok && (u.assessment.peak?.pRed ?? 0) >= 0.5)
@@ -834,9 +892,23 @@ export default function CommandCenter({ locations, entries, thresholds, caps }) 
         onModeChange={setMode}
         floatStaff={floatStaff}
         onFloatChange={setFloatStaff}
+        value={value}
+        record={record}
       />
 
       <VolumeOutlook units={units} />
+
+      {can(role, 'scenario') && (
+        <WhatIfPlanner
+          locations={activeLocations}
+          entries={activeEntries}
+          thresholds={thresholds}
+          caps={activeCaps}
+          forecasts={forecastsById}
+          censusForecasts={censusById}
+          floatStaff={floatStaff}
+        />
+      )}
 
       <div style={{ marginTop: 24, marginBottom: 12 }}>
         <div style={{ fontFamily: theme.display, fontSize: 17, fontWeight: 700 }}>Unit forecasts</div>

@@ -263,6 +263,27 @@ export const SAFETY_RULES = [
   },
 ]
 
+/* ------------------------------------------------------ AcuiPath thresholds */
+
+// The screen's operational outputs — which clinic, and attending-vs-resident —
+// are governed by adjustable thresholds so a service can tune them without a
+// code change. PHP/IOP is deliberately NOT a routing output: it is only an
+// advisory, surfaced when the overall acuity score crosses `phpIopComposite`.
+export const DEFAULT_AP_THRESHOLDS = {
+  // Attending required as primary physician when complexity crosses any of:
+  attendingRisk: 3,          // risk-of-harm at or above this
+  attendingComorbidity: 4,   // co-occurring complexity at or above this
+  // Advisory only — "consider PHP/IOP" when the composite reaches this.
+  phpIopComposite: 20,
+  // Acute-safety: at or above this risk the case is not routine outpatient and
+  // needs urgent/same-day evaluation. Kept as a safety guard, not complexity.
+  acuteRisk: 4,
+}
+
+export function normalizeApThresholds(t) {
+  return { ...DEFAULT_AP_THRESHOLDS, ...(t || {}) }
+}
+
 /* -------------------------------------------------------------------- score */
 
 function clampScore(v) {
@@ -288,8 +309,9 @@ export function normalizeScores(scores) {
  * the outpatient setting is appropriate, and a per-dimension contribution list
  * for the glass-box view.
  */
-export function screenLevelOfCare(rawScores, { population = 'adult' } = {}) {
+export function screenLevelOfCare(rawScores, { population = 'adult', thresholds, complexityFlag = false } = {}) {
   const scores = normalizeScores(rawScores)
+  const th = normalizeApThresholds(thresholds)
   const total = DIMENSIONS.reduce((s, d) => s + scores[d], 0)
 
   const compositeOrder = compositeToOrder(total)
@@ -314,6 +336,39 @@ export function screenLevelOfCare(rawScores, { population = 'adult' } = {}) {
     weight: total > 0 ? scores[d] / total : 0,
   })).sort((a, b) => b.score - a.score)
 
+  /* ----- operational outputs: clinic routing is elsewhere; here we decide
+     attending-vs-resident, whether PHP/IOP is worth considering, and whether
+     the case is acute enough to fall outside routine outpatient entirely. ----- */
+
+  // Attending required (complexity-based, configurable). Any indicator suffices.
+  const attendingReasons = []
+  if (scores.risk >= th.attendingRisk) attendingReasons.push('Elevated risk of harm')
+  if (scores.comorbidity >= th.attendingComorbidity) attendingReasons.push('Significant co-occurring complexity')
+  if (complexityFlag) attendingReasons.push('Diagnostic / treatment complexity flagged by the clinician')
+  const attending = { required: attendingReasons.length > 0, reasons: attendingReasons }
+
+  // Acute-safety guard: not routine outpatient, needs urgent evaluation.
+  const acuteSafety = {
+    flag: scores.risk >= th.acuteRisk,
+    reason: scores.risk >= th.acuteRisk
+      ? 'Acute risk — not routine outpatient; arrange same-day / urgent evaluation.'
+      : null,
+  }
+
+  // PHP / IOP is advisory only, gated on the overall acuity composite. It never
+  // removes the patient from clinic routing — the clinician decides.
+  const phpIop = {
+    consider: total >= th.phpIopComposite,
+    threshold: th.phpIopComposite,
+    reason: total >= th.phpIopComposite
+      ? `Overall acuity (${total}) is at or above the PHP/IOP review threshold (${th.phpIopComposite}) — consider a higher level of care.`
+      : null,
+  }
+
+  // Acute cases are pulled from routine outpatient routing; PHP/IOP advisories
+  // are not — they are routed to a clinic with the advisory attached.
+  const routableOutpatient = !acuteSafety.flag
+
   return {
     population,
     scores,
@@ -326,8 +381,15 @@ export function screenLevelOfCare(rawScores, { population = 'adult' } = {}) {
     flags: flags.map((r) => ({ id: r.id, label: r.label, floor: r.floor })),
     contributions,
     setting: level.setting,
-    // The outpatient continuum is OP and IOP. Below that may not need formal OP;
-    // PHP and above exceed routine outpatient and are a step-up referral.
+    thresholds: th,
+
+    // New operational outputs
+    attending,
+    acuteSafety,
+    phpIop,
+    routableOutpatient,
+
+    // Retained for reference/back-compat; no longer the headline routing signal.
     opAppropriate: level.setting === 'outpatient' || level.setting === 'outpatient-intensive',
     opClassification:
       level.setting === 'below-op' ? 'below-outpatient'

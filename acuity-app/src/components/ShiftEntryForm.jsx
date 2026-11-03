@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Card, Field, Button, Badge, theme } from './ui.jsx'
 import { uid, today } from '../lib/storage.js'
 import { computeEntryValue, computeStage, thresholdsFor, STAGE_COLORS } from '../lib/model.js'
@@ -12,11 +12,28 @@ const emptyForm = (locId) => ({
   points: '',
   staff: '',
   capInPlace: false,
+  bhArrivals: '',
+  boarders: '',
+  boardingHours: '',
   notes: '',
 })
 
-export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
+const optNum = (v) => (v === '' || v == null ? null : Number(v))
+
+export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPrefill = {}, onConsumePrefill }) {
   const [form, setForm] = useState(() => emptyForm(locations[0]?.id || ''))
+  const [prefilled, setPrefilled] = useState(false)
+
+  // A census imported from the EHR (Settings → FHIR census import) for this
+  // unit, date and shift fills the census field until the nurse changes it.
+  const pre = censusPrefill?.[form.locId]
+  useEffect(() => {
+    if (pre && pre.date === form.date && pre.shift === form.shift && form.census === '') {
+      setForm((f) => ({ ...f, census: String(pre.census) }))
+      setPrefilled(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.locId, form.date, form.shift, pre?.census])
 
   const loc = locations.find((l) => l.id === form.locId)
   const isEd = loc?.type === 'ed'
@@ -44,11 +61,14 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
       points: Number(form.points) || 0,
       staff: isEd ? null : Number(form.staff) || 0,
       capInPlace: !isEd && form.capInPlace,
+      ...(isEd ? { bhArrivals: optNum(form.bhArrivals), boarders: optNum(form.boarders), boardingHours: optNum(form.boardingHours) } : {}),
       notes: form.notes,
       pilot: false,
       createdAt: Date.now(),
     }
     onAdd(entry)
+    if (prefilled && onConsumePrefill) onConsumePrefill(form.locId)
+    setPrefilled(false)
     setForm((f) => emptyForm(f.locId))
   }
 
@@ -90,8 +110,8 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 12 }}>
               {!isEd && (
-                <Field label="Census" hint={loc?.censusCap != null ? `Nursing cap: ${loc.censusCap}` : undefined}>
-                  <input type="number" min="0" value={form.census} onChange={set('census')} />
+                <Field label="Census" hint={prefilled ? 'Pre-filled from the FHIR census import' : (loc?.censusCap != null ? `Nursing cap: ${loc.censusCap}` : undefined)}>
+                  <input type="number" min="0" value={form.census} onChange={(e) => { setPrefilled(false); set('census')(e) }} />
                 </Field>
               )}
               <Field label={isEd ? 'Behavioral Health Points' : 'Acuity Points'}>
@@ -103,6 +123,20 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd }) {
                 </Field>
               )}
             </div>
+
+            {isEd && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 2 }}>ED capacity (optional)</div>
+                <div style={{ fontSize: 11.5, color: theme.sub, marginBottom: 8 }}>
+                  Feeds the boarding forecast in Capacity &amp; Safety. Counts only — no patient details.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+                  <Field label="BH arrivals this shift"><input type="number" min="0" value={form.bhArrivals} onChange={set('bhArrivals')} /></Field>
+                  <Field label="BH patients boarding" hint="Awaiting an inpatient bed at shift end"><input type="number" min="0" value={form.boarders} onChange={set('boarders')} /></Field>
+                  <Field label="Boarding hours this shift" hint="Total across all BH boarders"><input type="number" min="0" step="0.5" value={form.boardingHours} onChange={set('boardingHours')} /></Field>
+                </div>
+              </div>
+            )}
 
             {!isEd && (
               <div style={{ marginBottom: 12 }}>

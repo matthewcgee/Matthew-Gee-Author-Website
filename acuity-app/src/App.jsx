@@ -18,11 +18,24 @@ import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import CommandCenter from './components/CommandCenter.jsx'
 import LevelOfCare from './components/LevelOfCare.jsx'
+import Outcomes from './components/Outcomes.jsx'
+import CapacitySafety from './components/CapacitySafety.jsx'
+import { AccessPanel, AuditLogPanel, FhirImport } from './components/Governance.jsx'
+import { IdentityPicker, SignInScreen } from './components/IdentityGate.jsx'
 import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
+import { ROLES, can, canSeeTab } from './lib/roles.js'
+import {
+  AUTH_MODE, AUTH_PROVIDER_ID, SIGN_IN_URL, readLocalIdentity, writeLocalIdentity, loadGatewayIdentity, loadFirebaseAuth,
+} from './lib/identity.js'
+import { useCollection, useConfigValue, setAuditSink, audit } from './lib/store.js'
+import { makeAuditEntry } from './lib/audit.js'
+import { useOutpatientData, loadOutpatientSample, clearOutpatientData } from './lib/opData.js'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
   { id: 'command', label: 'Command Center', icon: 'trendUp' },
+  { id: 'outcomes', label: 'Outcomes & ROI', icon: 'loop' },
+  { id: 'capacity', label: 'Capacity & Safety', icon: 'bed' },
   { id: 'levelofcare', label: 'AcuiPath™', icon: 'route' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
@@ -38,7 +51,12 @@ const SCRUB_KEY = 'bhai:scrubbed:v1'
 const AUTH_KEY = 'bhai:auth:v1'
 
 export default function App() {
-  const [authed, setAuthed] = useState(() => readStorage(AUTH_KEY, '') === EXPECTED_HASH)
+  // The shared access password is the gate for local (evaluation) builds only;
+  // single-sign-on builds rely on the organization's sign-in instead.
+  const [authed, setAuthed] = useState(() => AUTH_MODE !== 'local' || readStorage(AUTH_KEY, '') === EXPECTED_HASH)
+  const [identity, setIdentity] = useState(() => (AUTH_MODE === 'local' ? readLocalIdentity() : null))
+  const [identityState, setIdentityState] = useState(AUTH_MODE === 'local' ? 'ready' : 'loading')
+  const firebaseAuth = useRef(null)
   const [locations, setLocations] = useState(() => readStorage(KEYS.locations, null))
   const [entries, setEntries] = useState(() => readStorage(KEYS.entries, null))
   const [deployments, setDeployments] = useState(() => readStorage(KEYS.deployments, null))
@@ -48,6 +66,69 @@ export default function App() {
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
   const [settingsUnlocked, setSettingsUnlocked] = useState(() => sessionStorage.getItem('bhai:settingsUnlocked') === 'true')
+
+  const role = identity?.role || 'viewer'
+
+  // New collections, synced like entries and deployments.
+  const [auditEntries, auditApi] = useCollection('auditLog', { localKey: 'bhai:audit', audited: false })
+  const [planLog, planLogApi] = useCollection('planLog', { localKey: 'bhai:planLog', auditAs: 'planLog' })
+  const [safetyEvents, safetyApi] = useCollection('safetyEvents', { localKey: 'bhai:safetyEvents', auditAs: 'safetyEvents' })
+  const [censusPrefill, setCensusPrefill] = useConfigValue('censusPrefill', { localKey: 'bhai:censusPrefill', initial: {} })
+  const op = useOutpatientData()
+
+  // Identity from the sign-in gateway or Firebase, when configured.
+  useEffect(() => {
+    if (AUTH_MODE === 'gateway') {
+      loadGatewayIdentity()
+        .then((id) => { setIdentity(id); setIdentityState(id ? 'ready' : 'signin') })
+        .catch(() => setIdentityState('error'))
+    }
+    if (AUTH_MODE === 'firebase') {
+      let unsub = null
+      loadFirebaseAuth().then((m) => {
+        if (!m) return
+        firebaseAuth.current = m
+        unsub = m.startFirebaseAuth((id) => { setIdentity(id); setIdentityState(id ? 'ready' : 'signin') })
+      })
+      return () => unsub && unsub()
+    }
+    return undefined
+  }, [])
+
+  // Audit sink: every change made anywhere in the app becomes a hash-chained
+  // entry attributed to the signed-in person. Appends are serialized so each
+  // entry links to the one written just before it.
+  const auditRef = useRef({ entries: [], last: null, queue: Promise.resolve() })
+  auditRef.current.entries = auditEntries
+  const identityRef = useRef(identity)
+  identityRef.current = identity
+  useEffect(() => {
+    setAuditSink((action, target, detail) => {
+      const a = auditRef.current
+      a.queue = a.queue.then(async () => {
+        const fromStore = a.entries.reduce((m, e) => (!m || e.seq > m.seq ? e : m), null)
+        const prev = a.last && (!fromStore || a.last.seq >= fromStore.seq) ? a.last : fromStore
+        const who = identityRef.current
+        const entry = await makeAuditEntry(prev, { actor: who?.name || 'unknown', role: who?.role || 'unknown', action, target, detail })
+        a.last = entry
+        await auditApi.add(entry)
+      }).catch((e) => console.error('audit append', e))
+    })
+    return () => setAuditSink(null)
+  }, [auditApi])
+
+  const chooseIdentity = (id) => {
+    const switching = !!identityRef.current
+    writeLocalIdentity(id)
+    identityRef.current = id
+    setIdentity(id)
+    audit(switching ? 'identity.switch' : 'identity.signin', id.name, { role: id.role })
+  }
+
+  // Sign-ins through the gateway or Firebase are recorded once per person.
+  useEffect(() => {
+    if (AUTH_MODE !== 'local' && identity) audit('identity.signin', identity.name, { role: identity.role, source: identity.source })
+  }, [identity?.name]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const lastSynced = useRef({})
   const remoteLoaded = useRef(false)
@@ -317,6 +398,7 @@ export default function App() {
   }
 
   const updateCap = (locId, censusCap) => {
+    audit('cap.update', locId, { censusCap })
     if (LOCAL_MODE) return setCaps((prev) => ({ ...prev, [locId]: censusCap }))
     setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('update cap', e))
   }
@@ -324,18 +406,22 @@ export default function App() {
   // In local mode these update React state directly; the existing effects
   // persist that state to the browser, so the data survives a reload.
   const addEntry = (entry) => {
+    audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, census: entry.census })
     if (LOCAL_MODE) return setEntries((prev) => [...(prev || []), entry])
     setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
   }
   const removeEntry = (id) => {
+    audit('entry.remove', id)
     if (LOCAL_MODE) return setEntries((prev) => (prev || []).filter((e) => e.id !== id))
     deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
   }
   const addDeployment = (dep) => {
+    audit('deployment.add', dep.id, { toLocId: dep.toLocId, fromLocId: dep.fromLocId, date: dep.date, shift: dep.shift, hours: dep.hours, source: dep.source })
     if (LOCAL_MODE) return setDeployments((prev) => [...(prev || []), dep])
     setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
   }
   const removeDeployment = (id) => {
+    audit('deployment.remove', id)
     if (LOCAL_MODE) return setDeployments((prev) => (prev || []).filter((d) => d.id !== id))
     deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
   }
@@ -391,6 +477,22 @@ export default function App() {
     )
   }
 
+  // Apply a FHIR census import: update the census on entries already logged
+  // for that shift, and queue a pre-fill for units that have no entry yet.
+  function applyFhirCensus(plan, { date, shift }) {
+    audit('fhir.import', `${date} ${shift}`, { updated: plan.updates.length, prefilled: Object.keys(plan.prefills).length })
+    if (plan.updates.length) {
+      if (LOCAL_MODE) {
+        const byId = new Map(plan.updates.map((u) => [u.entryId, u.census]))
+        setEntries((prev) => (prev || []).map((e) => (byId.has(e.id) ? { ...e, census: byId.get(e.id) } : e)))
+      } else {
+        plan.updates.forEach((u) => updateDoc(doc(db, 'entries', u.entryId), { census: u.census }).catch((e) => console.error('fhir census', e)))
+      }
+    }
+    if (Object.keys(plan.prefills).length) setCensusPrefill({ ...(censusPrefill || {}), ...plan.prefills })
+    setToast('FHIR census applied')
+  }
+
   async function replaceCollection(name, items) {
     if (LOCAL_MODE) {
       if (name === 'entries') setEntries(items)
@@ -412,6 +514,25 @@ export default function App() {
       }} />
     )
   }
+
+  if (AUTH_MODE !== 'local' && identityState !== 'ready') {
+    return (
+      <SignInScreen
+        state={identityState}
+        mode={AUTH_MODE}
+        signInUrl={SIGN_IN_URL}
+        onSignIn={() => firebaseAuth.current?.firebaseSignIn(AUTH_PROVIDER_ID)}
+      />
+    )
+  }
+
+  if (AUTH_MODE === 'local' && !identity) {
+    return <IdentityPicker onDone={chooseIdentity} />
+  }
+
+  const canSettingsTab = can(role, 'settings') || can(role, 'audit-view') || can(role, 'import')
+  const visibleTabs = TABS.filter((t) => (t.id === 'settings' ? canSettingsTab : canSeeTab(role, t.id)))
+  const activeTab = visibleTabs.some((t) => t.id === tab) ? tab : visibleTabs[0]?.id
 
   if (locations == null || entries == null || deployments == null) {
     return (
@@ -435,8 +556,8 @@ export default function App() {
         <AcuitasLogo size={36} dark showWordmark />
 
         <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {TABS.map((t) => {
-            const active = tab === t.id
+          {visibleTabs.map((t) => {
+            const active = activeTab === t.id
             return (
               <button
                 key={t.id}
@@ -465,6 +586,19 @@ export default function App() {
         </nav>
 
         <div style={{ marginTop: 'auto', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.12)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', marginBottom: 10 }}>
+            <Icon name="user" size={16} />
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{identity?.name}</div>
+              <div style={{ fontSize: 10.5, color: '#9fc4bd' }}>{ROLES[role]?.label}{AUTH_MODE === 'local' ? ' · local sign-in' : ''}</div>
+            </div>
+            {AUTH_MODE === 'local' && (
+              <button type="button" onClick={() => setIdentity(null)} className="btn-press"
+                style={{ fontSize: 11, fontWeight: 700, color: '#cfe3df', background: 'transparent', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 7, padding: '3px 8px', cursor: 'pointer' }}>
+                Switch
+              </button>
+            )}
+          </div>
           <button
             onClick={() => setShowIntro(true)}
             className="btn-press"
@@ -494,26 +628,38 @@ export default function App() {
 
       <div className="app-main">
         <main style={{ padding: '24px 28px', maxWidth: 1240, margin: '0 auto' }}>
-          <ErrorBoundary key={tab}>
+          <ErrorBoundary key={activeTab}>
           <div className="fade-in">
-            {tab === 'status' && (
+            {activeTab === 'status' && (
               <StatusBoard locations={locations} entries={entries} thresholds={thresholds} caps={caps} onUpdateCap={updateCap} />
             )}
-            {tab === 'command' && (
-              <CommandCenter locations={locations} entries={entries} thresholds={thresholds} caps={caps} />
+            {activeTab === 'command' && (
+              <CommandCenter locations={locations} entries={entries} thresholds={thresholds} caps={caps} role={role} identity={identity} />
             )}
-            {tab === 'levelofcare' && <LevelOfCare />}
-            {tab === 'entry' && (
+            {activeTab === 'outcomes' && (
+              <Outcomes locations={locations} entries={entries} deployments={deployments} thresholds={thresholds} role={role} />
+            )}
+            {activeTab === 'capacity' && (
+              <CapacitySafety locations={locations} entries={entries} thresholds={thresholds} caps={caps} role={role} />
+            )}
+            {activeTab === 'levelofcare' && <LevelOfCare role={role} locations={locations} />}
+            {activeTab === 'entry' && (
               <ShiftEntryForm
                 locations={locations}
                 thresholds={thresholds}
+                censusPrefill={censusPrefill || {}}
+                onConsumePrefill={(locId) => {
+                  const next = { ...(censusPrefill || {}) }
+                  delete next[locId]
+                  setCensusPrefill(next)
+                }}
                 onAdd={(entry) => {
                   addEntry(entry)
                   setToast('Shift entry saved')
                 }}
               />
             )}
-            {tab === 'deployments' && (
+            {activeTab === 'deployments' && (
               <Deployments
                 locations={locations}
                 deployments={deployments}
@@ -521,25 +667,25 @@ export default function App() {
                   addDeployment(dep)
                   setToast('Deployment logged')
                 }}
-                onRemove={(id) => {
+                onRemove={can(role, 'remove-records') ? (id) => {
                   removeDeployment(id)
                   setToast('Deployment removed')
-                }}
+                } : null}
               />
             )}
-            {tab === 'reports' && (
+            {activeTab === 'reports' && (
               <Reports
                 locations={locations}
                 entries={entries}
                 deployments={deployments}
                 thresholds={thresholds}
-                onDeleteEntry={(id) => {
+                onDeleteEntry={can(role, 'remove-records') ? (id) => {
                   removeEntry(id)
                   setToast('Entry removed')
-                }}
+                } : null}
               />
             )}
-            {tab === 'calculator' && (
+            {activeTab === 'calculator' && (
               <AcuityCalculator
                 locations={locations}
                 onPushToED={(locId, shift, points) => {
@@ -548,8 +694,8 @@ export default function App() {
                 }}
               />
             )}
-            {tab === 'help' && <HelpGuide />}
-            {tab === 'settings' && !settingsUnlocked && (
+            {activeTab === 'help' && <HelpGuide />}
+            {activeTab === 'settings' && AUTH_MODE === 'local' && !settingsUnlocked && (
               <SettingsLock
                 onUnlock={() => {
                   sessionStorage.setItem('bhai:settingsUnlocked', 'true')
@@ -557,47 +703,82 @@ export default function App() {
                 }}
               />
             )}
-            {tab === 'settings' && settingsUnlocked && (
+            {activeTab === 'settings' && (AUTH_MODE !== 'local' || settingsUnlocked) && (
+              <div style={{ display: 'grid', gap: 16 }}>
+              {can(role, 'settings') && (
               <Settings
                 locations={locations}
                 thresholds={thresholds}
                 onChangeLocations={(next) => {
+                  audit('locations.update', null, { count: next.length })
                   setLocations(next)
                   setToast('Locations updated')
                 }}
                 onChangeThresholds={(next) => {
+                  audit('thresholds.update', null, null)
                   setThresholds(next)
                   setToast('Thresholds updated')
                 }}
                 onImport={async (data) => {
+                  audit('data.import', null, { entries: data.entries?.length ?? 0, deployments: data.deployments?.length ?? 0 })
                   if (data.locations) setLocations(data.locations)
                   if (data.thresholds) setThresholds(normalizeThresholds(data.thresholds))
                   if (data.entries) await replaceCollection('entries', data.entries)
                   if (data.deployments) await replaceCollection('deployments', data.deployments)
                   if (data.caps) restoreCaps(data.caps)
+                  if (data.planLog) await planLogApi.replace(data.planLog)
+                  if (data.safetyEvents) await safetyApi.replace(data.safetyEvents)
+                  if (data.outpatient) {
+                    const o = data.outpatient
+                    if (o.patients) await op.patientsApi.replace(o.patients)
+                    if (o.providers) await op.providersApi.replace(o.providers)
+                    if (o.discharges) await op.dischargesApi.replace(o.discharges)
+                    if (o.assessments) await op.assessmentsApi.replace(o.assessments)
+                    if (o.outcomes) await op.outcomesApi.replace(o.outcomes)
+                    if (o.programs) op.setPrograms(o.programs)
+                  }
                   setToast('Data imported')
                 }}
                 onClear={async () => {
+                  audit('data.clear', null, null)
                   const freshLocations = seedLocations()
                   setLocations(freshLocations)
                   setThresholds(DEFAULT_THRESHOLDS)
                   setCaps({})
                   await replaceCollection('entries', [])
                   await replaceCollection('deployments', [])
+                  await planLogApi.replace([])
+                  await safetyApi.replace([])
+                  await clearOutpatientData(op)
                   setToast('All data cleared')
                 }}
                 localMode={LOCAL_MODE}
                 onLoadSample={async () => {
+                  audit('data.sample', 'region', null)
                   const sample = buildSampleData()
                   setLocations(sample.locations)
                   setThresholds(DEFAULT_THRESHOLDS)
                   setCaps(sample.caps)
                   await replaceCollection('entries', sample.entries)
                   await replaceCollection('deployments', sample.deployments)
+                  await planLogApi.replace(sample.planLog)
+                  await safetyApi.replace(sample.safetyEvents)
+                  await loadOutpatientSample(op)
                   setToast('Sample data loaded')
                 }}
-                getExportData={() => ({ locations, entries, deployments, thresholds, caps })}
+                getExportData={() => ({
+                  locations, entries, deployments, thresholds, caps, planLog, safetyEvents,
+                  outpatient: {
+                    patients: op.patients, providers: op.providers, discharges: op.discharges,
+                    assessments: op.assessments, outcomes: op.outcomes, programs: op.programs,
+                  },
+                })}
               />
+              )}
+              {can(role, 'import') && <FhirImport locations={locations} entries={entries} onApply={applyFhirCensus} />}
+              <AccessPanel identity={identity} authMode={AUTH_MODE} onSwitch={AUTH_MODE === 'local' ? chooseIdentity : null} />
+              {can(role, 'audit-view') && <AuditLogPanel entries={auditEntries} />}
+              </div>
             )}
           </div>
           </ErrorBoundary>

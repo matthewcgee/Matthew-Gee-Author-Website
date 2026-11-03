@@ -1,0 +1,59 @@
+# Acuitas — test and build on every push.
+#
+# This file does nothing while Acuitas lives inside the author website
+# repository (GitHub only runs workflows from a repository's root). Once the
+# app is moved to its own repository (HANDOFF.md → "Moving Acuitas to your
+# internal GitHub"), it runs automatically.
+#
+# Optional secret ACUITAS_ENV: the full contents of your .env.production
+# (see .env.example). Without it the build is the self-contained local-mode copy.
+#
+# On GitHub Enterprise Server, if actions/upload-artifact@v4 is not available,
+# change it to actions/upload-artifact@v3.
+
+name: Build Acuitas
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run the test suite
+        run: npm test
+
+      - name: Write build settings
+        env:
+          ACUITAS_ENV: ${{ secrets.ACUITAS_ENV }}
+        run: |
+          # Defaults for a standalone repository; anything in the secret wins.
+          printf 'ACUITAS_BASE=/\nACUITAS_OUT_DIR=dist\n' > .env.production
+          if [ -n "$ACUITAS_ENV" ]; then printf '%s\n' "$ACUITAS_ENV" >> .env.production; fi
+          printf 'ACUITAS_OUT_DIR=dist\n' >> .env.production
+
+      - run: npm run build
+
+      - name: Remove build settings
+        if: always()
+        run: rm -f .env.production
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: acuitas-site
+          path: dist
+          retention-days: 30

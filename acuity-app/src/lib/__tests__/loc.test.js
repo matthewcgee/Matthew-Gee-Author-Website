@@ -214,3 +214,68 @@ describe('level ladder integrity', () => {
     }
   })
 })
+
+import { DEFAULT_AP_THRESHOLDS, normalizeApThresholds } from '../loc.js'
+
+describe('operational outputs: attending / acute / PHP-IOP', () => {
+  const s = (base, over = {}) => ({ ...Object.fromEntries(DIMENSIONS.map((d) => [d, base])), ...over })
+
+  it('requires an attending when risk crosses the configurable threshold', () => {
+    expect(screenLevelOfCare(s(1, { risk: 2 })).attending.required).toBe(false)
+    expect(screenLevelOfCare(s(1, { risk: 3 })).attending.required).toBe(true)
+  })
+
+  it('requires an attending on significant co-occurring complexity alone', () => {
+    const r = screenLevelOfCare(s(1, { comorbidity: 4 }))
+    expect(r.attending.required).toBe(true)
+    expect(r.attending.reasons.join(' ')).toMatch(/co-occurring/i)
+  })
+
+  it('requires an attending when the clinician flags diagnostic/treatment complexity', () => {
+    const r = screenLevelOfCare(s(1), { complexityFlag: true })
+    expect(r.attending.required).toBe(true)
+    expect(r.attending.reasons.join(' ')).toMatch(/complexity/i)
+  })
+
+  it('honors adjustable attending thresholds', () => {
+    const strict = { attendingRisk: 2 }
+    expect(screenLevelOfCare(s(1, { risk: 2 }), { thresholds: strict }).attending.required).toBe(true)
+    const loose = { attendingRisk: 5, attendingComorbidity: 5 }
+    expect(screenLevelOfCare(s(1, { risk: 3 }), { thresholds: loose }).attending.required).toBe(false)
+  })
+
+  it('flags acute-safety at or above the acute risk threshold and pulls it from routine outpatient', () => {
+    const calm = screenLevelOfCare(s(1, { risk: 3 }))
+    expect(calm.acuteSafety.flag).toBe(false)
+    expect(calm.routableOutpatient).toBe(true)
+    const acute = screenLevelOfCare(s(1, { risk: 4 }))
+    expect(acute.acuteSafety.flag).toBe(true)
+    expect(acute.routableOutpatient).toBe(false)
+    expect(acute.acuteSafety.reason).toMatch(/urgent|same-day/i)
+  })
+
+  it('raises the PHP/IOP advisory only when the composite crosses the threshold, and never removes routing', () => {
+    const low = screenLevelOfCare(s(2)) // total 12
+    expect(low.phpIop.consider).toBe(false)
+    const high = screenLevelOfCare(s(4, { risk: 2 })) // total 22, risk kept low so not acute
+    expect(high.phpIop.consider).toBe(true)
+    expect(high.routableOutpatient).toBe(true) // advisory does NOT exclude from routing
+    expect(high.phpIop.reason).toMatch(/consider a higher level/i)
+  })
+
+  it('lets the PHP/IOP threshold be adjusted', () => {
+    expect(screenLevelOfCare(s(2), { thresholds: { phpIopComposite: 10 } }).phpIop.consider).toBe(true)
+    expect(screenLevelOfCare(s(4), { thresholds: { phpIopComposite: 30 } }).phpIop.consider).toBe(false)
+  })
+
+  it('exposes the thresholds it used', () => {
+    const r = screenLevelOfCare(s(2), { thresholds: { phpIopComposite: 18 } })
+    expect(r.thresholds.phpIopComposite).toBe(18)
+    expect(r.thresholds.attendingRisk).toBe(DEFAULT_AP_THRESHOLDS.attendingRisk)
+  })
+
+  it('normalizeApThresholds fills defaults', () => {
+    expect(normalizeApThresholds({ attendingRisk: 2 })).toEqual({ ...DEFAULT_AP_THRESHOLDS, attendingRisk: 2 })
+    expect(normalizeApThresholds()).toEqual(DEFAULT_AP_THRESHOLDS)
+  })
+})

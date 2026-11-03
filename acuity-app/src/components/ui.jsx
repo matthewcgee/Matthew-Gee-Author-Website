@@ -128,6 +128,72 @@ const ICON_PATHS = {
       <path d="M8.4 19H14a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h6.6" />
     </>
   ),
+  loop: (
+    <>
+      <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" />
+      <path d="M4 4v4h4" />
+      <path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" />
+      <path d="M20 20v-4h-4" />
+    </>
+  ),
+  dollar: (
+    <>
+      <path d="M12 3v18" />
+      <path d="M16.5 7.5c-.8-1.3-2.4-2-4.5-2-2.5 0-4.2 1.2-4.2 3.1 0 4.6 9 2.4 9 7.1 0 1.9-1.9 3.3-4.8 3.3-2.3 0-4-.8-4.9-2.2" />
+    </>
+  ),
+  bed: (
+    <>
+      <path d="M3 18V7" />
+      <path d="M3 14h18v4" />
+      <path d="M21 14v-2a3 3 0 0 0-3-3h-7v5" />
+      <circle cx="7" cy="11" r="2" />
+    </>
+  ),
+  flask: (
+    <>
+      <path d="M9 3h6" />
+      <path d="M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3" />
+      <path d="M7.5 15h9" />
+    </>
+  ),
+  pulse: (
+    <>
+      <path d="M3 12h4l2-5 4 10 2-5h6" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  file: (
+    <>
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5" />
+      <path d="M9 13h6M9 17h6" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </>
+  ),
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+    </>
+  ),
+  upload: (
+    <>
+      <path d="M12 16V4" />
+      <path d="M7 9l5-5 5 5" />
+      <path d="M4 20h16" />
+    </>
+  ),
 }
 
 export function Icon({ name, size = 18, strokeWidth = 2, style }) {

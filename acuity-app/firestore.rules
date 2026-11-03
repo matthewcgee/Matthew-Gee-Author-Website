@@ -1,0 +1,112 @@
+// Acuitas™ — Firestore security rules (template for internal deployments)
+//
+// These rules are the real access control for a shared backend. They expect
+// users to sign in through Firebase Authentication (VITE_AUTH_MODE=firebase)
+// and carry an Acuitas role as a custom claim, set by an administrator with
+// the Admin SDK, e.g.:
+//
+//   admin.auth().setCustomUserClaims(uid, { acuitasRole: 'supervisor' })
+//
+// Roles: admin, supervisor, charge, screener, analyst, viewer — the same
+// matrix as src/lib/roles.js. Deploy with:  firebase deploy --only firestore:rules
+//
+// The audit log is append-only: entries can be created, never edited or
+// deleted, by anyone, including administrators.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function role() { return request.auth.token.acuitasRole; }
+    function hasRole(roles) { return signedIn() && role() in roles; }
+    function anyRole() { return hasRole(['admin', 'supervisor', 'charge', 'screener', 'analyst', 'viewer']); }
+
+    // Locations and thresholds (shared settings document).
+    match /appState/{docId} {
+      allow read: if anyRole();
+      allow write: if hasRole(['admin']);
+    }
+
+    // Shift entries, deployments and census caps — the inpatient board.
+    match /entries/{id} {
+      allow read: if anyRole();
+      allow create, update: if hasRole(['admin', 'supervisor', 'charge']);
+      allow delete: if hasRole(['admin', 'supervisor']);
+    }
+    match /deployments/{id} {
+      allow read: if anyRole();
+      allow create, update: if hasRole(['admin', 'supervisor', 'charge']);
+      allow delete: if hasRole(['admin', 'supervisor']);
+    }
+    match /locationCaps/{id} {
+      allow read: if anyRole();
+      allow write: if hasRole(['admin', 'supervisor', 'charge']);
+    }
+
+    // Outcome loop: recorded deployment plans.
+    match /planLog/{id} {
+      allow read: if hasRole(['admin', 'supervisor', 'analyst']);
+      allow create: if hasRole(['admin', 'supervisor']);
+      allow update, delete: if hasRole(['admin']);
+    }
+
+    // Safety events — unit, date, shift and type only.
+    match /safetyEvents/{id} {
+      allow read: if anyRole();
+      allow create, update: if hasRole(['admin', 'supervisor', 'charge']);
+      allow delete: if hasRole(['admin', 'supervisor']);
+    }
+
+    // AcuiPath outpatient data — de-identified case numbers, never names.
+    match /opPatients/{id} {
+      allow read: if hasRole(['admin', 'supervisor', 'screener', 'analyst']);
+      allow write: if hasRole(['admin', 'screener']);
+    }
+    match /opProviders/{id} {
+      allow read: if hasRole(['admin', 'supervisor', 'screener', 'analyst']);
+      allow write: if hasRole(['admin']);
+    }
+    match /opDischarges/{id} {
+      allow read: if hasRole(['admin', 'supervisor', 'screener', 'analyst']);
+      allow write: if hasRole(['admin', 'screener']);
+    }
+    match /opAssessments/{id} {
+      allow read: if hasRole(['admin', 'screener', 'analyst']);
+      allow write: if hasRole(['admin', 'screener']);
+    }
+    match /opOutcomes/{id} {
+      allow read: if hasRole(['admin', 'supervisor', 'screener', 'analyst']);
+      allow write: if hasRole(['admin', 'screener']);
+    }
+
+    // Shared configuration: clinic list, AcuiPath thresholds and triggers,
+    // cost rates, FHIR census pre-fills.
+    match /appConfig/costRates {
+      allow read: if anyRole();
+      allow write: if hasRole(['admin', 'analyst']);
+    }
+    match /appConfig/censusPrefill {
+      allow read: if anyRole();
+      allow write: if hasRole(['admin', 'supervisor']);
+    }
+    match /appConfig/{key} {
+      allow read: if anyRole();
+      allow write: if hasRole(['admin']);
+    }
+
+    // Audit log: append-only. The actor recorded must be the signed-in user.
+    match /auditLog/{id} {
+      allow read: if hasRole(['admin', 'analyst']);
+      allow create: if anyRole()
+        && request.resource.data.actor == (request.auth.token.email != null ? request.auth.token.email : request.auth.uid)
+        && request.resource.data.role == role();
+      allow update, delete: if false;
+    }
+
+    // Everything else is closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

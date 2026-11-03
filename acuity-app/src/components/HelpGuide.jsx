@@ -6,12 +6,51 @@ import AcuitasLogo from './AcuitasLogo.jsx'
 const SECTIONS = [
   { id: 'overview', label: 'Getting Around', icon: 'grid' },
   { id: 'status', label: 'Region Status Board', icon: 'shield' },
+  { id: 'command', label: 'Command Center', icon: 'trendUp' },
+  { id: 'outcomes', label: 'Outcomes & ROI', icon: 'loop' },
+  { id: 'capacity', label: 'Capacity & Safety', icon: 'bed' },
+  { id: 'acuipath', label: 'AcuiPath™ Outpatient', icon: 'route' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports & Exports', icon: 'barChart' },
   { id: 'acuity', label: 'AcuiCalc™ — Acuity Calculator™', icon: 'sparkle' },
   { id: 'settings', label: 'Settings & Admin', icon: 'settings' },
+  { id: 'access', label: 'People, Roles & Audit', icon: 'lock' },
+  { id: 'faq', label: 'FAQ', icon: 'help' },
   { id: 'tips', label: 'Tips & Troubleshooting', icon: 'help' },
+]
+
+const FAQ = [
+  ['Does Acuitas make clinical or staffing decisions?',
+    'No. Acuitas is decision support. It organizes the evidence, makes a recommendation, and shows its reasoning. A licensed clinician or supervisor confirms or overrides every recommendation. Nothing is automatic: plans are not executed, placements are not booked, and PHP/IOP is never assigned automatically.'],
+  ['Does Acuitas use AI? Is our data sent to an outside service?',
+    'Acuitas uses transparent statistics: per-unit forecasting, measured prediction ranges, and an exact optimizer. Every calculation runs in your browser. There is no external model service, no vendor AI API, and no patient data in transit. In the evaluation build data stays in this browser; in an internal build it goes only to your own database.'],
+  ['Do I need to enter patient names or MRNs?',
+    'No, never. AcuiPath, the discharge bridge and safety events all use de-identified case numbers. The FHIR census import counts admitted encounters by location and keeps nothing else from the bundle.'],
+  ['How accurate are the forecasts?',
+    'Each unit is scored on shifts its model never saw, and its card shows the typical error. Outcomes & ROI → Forecast calibration replays every unit to check that a predicted 30% chance of RED really happens about 30% of the time, and reports a Brier score and skill. A unit with too little history gets no forecast rather than a guess.'],
+  ['What does "Record this plan" do?',
+    'It saves the recommended moves and their predicted effect for the target shift. Acuitas later checks the deployments logged for that shift (was the plan followed?) and the reading that came in (did the unit avoid RED?). Comparing followed and unfollowed moves measures what the plan was worth.'],
+  ['Where do the dollar figures come from?',
+    'From the cost rates in Outcomes & ROI: the cost of a RED unit-shift, labor by source (float, overtime, agency, reassignment), and the cost of an ED boarding hour. The defaults are illustrative; enter your finance team’s figures. Every total is shown as a count times a rate, so it can be checked.'],
+  ['What could Acuitas save a hospital in a year?',
+    'An illustrative model, not a measured result. For a single 25-bed behavioral health unit (about 860 discharges and 200 psychiatric ED boarders a year), 10% fewer 30-day readmissions (13 × $7,200), 10% fewer boarders (20 × $2,264) and 2 fewer RN resignations (2 × $61,110) add up to about $261,000 a year. For a 60–75 bed program (2,000 discharges, 600 boarders) the same assumptions give about $474,000 a year. Average costs: NSI 2025 National Health Care Retention & RN Staffing Report; Nicks & Manthey, Emergency Medicine International, 2012; AHRQ HCUP Statistical Brief #189. They are not adjusted for inflation. Occupancy (85%) and average stay (9 days) are planning assumptions. On your own data, Outcomes & ROI measures the real value at your own rates.'],
+  ['Is the follow-up rate an official HEDIS FUH result?',
+    'No. It is an operational version of the 7- and 30-day follow-up measure, built to drive follow-up work. It does not apply HEDIS diagnosis, age, enrollment or readmission logic. Exclude readmissions and transfers by hand, and use your certified quality reporting for official submissions.'],
+  ['Why are PHQ-9 and GAD-7 here if AcuiPath has its own scale?',
+    'AcuiScale and the AcuiPath screen are original, transparent scales built for routing. PHQ-9 and GAD-7 are widely used validated instruments that are free to use. Tracking them over time shows whether patients are improving, and a worsening, severe or self-harm signal reopens the case for a fresh Tier 2 screen.'],
+  ['What happens when PHQ-9 item 9 is positive?',
+    'The patient goes to the top of the PHQ-9 / GAD-7 view with an urgent flag: complete a suicide risk assessment today, then re-screen Tier 2. The flag supports clinical judgment; it does not replace your organization’s suicide risk protocol.'],
+  ['Is the AcuiPath level-of-care scale validated?',
+    'Not yet. It is aligned to the concepts behind LOCUS, CASII and ASAM but is an original, unvalidated scale, and the app says so on screen. The outcome loop is designed to build the evidence: it records how placements actually turned out and shows when a threshold looks off.'],
+  ['Who can see and change what?',
+    'Each role sees only what it needs: charge nurses log shifts and events, outpatient clinicians work AcuiPath, quality & finance see outcomes and costs, viewers are read-only. In the evaluation build roles are self-selected and shape the interface only. Production builds take roles from single sign-on, and the shipped database security rules enforce them on the server.'],
+  ['Can the audit log be changed?',
+    'Each entry carries the SHA-256 hash of the one before it, so editing or deleting any entry breaks the chain, and Verify chain finds where. On a shared backend the security rules also make the log append-only.'],
+  ['Can Acuitas connect to Epic or another EHR?',
+    'Yes, for census. Settings → FHIR census import reads a standard FHIR R4 Bundle of admitted Encounters, which Epic, Oracle Health and most interface engines can produce. For a live feed, your interface team schedules that export each shift. Acuity points and staffing still come from the charge nurse.'],
+  ['Why does a new unit get no forecast, and why won’t Acuitas pull staff from it?',
+    'A forecast needs at least six logged shifts. Before a unit can donate staff it needs a full week (14 shifts), because one quiet reading is not a track record. A new unit can always receive staff.'],
 ]
 
 function Step({ n, children }) {
@@ -114,7 +153,7 @@ export default function HelpGuide() {
           <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Help &amp; Training Guide</div>
         </div>
         <div style={{ fontSize: 12.5, color: theme.sub }}>
-          A step-by-step walkthrough of every screen in the Acuitas™ AcuiScale™ dashboard.
+          A step-by-step walkthrough of every screen in Acuitas™, from the inpatient board to AcuiPath™ outpatient, with answers to common questions.
         </div>
       </div>
 
@@ -133,13 +172,18 @@ export default function HelpGuide() {
       <div ref={(el) => (refs.current.overview = el)}>
         <Card title="Getting Around the App" sub="Everything lives behind the left-hand navigation menu">
           <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
-            The dark sidebar on the left is always visible. Click any item to switch screens — your data is shared
-            in real time, so anything you or a teammate enters will appear for everyone within a second or two.
+            The dark sidebar on the left is always visible. Click any item to switch screens. On a shared backend,
+            anything you or a teammate enters appears for everyone within a second or two. The sidebar shows only the
+            screens your role uses, and your name and role appear at the bottom.
           </div>
           <Illustration label="What the sidebar looks like">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxWidth: 240 }}>
               {[
                 { label: 'Region Status Board', icon: 'grid', active: true },
+                { label: 'Command Center', icon: 'trendUp' },
+                { label: 'Outcomes & ROI', icon: 'loop' },
+                { label: 'Capacity & Safety', icon: 'bed' },
+                { label: 'AcuiPath™', icon: 'route' },
                 { label: 'New Shift Entry', icon: 'plusCircle' },
                 { label: 'Staff Deployments', icon: 'users' },
                 { label: 'Reports', icon: 'barChart' },
@@ -172,11 +216,15 @@ export default function HelpGuide() {
           </div>
           <ul style={{ fontSize: 13, lineHeight: 1.7, marginTop: 6, paddingLeft: 20 }}>
             <li><b>Region Status Board</b> — a live snapshot of every unit's acuity and census, updated automatically.</li>
+            <li><b>Command Center</b> — six-shift forecasts, chance of RED, the recommended staffing plan, and the what-if planner.</li>
+            <li><b>Outcomes &amp; ROI</b> — whether plans were followed and worked, forecast calibration, and cost.</li>
+            <li><b>Capacity &amp; Safety</b> — ED boarding demand against open beds, and safety-event risk by unit.</li>
+            <li><b>AcuiPath™</b> — outpatient screening, routing, discharge follow-up, PHQ-9/GAD-7 and outcomes.</li>
             <li><b>New Shift Entry</b> — where staff log census, acuity points, and staffing for AM/PM shifts.</li>
             <li><b>Staff Deployments</b> — a log of who was moved between units and why, for staffing/budget records.</li>
             <li><b>Reports</b> — charts, trends, and downloadable data exports.</li>
             <li><b>AcuiCalc™</b> — score individual patients and push totals directly to ED acuity.</li>
-            <li><b>Settings</b> — password-protected. Used to manage locations, thresholds, and data.</li>
+            <li><b>Settings</b> — locations, thresholds, data, FHIR census import, people &amp; access, and the audit log.</li>
           </ul>
           <BrandMark />
         </Card>
@@ -260,6 +308,145 @@ export default function HelpGuide() {
         </Card>
       </div>
 
+      {/* COMMAND CENTER */}
+      <div ref={(el) => (refs.current.command = el)}>
+        <Card title="Command Center" sub="Where every unit is heading, and exactly where to move staff">
+          <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
+            The Command Center forecasts each unit six shifts ahead, gives the chance it crosses into RED, and
+            recommends a staffing plan. Every forecast is fit to that unit&rsquo;s own history and scored against
+            shifts it never saw, and each card says how confident it is and why.
+          </div>
+          <Step n="1">
+            Read the four headline numbers: units at risk, the soonest projected breach, census cap pressure, and
+            how many units have enough history to forecast.
+          </Step>
+          <Step n="2">
+            <b>Recommended deployment.</b> Enter how many float staff are available. Choose <b>Act on next shift</b> to
+            staff ahead of the predicted surge, or <b>Act on now</b> for the current reading. Each move shows the unit&rsquo;s
+            acuity per staff and chance of RED before and after.
+          </Step>
+          <Step n="3">
+            Check the value line under the plan: the RED shifts it is expected to avoid, priced at your cost rates.
+          </Step>
+          <Step n="4">
+            When you act on the plan, choose <b>Record this plan</b>. Acuitas scores it later against the deployments you
+            log and the reading that follows. That is the outcome loop in Outcomes &amp; ROI.
+          </Step>
+          <Step n="5">
+            <b>What-if planner.</b> Close beds, add or remove staff, or scale acuity on any unit (or the whole region) and
+            see next shift&rsquo;s RED risk and census pressure change, along with the plan Acuitas would recommend. Presets
+            cover a region-wide surge, a call-out on every unit, and a bed closure. Nothing in the planner is saved.
+          </Step>
+          <Illustration label="Reading a unit forecast">
+            <div style={{ fontSize: 12.5, lineHeight: 1.6 }}>
+              Solid line: what was logged. Dashed line and shaded band: the prediction and its 80% range. The colored
+              strip gives the chance of RED for each of the next six shifts. <b>Why this prediction?</b> names the driver.
+              <Pointer>A unit with fewer than six logged shifts gets no forecast, and the card says so</Pointer>
+            </div>
+          </Illustration>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* OUTCOMES */}
+      <div ref={(el) => (refs.current.outcomes = el)}>
+        <Card title="Outcomes & ROI" sub="Was the advice followed, was it right, and what was it worth?">
+          <Step n="1">
+            <b>Following the plan</b> compares the RED rate on shifts where the recorded plan was followed with shifts
+            where it wasn&rsquo;t. A dark tick on each bar marks what Acuitas predicted, so you can check its own claims.
+          </Step>
+          <Step n="2">
+            <b>Forecast calibration</b> replays each unit&rsquo;s history one shift at a time and checks whether
+            &ldquo;30% chance of RED&rdquo; meant RED about 30% of the time. Points on the dashed line are perfectly
+            calibrated. The table gives each unit&rsquo;s Brier score (lower is better) and its skill against always
+            guessing the unit&rsquo;s base rate.
+          </Step>
+          <Step n="3">
+            <b>Cost &amp; ROI</b> totals RED unit-shifts, deployment labor by source, and ED boarding hours over 7, 30 or 90
+            days, each shown as a count times a rate. Open <b>Cost rates</b> to enter your finance figures; the defaults are
+            illustrative. Value from followed plans is shown two ways: a model estimate, and an observed estimate once
+            there are enough outcomes on both sides.
+          </Step>
+          <Step n="4">
+            <b>Recorded plans</b> lists each plan with every move marked Followed / Partly followed / Not followed, and its
+            outcome: Avoided RED, Went RED, or Awaiting reading.
+          </Step>
+          <Step n="5">
+            <b>Outpatient placement outcomes</b> summarizes AcuiPath outcomes and shows any prompt to review a threshold.
+          </Step>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* CAPACITY & SAFETY */}
+      <div ref={(el) => (refs.current.capacity = el)}>
+        <Card title="Capacity & Safety" sub="ED boarding demand against open beds, and where the next safety event is likely">
+          <Step n="1">
+            <b>Beds against ED boarding demand.</b> Teal bars are projected open inpatient beds (each unit&rsquo;s census cap
+            minus its forecast census). Violet bars are forecast BH patients boarding in the ED. Each shift is marked OK,
+            Tight (under 2 beds of margin) or Boarding, with the chance that demand exceeds open beds.
+          </Step>
+          <Step n="2">
+            To feed it, log <b>BH arrivals</b>, <b>BH patients boarding</b> and <b>boarding hours</b> on ED shift entries,
+            and keep census caps current on the Status Board. The forecast appears after about a week of history.
+          </Step>
+          <Step n="3">
+            <b>Safety events by acuity stage</b> shows how often events happen per unit-shift in GREEN, YELLOW and RED,
+            and how many times more likely they are on a RED shift. Switch between violence &amp; restraint events and all
+            events.
+          </Step>
+          <Step n="4">
+            <b>Next-shift safety risk by unit</b> combines each unit&rsquo;s forecast chance of each stage with those rates
+            to give the chance of at least one event next shift.
+          </Step>
+          <Step n="5">
+            <b>Log a safety event</b> by unit, date, shift, type and severity. Never enter patient or staff names.
+          </Step>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* ACUIPATH */}
+      <div ref={(el) => (refs.current.acuipath = el)}>
+        <Card title="AcuiPath™ — Outpatient" sub="Two-tier screening, routing, discharge follow-up, measurement-based care and outcomes">
+          <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
+            AcuiPath has five views, shown as buttons at the top. No patient-identifying information is ever needed:
+            use a case number, never a name or MRN.
+          </div>
+          <Step n="1">
+            <b>Screen a patient — Tier 1.</b> A nurse chart review with no patient contact. Check any red flag found in
+            the chart. A clean review can be placed directly in the recommended clinic as resident-eligible routine
+            outpatient care. Any flag sends the case to Tier 2.
+          </Step>
+          <Step n="2">
+            <b>Tier 2 — in-depth screen</b>, with a phone screen or patient discussion. Rate six dimensions 1–5; every
+            rating shows what each level means. The result gives the clinic, whether an attending must be the primary
+            physician, an advisory-only PHP/IOP flag, and an acute-safety flag that pulls the case out of routine routing.
+          </Step>
+          <Step n="3">
+            <b>Caseload &amp; assignment</b> matches each case to a provider by role, clinic, specialty, supervision level
+            and capacity. Post-discharge bridge cases go first, and new patients go to the least-loaded provider. Administrators
+            edit the red-flag triggers, thresholds and clinic list here.
+          </Step>
+          <Step n="4">
+            <b>Discharge bridge.</b> Record each inpatient discharge (de-identified) and add it to the caseload. The worklist
+            shows discharges that still need a visit, most urgent first. Book visits, mark them seen, or exclude
+            readmissions and transfers. FUH-7 and FUH-30 rates count only windows that have closed.
+          </Step>
+          <Step n="5">
+            <b>PHQ-9 / GAD-7.</b> Record the questionnaires; each item has the standard 0–3 answers. Patients with a
+            positive PHQ-9 item 9, a meaningful worsening, or a severe score rise to the top with <b>Re-screen (Tier 2)</b>,
+            which reopens their case in Tier 2 and updates it when saved.
+          </Step>
+          <Step n="6">
+            <b>Outcomes.</b> For each case, record first-visit attendance, whether the patient was still in care at 30 days,
+            and whether they needed a higher level of care. The breakdown by tier, physician level and clinic shows a
+            review prompt when the evidence supports one, for example if Tier 1 direct placements step up much more often.
+          </Step>
+          <BrandMark />
+        </Card>
+      </div>
+
       {/* NEW SHIFT ENTRY */}
       <div ref={(el) => (refs.current.entry = el)}>
         <Card title="New Shift Entry" sub="Log a unit's numbers once per shift">
@@ -312,6 +499,11 @@ export default function HelpGuide() {
           <Step n="8">
             Click <b>Save Entry</b>. The Status Board updates immediately for everyone.
           </Step>
+          <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 8, lineHeight: 1.55 }}>
+            <b>ED shifts</b> also take three optional counts: BH arrivals, BH patients boarding, and boarding hours. These
+            feed the boarding forecast in Capacity &amp; Safety. If census was imported from your EHR (Settings → FHIR census
+            import), it is pre-filled for the matching unit, date and shift; you can change it.
+          </div>
           <BrandMark />
         </Card>
       </div>
@@ -351,6 +543,11 @@ export default function HelpGuide() {
             Click <b>Log Deployment</b>. It appears instantly in the Deployment Log table below the form,
             which everyone can see. Use the <b>Remove</b> button on a row to delete a mistaken entry.
           </Step>
+          <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 8, lineHeight: 1.55 }}>
+            Set the <b>Source</b> (float pool, overtime or agency) so Outcomes &amp; ROI can price deployment labor correctly;
+            moves from another unit are recorded as reassignments. Deployments logged for a shift also tell the outcome
+            loop whether a recorded plan was followed.
+          </div>
           <BrandMark />
         </Card>
       </div>
@@ -574,8 +771,9 @@ export default function HelpGuide() {
       <div ref={(el) => (refs.current.settings = el)}>
         <Card title="Settings & Admin" sub="Password-protected — for unit/location management">
           <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
-            The Settings screen controls things that affect the whole region: which units exist, their
-            thresholds, and full data export/import. It's locked with a password held by your administrator.
+            The Settings screen controls things that affect the whole region: which units exist, their thresholds,
+            full data export and import, the FHIR census import, people &amp; access, and the audit log. In the evaluation
+            build it is locked with a password held by your administrator; single-sign-on builds rely on your role instead.
           </div>
           <Illustration label="Settings lock screen">
             <div style={{ maxWidth: 320, margin: '0 auto', textAlign: 'center' }}>
@@ -619,7 +817,9 @@ export default function HelpGuide() {
           </Step>
           <Step n="5">
             <b>Data Management</b> — Export All Data (JSON) for backups, Import Data (JSON) to restore from a
-            backup, or Clear All Data to reset everything (this cannot be undone, so use with care).
+            backup, or Clear All Data to reset everything (this cannot be undone, so use with care). Exports include
+            recorded plans, safety events and all AcuiPath data. <b>Load sample data</b> fills every screen, inpatient and
+            outpatient, with a de-identified demonstration region.
           </Step>
 
           <div
@@ -640,6 +840,47 @@ export default function HelpGuide() {
           <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 8 }}>
             Note: Census caps on the Status Board can be updated by any charge nurse directly on the unit's
             card — you don't need the Settings password for day-to-day cap changes.
+          </div>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* ACCESS */}
+      <div ref={(el) => (refs.current.access = el)}>
+        <Card title="People, Roles & Audit" sub="Who can do what, how sign-in works, and the record of every change">
+          <Step n="1">
+            <b>Signing in.</b> In the evaluation build, enter your name and choose your role after the access password.
+            Use <b>Switch</b> at the bottom of the sidebar to change user. Production builds use your organization&rsquo;s
+            single sign-on instead: you sign in once with your work account, and your role comes from your IT groups.
+          </Step>
+          <Step n="2">
+            <b>Roles.</b> Administrator, House supervisor, Charge nurse, Outpatient clinician, Quality &amp; finance, and
+            Viewer. Each sees only the screens and actions it needs. Settings → People &amp; access shows the full table.
+          </Step>
+          <Step n="3">
+            <b>Audit log</b> (Settings, for administrators and quality &amp; finance). Every change is recorded: who, in
+            which role, what, and when. Choose <b>Verify chain</b> to confirm nothing has been edited or deleted, and
+            <b> Export</b> for compliance review.
+          </Step>
+          <Step n="4">
+            <b>FHIR census import</b> (Settings). Load a FHIR Bundle from your EHR, or try the example. Check each FHIR
+            location&rsquo;s match to an Acuitas unit, pick the date and shift, and choose <b>Apply census</b>. Logged entries
+            get the census; the rest is pre-filled on New Shift Entry.
+          </Step>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* FAQ */}
+      <div ref={(el) => (refs.current.faq = el)}>
+        <Card title="Frequently Asked Questions">
+          <div style={{ display: 'grid', gap: 6 }}>
+            {FAQ.map(([q, a]) => (
+              <details key={q} style={{ border: `1px solid ${theme.border}`, borderRadius: 10, padding: '9px 12px', background: theme.panel }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{q}</summary>
+                <div style={{ fontSize: 12.8, lineHeight: 1.6, marginTop: 6, color: theme.text }}>{a}</div>
+              </details>
+            ))}
           </div>
           <BrandMark />
         </Card>
@@ -672,6 +913,18 @@ export default function HelpGuide() {
             </li>
             <li>
               <b>Need the intro video again?</b> Click "Watch the Story" at the bottom of the sidebar.
+            </li>
+            <li>
+              <b>Don&rsquo;t see a screen?</b> The sidebar shows only the screens your role uses. Ask an administrator if you
+              need more access.
+            </li>
+            <li>
+              <b>Outcomes look empty?</b> Plans only appear after someone chooses <b>Record this plan</b>, and outcomes fill in
+              once the target shift&rsquo;s reading is logged.
+            </li>
+            <li>
+              <b>Want to see everything working?</b> Settings → Load sample data fills every screen with a synthetic region
+              and a de-identified outpatient caseload.
             </li>
           </ul>
           <BrandMark />

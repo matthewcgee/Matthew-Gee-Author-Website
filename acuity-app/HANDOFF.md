@@ -99,44 +99,37 @@ client-side routes.
 
 ## Moving Acuitas to your internal GitHub
 
-Acuitas currently lives in the `acuity-app/` folder of the developer's website
-repository (`github.com/matthewcgee/Matthew-Gee-Author-Website`). Moving it
-gives it a repository of its own on your internal GitHub (GitHub Enterprise,
-or any git server: GitLab, Azure DevOps and Bitbucket take the same commands).
+The developer provides Acuitas as a release package: `acuitas-1.0.bundle`
+(a git repository in a single file) and `Acuitas-1.0-source.zip` (the same
+source as plain files). Either one gives Acuitas a repository of its own on
+your internal GitHub (GitHub Enterprise, or any git server: GitLab, Azure
+DevOps and Bitbucket take the same commands).
 
 **Before you start:** create an **empty** repository on your internal git
 server (no README, no license), for example `acuitas`. You need git and
 Node.js 20 on the machine you run this from.
 
-### Option A — keep the full change history (recommended)
+### Option A — from the git bundle (recommended)
 
 Copy, paste, and replace the one URL on the last line:
 
 ```bash
-git clone https://github.com/matthewcgee/Matthew-Gee-Author-Website.git
-cd Matthew-Gee-Author-Website
-git subtree split --prefix=acuity-app -b acuitas-only
-git push https://<your-internal-git>/<org>/acuitas.git acuitas-only:main
+git clone acuitas-1.0.bundle acuitas
+cd acuitas
+git push https://<your-internal-git>/<org>/acuitas.git main
 ```
 
-That is the whole move. The internal repository now holds only Acuitas, with
-the app at its root and its history intact. Nothing else from the website
-comes with it.
+That is the whole move. The internal repository now holds Acuitas with the app
+at its root.
 
-> If the developer's repository is private for you, ask the developer for
-> read access or use Option B. If the latest changes are still on a branch
-> rather than `main`, add `git checkout <branch-name>` after the `cd` line.
+### Option B — from the ZIP
 
-### Option B — no history (simplest)
-
-1. Get the `acuity-app` folder as a ZIP (from the developer, or GitHub →
-   Code → Download ZIP and take the `acuity-app` folder out of it).
-2. Unzip it, and from inside the folder:
+Unzip `Acuitas-1.0-source.zip`, and from inside the folder:
 
 ```bash
 git init -b main
 git add .
-git commit -m "Acuitas: initial import"
+git commit -m "Acuitas 1.0"
 git push https://<your-internal-git>/<org>/acuitas.git main
 ```
 
@@ -281,7 +274,7 @@ is listed under [Database / Backend](#database--backend).
 
 **Move it in** (about an hour)
 - [ ] Create an empty `acuitas` repository on the internal git server
-- [ ] Run the four Option A commands (or Option B)
+- [ ] Run the three Option A commands (or Option B)
 - [ ] `npm ci && npm test && npm run build` passes on a clean clone
 - [ ] Copy `dist/` to an internal web server and open it (local mode, demo data)
 
@@ -798,28 +791,16 @@ still works after the swap.
 
 ## Receiving Updates
 
-Updates arrive through git, the same way the app was moved in.
+Each new version arrives as a release package, the same way the first one did.
 
-**If your copy was made with `git subtree split`** (Option A below), repeat the
-same commands. The split is repeatable, so the new history continues the old one
-and the push simply adds the new commits:
+1. Unzip the new `Acuitas-<version>-source.zip` over your working copy of the
+   internal repository.
+2. Review what changed with `git diff`, then commit and push it.
+3. Rebuild and redeploy (`npm ci && npm test && npm run build`).
 
-```bash
-cd Matthew-Gee-Author-Website
-git pull
-git subtree split --prefix=acuity-app -b acuitas-only
-git push https://<your-internal-git>/<org>/acuitas.git acuitas-only:main
-```
-
-If your team has committed its own changes to the internal repository, push to
-a branch instead (`acuitas-only:upstream`) and merge it there with a pull request.
-
-**If your copy was made from a ZIP** (Option B), the developer provides a new
-ZIP; copy its contents over your working copy, review the diff, and commit.
-
-Then rebuild and redeploy (`npm ci && npm test && npm run build`). No database
-migrations are required for UI/feature updates. Backend schema changes (if any)
-will be documented with each update.
+No database migrations are required for UI/feature updates. Backend schema
+changes (if any) will be documented with each release. Rolling back is
+redeploying the previous build.
 
 ---
 

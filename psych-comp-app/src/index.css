@@ -51,8 +51,7 @@ button { cursor: pointer; }
   display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
 }
 .brand { display: flex; align-items: center; gap: 18px; min-width: 0; }
-.brand img { height: 50px; width: auto; display: block; }
-@media (max-width: 640px) { .brand img { height: 38px; } }
+.brand-mark { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--teal), var(--teal-700)); color: #fff; display: grid; place-items: center; flex: none; box-shadow: 0 4px 12px rgba(14,140,131,.25); }
 .brand-divider { width: 1px; height: 40px; background: var(--line); }
 .brand-title { font-weight: 800; font-size: 17px; letter-spacing: -0.01em; }
 .brand-sub { color: var(--muted); font-size: 12.5px; }
@@ -110,7 +109,8 @@ button { cursor: pointer; }
   .summary-inner .kpi:nth-child(n+5) { display: none; }
   .main { padding: 16px; }
   .topbar-inner { padding: 10px 16px; }
-  .brand-divider, .brand-text { display: none; }
+  .brand-divider { display: none; }
+  .brand-sub { display: none; }
 }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }

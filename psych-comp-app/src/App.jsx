@@ -86,7 +86,9 @@ export default function App() {
       <header className="topbar">
         <div className="topbar-inner">
           <div className="brand">
-            <img src={`${import.meta.env.BASE_URL}assets/logo.jpg`} alt="Atrium Health Wake Forest Baptist — now part of Advocate Health" />
+            <div className="brand-mark" aria-hidden="true">
+              <Ico name="results" size={24} stroke={2.4} />
+            </div>
             <div className="brand-divider" />
             <div className="brand-text">
               <div className="brand-title">Psychiatry Compensation Calculator</div>

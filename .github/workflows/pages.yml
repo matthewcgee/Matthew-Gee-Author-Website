@@ -52,6 +52,15 @@ jobs:
         run: |
           npm ci
           npm run build
+      # Psychiatry compensation calculator. Ships with no benchmark or faculty
+      # data: licensed survey benchmarks and payroll inputs are loaded by the
+      # user in their own browser and never published.
+      - name: Build Psychiatry Compensation Calculator
+        working-directory: psych-comp-app
+        run: |
+          npm ci
+          npm test
+          npm run build
       - name: Verify the published builds
         run: |
           # Institution names and credentials must never ship in the public
@@ -66,7 +75,7 @@ jobs:
           # any asset pointing at /Matthew-Gee-Author-Website/ 404s and the page
           # renders blank. That bug has bitten three apps in this repo; fail
           # loudly on it for every one of them.
-          for app in acuity bedspace volleyball piedmont-volleyball ; do
+          for app in acuity bedspace volleyball piedmont-volleyball psych-comp ; do
             if [ -f "$app/index.html" ] && grep -ioF "Matthew-Gee-Author-Website" "$app/index.html" ; then
               echo "::error::$app/index.html references the project path instead of the custom-domain root — its assets would 404."
               exit 1
@@ -74,7 +83,7 @@ jobs:
           done
           echo "All builds are clean."
       - name: Remove build-time dependencies from artifact
-        run: rm -rf bedspace-app/node_modules volleyball-app/node_modules piedmont-volleyball-app/node_modules acuity-app/node_modules
+        run: rm -rf bedspace-app/node_modules volleyball-app/node_modules piedmont-volleyball-app/node_modules acuity-app/node_modules psych-comp-app/node_modules
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact

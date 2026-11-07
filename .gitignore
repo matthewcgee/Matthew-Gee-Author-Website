@@ -1,6 +1,7 @@
 /bedspace/
 /volleyball/
 /piedmont-volleyball/
+/psych-comp/
 
 # Acuitas build output. Built fresh by the Pages workflow like the apps above,
 # so the compiled bundle is never committed. The public build is produced with

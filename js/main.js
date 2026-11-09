@@ -64,22 +64,43 @@ document.addEventListener('DOMContentLoaded', function () {
       requestAnimationFrame(function () {
         modal.classList.add('is-visible');
       });
+
+      // Video modal: autoplay muted, unmute button
+      var video = document.getElementById('promoVideo');
+      var unmuteBtn = document.getElementById('unmuteBtn');
+      if (video) {
+        video.play().catch(function () {});
+        if (unmuteBtn) {
+          unmuteBtn.addEventListener('click', function () {
+            video.muted = false;
+            video.play().catch(function () {});
+            unmuteBtn.classList.add('is-hidden');
+          });
+        }
+      }
     }, 600);
+
+    function stopVideo() {
+      var video = document.getElementById('promoVideo');
+      if (video) { video.pause(); video.currentTime = 0; }
+    }
 
     [closeBtn, dismissBtn, ctaLink].forEach(function (el) {
       if (el) {
-        el.addEventListener('click', closeModal);
+        el.addEventListener('click', function () { stopVideo(); closeModal(); });
       }
     });
 
     modal.addEventListener('click', function (event) {
       if (event.target === modal) {
+        stopVideo();
         closeModal();
       }
     });
 
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && !modal.hidden) {
+        stopVideo();
         closeModal();
       }
     });

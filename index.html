@@ -537,57 +537,22 @@
     </div>
   </div>
 
-  <!-- ===================== ANNOUNCEMENT MODAL ===================== -->
-  <div class="modal-overlay" id="announcementModal" role="dialog" aria-modal="true" aria-labelledby="announcementTitle" hidden>
-    <div class="modal-card modal-card--autumn">
-      <button class="modal-close" id="announcementClose" aria-label="Close announcement">&times;</button>
-
-      <div class="modal-autumn">
-
-        <!-- Left: cover panel -->
-        <div class="modal-autumn-left">
-          <div class="modal-autumn-bg">
-            <img src="images/the-god-who-sees-cover.png" alt="" aria-hidden="true">
-          </div>
-          <div class="modal-autumn-cover">
-            <img src="images/the-god-who-sees-cover.png" alt="Cover of The God Who Sees by Matthew C. Gee">
-          </div>
-          <p class="modal-autumn-badge">Matthew C. Gee</p>
-        </div>
-
-        <!-- Right: copy + CTAs -->
-        <div class="modal-autumn-right">
-          <div class="modal-autumn-eyebrow">
-            <span class="modal-autumn-eyebrow-line"></span>
-            Now Available
-          </div>
-          <h2 id="announcementTitle" class="modal-autumn-title">The God Who Sees</h2>
-          <p class="modal-autumn-subtitle">Recovering Our Sight in a World That Has Stopped Looking</p>
-          <hr class="modal-autumn-rule">
-          <p class="modal-autumn-body">
-            In a world of endless distraction, we have quietly lost the art of truly seeing one another.
-            This powerful new book invites you to recover attention, dignity, and hope.
-          </p>
-          <a href="https://a.co/d/0eSD9vbY" class="modal-autumn-cta" id="announcementCta" target="_blank" rel="noopener noreferrer">
-            Buy on Amazon &rarr;
-          </a>
-
-          <div class="modal-autumn-divider"><span>Also Available</span></div>
-
-          <div class="modal-autumn-study">
-            <div class="modal-autumn-study-icon">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
-            </div>
-            <div class="modal-autumn-study-text">
-              <strong>Free Six-Week Bible Study</strong>
-              <span>Participant workbook &amp; leader guide &mdash; free PDF download</span>
-            </div>
-            <a href="downloads/tgws-bible-study.pdf" download class="modal-autumn-study-link">Download&nbsp;&rarr;</a>
-          </div>
-
-          <p class="modal-autumn-footer">matthewcgee.com</p>
-        </div>
-
+  <!-- ===================== ANNOUNCEMENT MODAL (video) ===================== -->
+  <div class="modal-overlay" id="announcementModal" role="dialog" aria-modal="true" aria-label="The God Who Sees — Study Guide" hidden>
+    <div class="modal-video-card">
+      <button class="modal-close modal-close--video" id="announcementClose" aria-label="Close">&times;</button>
+      <div class="modal-video-wrap">
+        <video id="promoVideo" class="modal-video-el" playsinline muted loop preload="auto">
+          <source src="videos/God_Who_Sees_Study_Web.mp4" type="video/mp4">
+        </video>
+        <button class="modal-unmute-btn" id="unmuteBtn" aria-label="Tap to unmute video">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22">
+            <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/>
+            <line x1="23" y1="9" x2="17" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <line x1="17" y1="9" x2="23" y2="15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span>Tap to unmute</span>
+        </button>
       </div>
     </div>
   </div>

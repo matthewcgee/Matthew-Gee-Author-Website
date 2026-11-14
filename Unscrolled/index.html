@@ -308,6 +308,11 @@ a{color:inherit}
 </div>
 
 <script>
+// Always open at the top, so the intro video appears over the hero.
+if('scrollRestoration' in history)history.scrollRestoration='manual';
+function toTop(){window.scrollTo({top:0,left:0,behavior:'instant'})}
+if(location.hash)history.replaceState(null,'',location.pathname+location.search);
+toTop();window.addEventListener('load',toTop);window.addEventListener('pageshow',toTop);
 var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}})},{threshold:.3});
 document.querySelectorAll('.seq').forEach(function(el){io.observe(el)});
 

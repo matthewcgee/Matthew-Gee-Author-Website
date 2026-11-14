@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Unscrolled — Real faith for a distracted world.</title>
+<meta name="description" content="Unscrolled: a podcast, Bible study, and prayer wall. Real faith for a distracted world.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://matthewcgee.com/Unscrolled/">
+<meta property="og:title" content="Unscrolled">
+<meta property="og:description" content="Real faith for a distracted world. Podcast, Bible study, and prayer wall.">
+<link rel="icon" href="../images/unscrolled-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800;900&family=Lora:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#eeeff2; --paper2:#e2e3e8; --ink:#13141a; --ink-soft:#4b4d58;
+  --night:#0b0b0f; --night2:#15151b; --snow:#f4f2ec; --snow-soft:#a3a3ad;
+  --gold:#b08433; --gold-lt:#d9ae5c;
+  --line-d:rgba(19,20,26,.14); --line-l:rgba(244,242,236,.14);
+  --sans:'Inter Tight','Helvetica Neue',Arial,sans-serif;
+  --serif:'Lora',Georgia,'Times New Roman',serif;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+
+.scene{padding-block:clamp(88px,13vw,160px);padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));position:relative}
+.light{background:linear-gradient(180deg,var(--paper) 0%,var(--paper2) 100%);color:var(--ink)}
+.dark{background:var(--night);color:var(--snow)}
+.wrap{max-width:1040px;margin:0 auto}
+.center{text-align:center}
+
+.kicker{font-size:.68rem;font-weight:800;letter-spacing:.42em;text-transform:uppercase;color:var(--gold);margin-bottom:clamp(20px,3vw,32px)}
+.dark .kicker{color:var(--gold-lt)}
+.big{font-weight:900;font-size:clamp(2.3rem,7vw,5rem);line-height:1;letter-spacing:-.045em;text-wrap:balance}
+.gold{color:var(--gold)} .dark .gold{color:var(--gold-lt)}
+.soft{font-family:var(--serif);font-style:italic;font-size:clamp(1.05rem,2.2vw,1.5rem);line-height:1.5;color:var(--ink-soft)}
+.dark .soft{color:var(--snow-soft)}
+.body{font-size:clamp(.98rem,1.5vw,1.08rem);font-weight:500;color:var(--ink-soft);max-width:34em;line-height:1.7}
+.dark .body{color:var(--snow-soft)}
+
+/* logo */
+.logo{display:inline-flex;align-items:baseline;font-weight:900;letter-spacing:-.055em;line-height:1;white-space:nowrap}
+.logo svg{height:.84em;width:auto;margin-right:.012em;flex:none;transform:translateY(.057em)}
+.logo svg{color:var(--gold)} .dark .logo svg{color:var(--gold-lt)}
+[hidden]{display:none!important}
+
+/* top bar */
+.top{position:absolute;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px max(20px,env(safe-area-inset-right,0px)) 18px max(20px,env(safe-area-inset-left,0px))}
+.top .logo{font-size:1.35rem;text-decoration:none}
+.top nav{display:flex;gap:clamp(14px,3vw,32px)}
+.top nav a{font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--ink-soft)}
+.top nav a:hover{color:var(--gold)}
+@media(max-width:520px){.top nav a.opt{display:none}}
+
+/* hero */
+.hero{min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.hero .logo{font-size:clamp(3.2rem,15vw,11rem)}
+.hero .soft{margin-top:clamp(18px,3vw,34px);color:var(--gold);font-size:clamp(1.15rem,3vw,2rem)}
+.hero .bar{width:64px;height:3px;background:var(--gold);margin:clamp(24px,4vw,40px) auto 0;border-radius:2px}
+.btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:clamp(28px,4vw,44px)}
+.btn{display:inline-flex;align-items:center;justify-content:center;font-family:var(--sans);font-size:.82rem;font-weight:800;letter-spacing:.02em;padding:14px 26px;border-radius:999px;text-decoration:none;border:2px solid var(--ink);cursor:pointer;transition:transform .15s,background .15s,color .15s}
+.btn:hover{transform:translateY(-2px)}
+.btn-ink{background:var(--ink);color:var(--paper)}
+.btn-line{background:transparent;color:var(--ink)}
+.dark .btn{border-color:var(--snow)}
+.dark .btn-ink{background:var(--snow);color:var(--night)}
+.dark .btn-line{color:var(--snow)}
+.btn-gold{background:var(--gold-lt);border-color:var(--gold-lt)!important;color:var(--night)}
+
+/* animation */
+.rise{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1)}
+.on .rise,.rise.on{opacity:1;transform:none}
+.on .s1{transition-delay:.25s}.on .s2{transition-delay:.7s}.on .s3{transition-delay:1.15s}.on .s4{transition-delay:1.6s}.on .s5{transition-delay:2.2s}
+.intro .rise{animation:in .8s cubic-bezier(.2,.8,.2,1) forwards}
+.intro .s1{animation-delay:.15s}.intro .s2{animation-delay:.6s}.intro .s3{animation-delay:.9s}.intro .s4{animation-delay:1.15s}
+@keyframes in{to{opacity:1;transform:none}}
+
+/* this is for */
+.for-list{list-style:none;display:grid;gap:clamp(12px,2vw,20px)}
+.for-list li{font-weight:800;font-size:clamp(1.25rem,3.6vw,2.4rem);letter-spacing:-.035em;line-height:1.15;text-wrap:balance}
+
+/* strike */
+.strike{position:relative;display:inline-block;color:var(--snow)}
+.strike::after{content:'';position:absolute;left:-3%;top:54%;height:.085em;width:106%;background:var(--snow);transform:scaleX(0);transform-origin:left;transition:transform .5s ease .9s}
+.on .strike::after{transform:scaleX(1)}
+.on .strike{color:rgba(244,242,236,.45);transition:color .4s ease 1.2s}
+.swap{font-size:clamp(3rem,12vw,8.5rem);font-weight:900;letter-spacing:-.05em;line-height:1.02}
+
+/* podcast */
+.pod{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(28px,6vw,72px);align-items:center}
+.cover{aspect-ratio:1;max-width:100%;border-radius:22px;background:radial-gradient(circle at 50% 45%,#2a2217 0%,#0b0b0f 68%);border:1px solid var(--line-l);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:18px;box-shadow:0 30px 70px rgba(0,0,0,.55)}
+.cover small{font-size:.5rem;font-weight:800;letter-spacing:.42em;text-transform:uppercase;color:var(--gold-lt)}
+.cover .logo{font-size:clamp(1.7rem,5vw,2.5rem)}
+.cover em{font-family:var(--serif);font-size:.82rem;color:var(--gold-lt)}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:.66rem;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-lt);border:1px solid rgba(217,174,92,.4);border-radius:999px;padding:6px 14px;margin-bottom:20px}
+.pill i{width:7px;height:7px;border-radius:50%;background:var(--gold-lt)}
+.h2{font-weight:900;font-size:clamp(1.8rem,4.4vw,3.2rem);letter-spacing:-.04em;line-height:1.04;text-wrap:balance;margin-bottom:18px}
+@media(max-width:700px){.pod{grid-template-columns:1fr}.cover{max-width:260px}}
+
+/* study */
+.study{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:clamp(28px,6vw,72px);align-items:center}
+.study img{width:100%;border-radius:6px;box-shadow:0 24px 50px rgba(19,20,26,.35);display:block}
+.weeks{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0 28px;list-style:none}
+.weeks li{font-size:.76rem;font-weight:700;padding:6px 13px;border-radius:999px;border:1.5px solid var(--line-d);color:var(--ink-soft)}
+@media(max-width:700px){.study{grid-template-columns:1fr}.study img{max-width:170px}}
+
+/* prayer */
+.pray{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:clamp(24px,5vw,56px);align-items:start;margin-top:clamp(36px,6vw,60px)}
+.card{background:var(--night2);border:1px solid var(--line-l);border-radius:18px;padding:clamp(20px,3vw,28px)}
+.pform label{display:block;font-size:.66rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--snow-soft);margin:0 0 7px}
+.pform input,.pform textarea{width:100%;font:500 .98rem var(--sans);color:var(--snow);background:var(--night);border:1.5px solid var(--line-l);border-radius:12px;padding:12px 14px;margin-bottom:16px;outline:none}
+.pform input:focus,.pform textarea:focus{border-color:var(--gold-lt)}
+.pform textarea{min-height:120px;resize:vertical;line-height:1.5}
+.pform .btn{width:100%}
+.note{font-size:.8rem;color:var(--snow-soft);margin-top:12px}
+.wall-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.66rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-lt);margin-bottom:14px}
+.wall-head span+span{color:var(--snow-soft);letter-spacing:.06em}
+.wall{display:grid;gap:12px}
+.req{background:var(--night2);border:1px solid var(--line-l);border-radius:16px;padding:18px 20px}
+.req b{font-size:.78rem;font-weight:800;color:var(--gold-lt)}
+.req time{font-size:.74rem;color:var(--snow-soft);float:right}
+.req p{font-size:1rem;font-weight:500;line-height:1.55;margin:8px 0 14px;color:var(--snow)}
+.amen{font:800 .74rem var(--sans);color:var(--snow);background:transparent;border:1.5px solid var(--line-l);border-radius:999px;padding:7px 14px;cursor:pointer}
+.amen:hover,.amen.on{border-color:var(--gold-lt);color:var(--gold-lt)}
+.more{margin-top:14px;width:100%}
+@media(max-width:760px){.pray{grid-template-columns:1fr}}
+
+/* footer */
+.foot{padding-block:clamp(56px,8vw,88px);text-align:center;border-top:1px solid var(--line-l)}
+.foot .logo{font-size:2.2rem}
+.foot .soft{font-size:1rem;margin:10px 0 26px;color:var(--gold-lt)}
+.foot nav{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+.foot nav a{font-size:.7rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;text-decoration:none;color:var(--snow-soft)}
+.foot nav a:hover{color:var(--gold-lt)}
+
+@media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none;animation:none}.strike::after{transition:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="u" viewBox="0 0 431 469">
+    <path fill="currentColor" d="M0 120H90V295.5A83.5 83.5 0 0 0 257 295.5V185H347V295.5A173.5 173.5 0 0 1 0 295.5Z"/>
+    <polygon points="302,5 178,185 426,185" fill="currentColor" stroke="currentColor" stroke-width="10" stroke-linejoin="round"/>
+  </symbol>
+</svg>
+
+<header class="top">
+  <a class="logo" href="#top" aria-label="Unscrolled"><svg viewBox="0 0 431 469" aria-hidden="true"><use href="#u"/></svg>nscrolled</a>
+  <nav>
+    <a class="opt" href="#podcast">Podcast</a>
+    <a class="opt" href="#study">Bible Study</a>
+    <a href="#prayer">Prayer Wall</a>
+  </nav>
+</header>
+
+<section class="scene light hero intro" id="top">
+  <p class="kicker rise s1">Podcast &middot; Bible Study &middot; Prayer</p>
+  <h1 class="logo rise s2" aria-label="Unscrolled"><svg viewBox="0 0 431 469" aria-hidden="true"><use href="#u"/></svg>nscrolled</h1>
+  <p class="soft rise s3">Real faith for a distracted world.</p>
+  <div class="bar rise s3"></div>
+  <div class="btns rise s4">
+    <a class="btn btn-ink" href="#podcast">The Podcast</a>
+    <a class="btn btn-line" href="#prayer">Prayer Wall</a>
+  </div>
+</section>
+
+<section class="scene light center seq">
+  <div class="wrap">
+    <p class="kicker rise">This is for</p>
+    <ul class="for-list">
+      <li class="rise s1">the one who&rsquo;s tired of scrolling.</li>
+      <li class="rise s2">the parent who&rsquo;s home but not present.</li>
+      <li class="rise s3">the leader who&rsquo;s stopped noticing people.</li>
+      <li class="rise s4">the friend who always says &ldquo;I&rsquo;m fine.&rdquo;</li>
+    </ul>
+  </div>
+</section>
+
+<section class="scene dark center seq">
+  <div class="wrap">
+    <p class="swap rise"><span class="strike">Scrolled.</span></p>
+    <p class="swap gold rise s4">Unscrolled.</p>
+    <p class="soft rise s5" style="margin-top:clamp(24px,4vw,40px)">Put the phone down. Open the Word.</p>
+  </div>
+</section>
+
+<section class="scene dark seq" id="podcast" style="padding-top:0">
+  <div class="wrap pod">
+    <div class="cover rise">
+      <small>A Podcast</small>
+      <span class="logo"><svg viewBox="0 0 431 469" aria-hidden="true"><use href="#u"/></svg>nscrolled</span>
+      <em>Real faith for a distracted world.</em>
+    </div>
+    <div class="rise s1">
+      <span class="pill"><i></i>Coming soon</span>
+      <h2 class="h2">Honest conversations the algorithm keeps scrolling past.</h2>
+      <p class="body">One topic. One scripture. What it looks like to actually live it out at work, at home, and with the people right in front of you.</p>
+      <div class="btns" style="justify-content:flex-start">
+        <a class="btn btn-gold" href="https://www.instagram.com/matthew.c.gee" target="_blank" rel="noopener">Follow for the launch</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene light center seq">
+  <div class="wrap">
+    <p class="soft rise">But seek first his kingdom and his righteousness,</p>
+    <p class="big rise s2" style="margin-top:14px">and all these things<br>will be <span class="gold">given to you.</span></p>
+    <p class="kicker rise s3" style="margin:clamp(24px,4vw,40px) 0 0">Matthew 6:33</p>
+  </div>
+</section>
+
+<section class="scene light seq" id="study" style="padding-top:clamp(24px,4vw,48px);background:var(--paper2)">
+  <div class="wrap study">
+    <img class="rise" src="../images/tgws-cover-small.jpg" alt="The God Who Sees book cover">
+    <div class="rise s1">
+      <p class="kicker" style="margin-bottom:14px">Free Bible study</p>
+      <h2 class="h2">The God Who Sees.<br>Six weeks. Together.</h2>
+      <p class="body">A participant workbook and leader guide for groups who want to recover the art of truly seeing one another.</p>
+      <ul class="weeks">
+        <li>When We Stop Seeing</li><li>The People We Write Off</li><li>Seen in the Wilderness</li>
+        <li>Jesus Sees the Whole Person</li><li>A Place at the Table</li><li>Seeing the Nearest Face</li>
+      </ul>
+      <div class="btns" style="justify-content:flex-start;margin-top:0">
+        <a class="btn btn-ink" href="../downloads/tgws-bible-study.pdf" download>Download the free PDF</a>
+        <a class="btn btn-line" href="https://a.co/d/0eSD9vbY" target="_blank" rel="noopener">Get the book</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="scene dark seq" id="prayer">
+  <div class="wrap">
+    <p class="kicker rise">Prayer wall</p>
+    <h2 class="big rise s1">You don&rsquo;t have to<br><span class="gold">carry it alone.</span></h2>
+    <p class="soft rise s2" style="margin-top:18px">Post it here. We&rsquo;ll pray with you.</p>
+    <div class="pray">
+      <form class="card pform" id="prayerForm">
+        <label for="pName">Name (optional)</label>
+        <input id="pName" maxlength="40" placeholder="Anonymous" autocomplete="given-name">
+        <label for="pText">Prayer request</label>
+        <textarea id="pText" maxlength="400" required placeholder="What's on your heart?"></textarea>
+        <button class="btn btn-gold" id="subBtn" type="submit">Post request</button>
+        <p class="note" id="formNote" role="status"></p>
+      </form>
+      <div>
+        <div class="wall-head"><span>Recent requests</span><span id="wallCt"></span></div>
+        <div class="wall" id="wall"></div>
+        <button class="btn btn-line more" id="moreBtn" hidden>Load more</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="scene dark foot">
+  <span class="logo"><svg viewBox="0 0 431 469" aria-hidden="true"><use href="#u"/></svg>nscrolled</span>
+  <p class="soft">Real faith for a distracted world.</p>
+  <nav>
+    <a href="#podcast">Podcast</a>
+    <a href="#study">Bible Study</a>
+    <a href="#prayer">Prayer Wall</a>
+    <a href="https://www.instagram.com/matthew.c.gee" target="_blank" rel="noopener">Instagram</a>
+    <a href="https://matthewcgee.com">matthewcgee.com</a>
+  </nav>
+</footer>
+
+<script>
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('on');io.unobserve(e.target)}})},{threshold:.3});
+document.querySelectorAll('.seq').forEach(function(el){io.observe(el)});
+
+// Prayer wall. Paste the Firebase web config and set FIREBASE_CONFIGURED = true to go live.
+var FIREBASE_CONFIGURED=false;
+var firebaseConfig={apiKey:"YOUR_API_KEY",authDomain:"YOUR_PROJECT.firebaseapp.com",projectId:"YOUR_PROJECT_ID",storageBucket:"YOUR_PROJECT.appspot.com",messagingSenderId:"YOUR_SENDER_ID",appId:"YOUR_APP_ID"};
+var db=null,items=[],PAGE=8,lastDoc=null;
+var wall=document.getElementById('wall'),ct=document.getElementById('wallCt'),note=document.getElementById('formNote'),moreBtn=document.getElementById('moreBtn'),form=document.getElementById('prayerForm');
+
+function card(id,name,date,text,count){
+  var d=document.createElement('div');d.className='req';
+  var b=document.createElement('b');b.textContent=name||'Anonymous';
+  var t=document.createElement('time');t.textContent=date;
+  var p=document.createElement('p');p.textContent=text;
+  var a=document.createElement('button');a.className='amen';a.type='button';a.textContent='Praying · '+count;
+  a.addEventListener('click',function(){
+    if(a.classList.contains('on'))return;
+    a.classList.add('on');a.textContent='Praying · '+(count+1);
+    if(db&&id)db.collection('prayers').doc(id).update({praying:firebase.firestore.FieldValue.increment(1)}).catch(function(){});
+  });
+  d.append(t,b,p,a);return d;
+}
+function fmt(dt){return dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}
+
+function load(reset){
+  var q=db.collection('prayers').orderBy('ts','desc').limit(PAGE+1);
+  if(!reset&&lastDoc)q=q.startAfter(lastDoc);
+  q.get().then(function(snap){
+    var docs=snap.docs,more=docs.length>PAGE;if(more)docs=docs.slice(0,PAGE);
+    if(reset){wall.textContent='';items=[]}
+    lastDoc=docs[docs.length-1]||lastDoc;items=items.concat(docs);
+    docs.forEach(function(doc){var d=doc.data();wall.append(card(doc.id,d.name,fmt(d.ts?d.ts.toDate():new Date()),d.text,d.praying||0))});
+    ct.textContent=items.length?items.length+(more?'+':'')+' posted':'Be the first';
+    moreBtn.hidden=!more;
+  }).catch(function(){ct.textContent='Could not load requests'});
+}
+moreBtn.addEventListener('click',function(){load(false)});
+
+form.addEventListener('submit',function(e){
+  e.preventDefault();
+  var text=document.getElementById('pText').value.trim();if(!text)return;
+  if(!db){note.textContent='The prayer wall is not open yet, so this was not saved.';return}
+  var btn=document.getElementById('subBtn');btn.disabled=true;
+  db.collection('prayers').add({name:document.getElementById('pName').value.trim()||'Anonymous',text:text,ts:firebase.firestore.FieldValue.serverTimestamp(),praying:0})
+    .then(function(){form.reset();note.textContent='Posted. We are praying with you.';load(true)})
+    .catch(function(){note.textContent='Something went wrong. Please try again.'})
+    .finally(function(){btn.disabled=false});
+});
+
+function addScript(src,cb){var s=document.createElement('script');s.src=src;s.onload=cb;document.head.appendChild(s)}
+if(FIREBASE_CONFIGURED){
+  addScript('https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js',function(){
+    addScript('https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js',function(){
+      firebase.initializeApp(firebaseConfig);db=firebase.firestore();load(true);
+    });
+  });
+}else{
+  ct.textContent='Opening soon';
+  var soon=document.createElement('div');soon.className='req';var sp=document.createElement('p');sp.style.margin='0';sp.textContent='The prayer wall opens soon. Requests posted here will appear for the community to pray over.';soon.append(sp);wall.append(soon);
+  document.getElementById('subBtn').disabled=true;document.getElementById('subBtn').style.opacity='.5';note.textContent='Posting opens soon.';
+}
+</script>
+</body>
+</html>

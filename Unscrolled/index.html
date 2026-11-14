@@ -388,7 +388,8 @@ var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isInter
 document.querySelectorAll('.seq').forEach(function(el){io.observe(el)});
 
 // Prayer wall. This config is public by design; access is controlled by the Firestore security rules.
-// Requests are saved with approved:false and only appear once approved in the Firebase console.
+// Requests post straight to the wall. The security rules reject links and strong language, and the
+// private page at /Unscrolled/admin/ can hide or delete anything.
 var FIREBASE_CONFIGURED=true;
 var firebaseConfig={apiKey:"AIzaSyA6i9KZFQUt9dWNv0rAE7FnrvHRP2vrVpc",authDomain:"unscrolled-ea2a2.firebaseapp.com",projectId:"unscrolled-ea2a2",storageBucket:"unscrolled-ea2a2.firebasestorage.app",messagingSenderId:"529772321422",appId:"1:529772321422:web:6b8809a891aa09f88cc7df"};
 var db=null,all=[],shown=0,PAGE=8;
@@ -432,10 +433,19 @@ form.addEventListener('submit',function(e){
   e.preventDefault();
   var text=document.getElementById('pText').value.trim();if(!text)return;
   if(!db){note.textContent='The prayer wall is not open yet, so this was not saved.';return}
+  var name=document.getElementById('pName').value.trim()||'Anonymous';
+  var blocked=/(http|www\.|\.com|\.net|\.org|\.ru|\.xyz|\.io|<|fuck|shit|bitch|asshole|cunt)/i;
+  if(blocked.test(text)||blocked.test(name)){note.textContent='Please remove any links or strong language and try again.';return}
   var btn=document.getElementById('subBtn');btn.disabled=true;
-  db.collection('prayers').add({name:document.getElementById('pName').value.trim()||'Anonymous',text:text,ts:firebase.firestore.FieldValue.serverTimestamp(),praying:0,approved:false})
-    .then(function(){form.reset();note.textContent='Received. We are praying with you. Your request will appear on the wall once it has been reviewed.'})
-    .catch(function(){note.textContent='Something went wrong. Please try again.'})
+  function send(approved){return db.collection('prayers').add({name:name,text:text,ts:firebase.firestore.FieldValue.serverTimestamp(),praying:0,approved:approved})}
+  send(true)
+    .then(function(){form.reset();note.textContent='Posted. We are praying with you.';load()})
+    .catch(function(){
+      // Falls back to review-first if the database is still on the approval-only rules.
+      return send(false)
+        .then(function(){form.reset();note.textContent='Received. We are praying with you. Your request will appear on the wall once it has been reviewed.'})
+        .catch(function(){note.textContent='That could not be posted. Please remove any links or strong language and try again.'});
+    })
     .finally(function(){btn.disabled=false});
 });
 

@@ -141,11 +141,12 @@ a{color:inherit}
 /* video popup */
 .vpop{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(11,11,15,.84);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));opacity:0;transition:opacity .3s ease}
 .vpop.show{opacity:1}
-.vpop-card{position:relative;width:min(100%,calc(min(86svh,780px)*9/16));aspect-ratio:9/16;border-radius:20px;overflow:hidden;background:var(--night);box-shadow:0 30px 90px rgba(0,0,0,.7)}
-.vpop video{width:100%;height:100%;object-fit:cover;display:block}
+.vpop-card{position:relative;width:min(100%,960px,calc(82svh*16/9));aspect-ratio:16/9;border-radius:20px;background:var(--night);box-shadow:0 30px 90px rgba(0,0,0,.7)}
+.vpop video{width:100%;height:100%;object-fit:cover;display:block;border-radius:20px}
+@media(max-width:640px){.vpop-sound{bottom:auto!important;top:calc(100% + 14px)}}
 .vpop-x{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(11,11,15,.6);color:var(--snow);font:500 1.5rem/1 var(--sans);cursor:pointer}
 .vpop-x:hover{background:var(--gold)}
-.vpop-sound{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font:800 .8rem var(--sans);color:var(--night);background:var(--gold-lt);border:0;border-radius:999px;padding:11px 20px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.vpop-sound{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font:800 .76rem var(--sans);color:var(--night);background:var(--gold-lt);border:0;border-radius:999px;padding:9px 16px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 
 @media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none;animation:none}.strike::after{transition:none}html{scroll-behavior:auto}}
 </style>
@@ -282,7 +283,7 @@ a{color:inherit}
 <div class="vpop" id="vpop" role="dialog" aria-modal="true" aria-label="Unscrolled podcast trailer" hidden>
   <div class="vpop-card">
     <video id="vpopVideo" playsinline muted preload="none">
-      <source src="../videos/unscrolled-ad.mp4" type="video/mp4">
+      <source src="../videos/unscrolled-intro.mp4" type="video/mp4">
     </video>
     <button class="vpop-x" id="vpopClose" type="button" aria-label="Close video">&times;</button>
     <button class="vpop-sound" id="vpopSound" type="button">

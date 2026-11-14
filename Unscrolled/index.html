@@ -117,6 +117,30 @@ a{color:inherit}
 #podcast,#study,#prayer{scroll-margin-top:24px}
 @media(max-width:640px){.host-grid{grid-template-columns:1fr}}
 
+/* topics */
+.topics{margin-top:clamp(64px,10vw,120px)}
+.topic-grid{list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(10px,1.6vw,18px);margin-top:clamp(20px,3vw,32px)}
+.topic-grid li{position:relative;aspect-ratio:4/3;border-radius:18px;padding:clamp(14px,2.2vw,24px);display:flex;align-items:flex-end;font-weight:900;font-size:clamp(1.25rem,3.6vw,2.6rem);letter-spacing:-.045em;line-height:1}
+.topic-grid li::before{content:attr(data-n) " / 06";position:absolute;top:clamp(12px,2vw,20px);right:clamp(14px,2.2vw,24px);font-size:.62rem;font-weight:800;letter-spacing:.2em;opacity:.7}
+.t-cream{background:#efe9dc;color:var(--ink)}
+.t-gold{background:var(--gold-lt);color:var(--ink)}
+.t-night{background:var(--night2);color:var(--snow);border:1px solid var(--line-l)}
+@media(max-width:560px){.topic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* ticker */
+.ticker{overflow:hidden;background:var(--gold-lt);color:var(--ink);padding:14px 0}
+.ticker div{display:flex;width:max-content;animation:tick 30s linear infinite}
+.ticker span{font-weight:900;font-size:clamp(.95rem,2vw,1.3rem);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;padding-right:.6em}
+@keyframes tick{to{transform:translateX(-50%)}}
+
+/* watch */
+.watch-grid{display:grid;grid-template-columns:81fr 256fr;gap:clamp(14px,2.5vw,28px);margin-top:clamp(28px,4vw,44px);align-items:start}
+.watch-grid figure{margin:0}
+.watch-grid video{width:100%;height:auto;display:block;border-radius:18px;background:var(--night);box-shadow:0 24px 50px rgba(19,20,26,.3)}
+.watch-grid .tall{aspect-ratio:9/16}.watch-grid .wide{aspect-ratio:16/9}
+.watch-grid figcaption{font-size:.8rem;font-weight:700;color:var(--ink-soft);margin-top:12px}
+@media(max-width:640px){.watch-grid{grid-template-columns:1fr}.watch-grid figure:first-child{max-width:240px;margin-inline:auto;order:2}}
+
 /* study */
 .study{display:grid;grid-template-columns:minmax(0,220px) minmax(0,1fr);gap:clamp(28px,6vw,72px);align-items:center}
 .study img{width:100%;border-radius:6px;box-shadow:0 24px 50px rgba(19,20,26,.35);display:block}
@@ -163,7 +187,7 @@ a{color:inherit}
 .vpop-x:hover{background:var(--gold)}
 .vpop-sound{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font:800 .76rem var(--sans);color:var(--night);background:var(--gold-lt);border:0;border-radius:999px;padding:9px 16px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.5)}
 
-@media(prefers-reduced-motion:reduce){.rise{opacity:1;transform:none;transition:none;animation:none}.strike::after{transition:none}html{scroll-behavior:auto}}
+@media(prefers-reduced-motion:reduce){.ticker div{animation:none}.rise{opacity:1;transform:none;transition:none;animation:none}.strike::after{transition:none}html{scroll-behavior:auto}}
 </style>
 </head>
 <body>
@@ -179,6 +203,7 @@ a{color:inherit}
   <a class="logo" href="#top" aria-label="Unscrolled"><svg viewBox="0 0 431 469" aria-hidden="true"><use href="#u"/></svg>nscrolled</a>
   <nav>
     <a class="opt" href="#podcast">Podcast</a>
+    <a class="opt" href="#watch">Watch</a>
     <a class="opt" href="#study">Bible Study</a>
     <a href="#prayer">Prayer Wall</a>
   </nav>
@@ -231,12 +256,48 @@ a{color:inherit}
       </div>
     </div>
   </div>
+  <div class="wrap topics seq">
+    <p class="kicker rise">Honest conversations about</p>
+    <ul class="topic-grid">
+      <li class="t-cream rise s1" data-n="01">Loneliness.</li>
+      <li class="t-gold rise s1" data-n="02">Faith.</li>
+      <li class="t-night rise s1" data-n="03">Friendship.</li>
+      <li class="t-cream rise s2" data-n="04">Family.</li>
+      <li class="t-gold rise s2" data-n="05">Work.</li>
+      <li class="t-night rise s2" data-n="06">Doubt.</li>
+    </ul>
+  </div>
   <div class="wrap hosts seq">
     <p class="kicker rise">Your hosts</p>
     <h3 class="h2 rise s1">Put the phone down. <span class="gold">Let&rsquo;s talk.</span></h3>
     <div class="host-grid">
       <img class="rise s1" src="../images/unscrolled-host-jordan.jpg" width="900" height="784" alt="Jordan Stump, Christian content creator and influencer, co-host of Unscrolled">
       <img class="rise s2" src="../images/unscrolled-host-matthew.jpg" width="900" height="784" alt="Matthew C. Gee, author and creator, co-host of Unscrolled">
+    </div>
+  </div>
+</section>
+
+<div class="ticker" aria-label="Less scrolling. More seeing. More being seen.">
+  <div aria-hidden="true"><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span><span>Less scrolling &middot; More seeing &middot; More being seen &middot;</span></div>
+</div>
+
+<section class="scene light center seq" id="watch">
+  <div class="wrap">
+    <p class="kicker rise">Watch</p>
+    <h2 class="big rise s1">The conversations we keep <span class="gold">scrolling past.</span></h2>
+    <div class="watch-grid rise s2">
+      <figure>
+        <video class="tall" controls playsinline preload="none" poster="../images/unscrolled-poster-trailer.jpg">
+          <source src="../videos/unscrolled-trailer.mp4" type="video/mp4">
+        </video>
+        <figcaption>The trailer</figcaption>
+      </figure>
+      <figure>
+        <video class="wide" controls playsinline preload="none" poster="../images/unscrolled-poster-intro.jpg">
+          <source src="../videos/unscrolled-intro.mp4" type="video/mp4">
+        </video>
+        <figcaption>Group chat</figcaption>
+      </figure>
     </div>
   </div>
 </section>

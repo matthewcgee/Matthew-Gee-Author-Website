@@ -215,6 +215,11 @@ section:last-of-type {
   border-radius: 2px;
 }
 
+@media (min-width: 761px) and (max-width: 1040px) {
+  .nav-links { gap: 14px; }
+  .nav-links a { font-size: 0.72rem; letter-spacing: 0.06em; }
+}
+
 @media (max-width: 760px) {
   .nav-toggle {
     display: inline-flex;

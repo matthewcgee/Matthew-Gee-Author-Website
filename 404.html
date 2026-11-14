@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page not found — Matthew C. Gee</title>
+<script>
+// Addresses are case-sensitive here, so send /unscrolled (any capitalisation) to /Unscrolled/.
+(function(){
+  var p=location.pathname;
+  if(/^\/unscrolled(\/|$)/i.test(p)&&p.indexOf('/Unscrolled')!==0)location.replace('/Unscrolled/');
+})();
+</script>
+<style>
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;text-align:center;padding:24px;background:#0c0b09;color:#f5efe3;font-family:Georgia,'Times New Roman',serif}
+h1{font-size:2rem;margin:0}
+p{margin:0;color:#a89e8e;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+a{color:#c9a454}
+</style>
+</head>
+<body>
+<h1>Page not found</h1>
+<p>That address doesn&rsquo;t exist on this site.</p>
+<p><a href="/">matthewcgee.com</a> &nbsp;&middot;&nbsp; <a href="/Unscrolled/">Unscrolled</a></p>
+</body>
+</html>

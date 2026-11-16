@@ -100,9 +100,10 @@ client-side routes.
 
 ## Moving Acuitas to your internal GitHub
 
-The developer provides Acuitas as a release package: `acuitas-1.0.bundle`
-(a git repository in a single file) and `Acuitas-1.0-source.zip` (the same
-source as plain files). Either one gives Acuitas a repository of its own on
+The developer provides Acuitas as a release package, `Acuitas-1.1-Release.zip`,
+holding `acuitas-1.1.bundle` (a git repository in a single file),
+`Acuitas-1.1-source.zip` (the same
+source as plain files) and this guide. Either one gives Acuitas a repository of its own on
 your internal GitHub (GitHub Enterprise, or any git server: GitLab, Azure
 DevOps and Bitbucket take the same commands).
 
@@ -115,7 +116,7 @@ Node.js 20 on the machine you run this from.
 Copy, paste, and replace the one URL on the last line:
 
 ```bash
-git clone acuitas-1.0.bundle acuitas
+git clone acuitas-1.1.bundle acuitas
 cd acuitas
 git push https://<your-internal-git>/<org>/acuitas.git main
 ```
@@ -125,12 +126,12 @@ at its root.
 
 ### Option B — from the ZIP
 
-Unzip `Acuitas-1.0-source.zip`, and from inside the folder:
+Unzip `Acuitas-1.1-source.zip`, and from inside the folder:
 
 ```bash
 git init -b main
 git add .
-git commit -m "Acuitas 1.0"
+git commit -m "Acuitas 1.1"
 git push https://<your-internal-git>/<org>/acuitas.git main
 ```
 
@@ -183,8 +184,9 @@ an application server or a data warehouse.
 | **Backups** | Firestore point-in-time recovery plus scheduled daily backups | Lets you restore if data is entered wrongly or deleted. |
 
 One Firestore project serves the entire service line: every inpatient unit,
-the ED, and every AcuiPath outpatient clinic. Units, clinics and programs are
-configured inside the app (Settings), not by adding databases.
+the ED, every AcuiPath outpatient clinic and the IOP. Units, clinics, programs
+and IOP tracks are configured inside the app (Settings, and AcuiStep → Program
+setup), not by adding databases.
 
 **Compliance.** Acuitas is designed to run without PHI: shift-level numbers,
 staffing and de-identified outpatient records. It is still confidential
@@ -197,7 +199,7 @@ for your use.
 
 Small. A shift entry is about 1 KB. A 10-unit service line logging two shifts
 a day creates about 7,300 entries a year, roughly 7 MB, and with deployments,
-the audit log and AcuiPath records the total stays well under 100 MB a year.
+the audit log, AcuiPath and AcuiStep records the total stays well under 100 MB a year.
 No capacity planning is needed.
 
 Cost is driven by **reads**, not storage: each time someone opens Acuitas it
@@ -295,6 +297,8 @@ is listed under [Database / Backend](#database--backend).
 - [ ] A Viewer cannot save an entry; a Charge nurse can
 - [ ] Settings → Audit log → **Verify chain** reports the chain intact
 - [ ] Add every unit, the ED and the AcuiPath clinics in Settings
+- [ ] Set the IOP tracks, schedules and capacity in AcuiStep → Program setup (an administrator)
+- [ ] An AcuiPath screen that recommends IOP appears in the AcuiStep intake queue after saving
 
 ---
 
@@ -317,7 +321,7 @@ To set a new password:
 node -e "const c=require('crypto'); console.log(c.createHash('sha256').update('YourNewPassword').digest('hex'))"
 ```
 
-Then open `src/components/PasswordGate.jsx` and replace the hash on line 4:
+Then open `src/components/PasswordGate.jsx` and replace the hash near the top of the file:
 ```js
 const EXPECTED_HASH = 'paste-your-new-hash-here'
 ```
@@ -357,7 +361,7 @@ A signed-in user with no mapped role gets **Viewer** — never more.
 | Administrator | Everything, including settings, users, clinic configuration and the audit log |
 | House supervisor | Deployments, recorded plans, scenarios, capacity & safety, FHIR import, removing records |
 | Charge nurse | Shift entries, deployments, AcuiCalc, safety events |
-| Outpatient clinician | AcuiPath screening, discharge follow-up, PHQ-9 / GAD-7, outpatient outcomes |
+| Outpatient clinician | AcuiPath screening, AcuiStep IOP intake, discharge follow-up, PHQ-9 / GAD-7, outpatient outcomes |
 | Quality & finance | Outcomes, calibration, cost rates, scenarios, audit log (read-mostly) |
 | Viewer | Read-only boards and reports |
 
@@ -366,7 +370,7 @@ The full matrix lives in `src/lib/roles.js` and is shown in the app under Settin
 ### Audit log
 
 Every change — shift entries, deployments, caps, locations, thresholds, imports,
-recorded plans, safety events, every AcuiPath record, cost rates, sign-ins — is
+recorded plans, safety events, every AcuiPath and AcuiStep record, cost rates, sign-ins — is
 written to an audit log: who, in which role, what, which record, when. Entries
 form a **SHA-256 hash chain**; each stores the hash of the entry before it, so
 editing or deleting any entry breaks the chain, and **Verify chain** (Settings)
@@ -635,8 +639,9 @@ logistics and coverage, which make the result conditional rather than changing
 it. It returns one of five verdicts, an eight-criterion checklist, the matched
 track, a treatment path, an intake task list (including Medicare's physician
 certification where it applies), a target start date and a chart summary.
-Tracks, schedules and capacity live in `appConfig/iopTracks`; intakes in
-`iopIntakes`, with the same access rules as the AcuiPath caseload. When an
+Tracks, schedules and capacity live in `appConfig/iopTracks` (administrators
+edit them in Program setup); intakes in `iopIntakes`, with the same access rules
+as the AcuiPath caseload. When an
 AcuiPath Tier 2 screen recommends IOP, saving it sends the case to AcuiStep
 (`sendToAcuiStep` in `iopData.js`): one intake per AcuiPath case, carrying the
 six dimension scores, symptoms and latest PHQ-9 / GAD-7, with safety, stability
@@ -826,12 +831,19 @@ No database migrations are required for UI/feature updates. Backend schema
 changes (if any) will be documented with each release. Rolling back is
 redeploying the previous build.
 
+**Release 1.1 (AcuiStep).** Adds one collection, `iopIntakes`, and one shared
+setting, `appConfig/iopTracks`. No existing data changes. If you already run the
+shared database on 1.0, **redeploy the rules** after updating
+(`firebase deploy --only firestore:rules`): the 1.0 rules close every collection
+they do not name, so AcuiStep intakes cannot be saved until the 1.1 rules are
+live. New installations deploy the 1.1 rules as part of set-up.
+
 ---
 
 ## File Structure
 
 ```
-acuity-app/
+acuitas/
 ├── src/
 │   ├── App.jsx                  # Main app shell, routing, Firebase sync
 │   ├── components/
@@ -857,9 +869,10 @@ acuity-app/
 │   │   ├── ShiftEntryForm.jsx   # New shift entry form
 │   │   ├── StatusBoard.jsx      # Region-wide acuity overview
 │   │   ├── WhatIf.jsx           # What-if scenario planner
+│   │   ├── __tests__/           # Screen rendering tests
 │   │   └── ui.jsx               # Shared UI components & theme
 │   └── lib/
-│       ├── __tests__/           # Test suite (365 tests)
+│       ├── __tests__/           # Engine tests (365 tests in all, 19 files)
 │       ├── audit.js             # Hash-chained audit log
 │       ├── capacity.js          # ED boarding vs open-bed outlook
 │       ├── cost.js              # Cost rates, spend, plan value, realized value

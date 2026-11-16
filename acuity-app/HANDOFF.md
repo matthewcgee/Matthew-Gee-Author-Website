@@ -124,6 +124,11 @@ git push https://<your-internal-git>/<org>/acuitas.git main
 That is the whole move. The internal repository now holds Acuitas with the app
 at its root.
 
+> If a fresh clone of the internal repository comes back empty, the server's
+> default branch is still `master`: set the repository's default branch to
+> `main` in its settings. GitHub, GitLab and Azure DevOps normally adopt the
+> first branch pushed, so most servers need nothing.
+
 ### Option B — from the ZIP
 
 Unzip `Acuitas-1.1-source.zip`, and from inside the folder:
@@ -822,9 +827,11 @@ still works after the swap.
 
 Each new version arrives as a release package, the same way the first one did.
 
-1. Unzip the new `Acuitas-<version>-source.zip` over your working copy of the
-   internal repository.
-2. Review what changed with `git diff`, then commit and push it.
+1. From the folder that contains your working copy (a clone of the internal
+   repository named `acuitas`), unzip the new `Acuitas-<version>-source.zip`;
+   it unpacks into `acuitas/` and overwrites the files in place. Run
+   `git add -A` so any file a release removes is removed too.
+2. Review what changed with `git diff --cached`, then commit and push it.
 3. Rebuild and redeploy (`npm ci && npm test && npm run build`).
 
 No database migrations are required for UI/feature updates. Backend schema

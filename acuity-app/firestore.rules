@@ -63,6 +63,10 @@ service cloud.firestore {
       allow read: if hasRole(['admin', 'supervisor', 'screener', 'analyst']);
       allow write: if hasRole(['admin', 'screener']);
     }
+    match /iopIntakes/{id} {
+      allow read: if hasRole(['admin', 'supervisor', 'screener', 'analyst']);
+      allow write: if hasRole(['admin', 'screener']);
+    }
     match /opProviders/{id} {
       allow read: if hasRole(['admin', 'supervisor', 'screener', 'analyst']);
       allow write: if hasRole(['admin']);

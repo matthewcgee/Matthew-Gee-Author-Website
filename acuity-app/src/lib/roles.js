@@ -19,7 +19,7 @@ export const ROLES = {
   admin: { id: 'admin', label: 'Administrator', blurb: 'Everything, including settings, users and the audit log.' },
   supervisor: { id: 'supervisor', label: 'House supervisor', blurb: 'Runs the region: deployments, plans, scenarios, capacity and safety.' },
   charge: { id: 'charge', label: 'Charge nurse', blurb: 'Logs shifts, deployments and safety events for their units.' },
-  screener: { id: 'screener', label: 'Outpatient clinician', blurb: 'AcuiPath screening, discharge follow-up, PHQ-9/GAD-7 and outcomes.' },
+  screener: { id: 'screener', label: 'Outpatient clinician', blurb: 'AcuiPath and AcuiStep IOP screening, discharge follow-up, PHQ-9/GAD-7 and outcomes.' },
   analyst: { id: 'analyst', label: 'Quality & finance', blurb: 'Outcomes, cost and ROI, scenarios and the audit log. Read-mostly.' },
   viewer: { id: 'viewer', label: 'Viewer', blurb: 'Read-only access to the boards and reports.' },
 }
@@ -74,6 +74,7 @@ export const TAB_PERMISSION = {
   outcomes: 'outcomes-view',
   capacity: 'view',
   levelofcare: 'op-view',
+  acuistep: 'op-view',
   entry: 'enter-shift',
   deployments: 'deploy',
   reports: 'view',

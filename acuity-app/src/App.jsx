@@ -18,6 +18,7 @@ import IntroVideo from './components/IntroVideo.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import CommandCenter from './components/CommandCenter.jsx'
 import LevelOfCare from './components/LevelOfCare.jsx'
+import AcuiStep from './components/AcuiStep.jsx'
 import Outcomes from './components/Outcomes.jsx'
 import CapacitySafety from './components/CapacitySafety.jsx'
 import { AccessPanel, AuditLogPanel, FhirImport } from './components/Governance.jsx'
@@ -30,6 +31,7 @@ import {
 import { useCollection, useConfigValue, setAuditSink, audit } from './lib/store.js'
 import { makeAuditEntry } from './lib/audit.js'
 import { useOutpatientData, loadOutpatientSample, clearOutpatientData } from './lib/opData.js'
+import { useIopData, loadIopSample, clearIopData } from './lib/iopData.js'
 
 const TABS = [
   { id: 'status', label: 'Region Status Board', icon: 'grid' },
@@ -37,6 +39,7 @@ const TABS = [
   { id: 'outcomes', label: 'Outcomes & ROI', icon: 'loop' },
   { id: 'capacity', label: 'Capacity & Safety', icon: 'bed' },
   { id: 'levelofcare', label: 'AcuiPath™', icon: 'route' },
+  { id: 'acuistep', label: 'AcuiStep™ IOP', icon: 'steps' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports', icon: 'barChart' },
@@ -75,6 +78,7 @@ export default function App() {
   const [safetyEvents, safetyApi] = useCollection('safetyEvents', { localKey: 'bhai:safetyEvents', auditAs: 'safetyEvents' })
   const [censusPrefill, setCensusPrefill] = useConfigValue('censusPrefill', { localKey: 'bhai:censusPrefill', initial: {} })
   const op = useOutpatientData()
+  const iop = useIopData()
 
   // Identity from the sign-in gateway or Firebase, when configured.
   useEffect(() => {
@@ -643,6 +647,7 @@ export default function App() {
               <CapacitySafety locations={locations} entries={entries} thresholds={thresholds} caps={caps} role={role} />
             )}
             {activeTab === 'levelofcare' && <LevelOfCare role={role} locations={locations} />}
+            {activeTab === 'acuistep' && <AcuiStep role={role} identity={identity} />}
             {activeTab === 'entry' && (
               <ShiftEntryForm
                 locations={locations}
@@ -750,6 +755,7 @@ export default function App() {
                   await planLogApi.replace([])
                   await safetyApi.replace([])
                   await clearOutpatientData(op)
+                  await clearIopData(iop)
                   setToast('All data cleared')
                 }}
                 localMode={LOCAL_MODE}
@@ -764,6 +770,7 @@ export default function App() {
                   await planLogApi.replace(sample.planLog)
                   await safetyApi.replace(sample.safetyEvents)
                   await loadOutpatientSample(op)
+                  await loadIopSample(iop)
                   setToast('Sample data loaded')
                 }}
                 getExportData={() => ({
@@ -772,6 +779,7 @@ export default function App() {
                     patients: op.patients, providers: op.providers, discharges: op.discharges,
                     assessments: op.assessments, outcomes: op.outcomes, programs: op.programs,
                   },
+                  iop: { intakes: iop.intakes, tracks: iop.tracks },
                 })}
               />
               )}

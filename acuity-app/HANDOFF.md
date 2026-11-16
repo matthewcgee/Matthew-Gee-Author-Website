@@ -28,6 +28,7 @@ Acuitas™ is a real-time, predictive behavioral health acuity dashboard. It all
 - **Test what-if scenarios** — bed closures, call-outs, acuity surges — before they happen
 - **Close the loop** — record the plans they act on, and see whether they were followed, whether they worked, and what they saved (Outcomes & ROI)
 - **Forecast ED boarding** against the region's open beds, and **predict safety-event risk** by unit (Capacity & Safety)
+- **Screen intensive outpatient (IOP) referrals** with AcuiStep™: eligibility, the right track, intake tasks and program census
 - **Screen and route outpatient referrals** with AcuiPath™: two-tier screening, clinic and attending-vs-resident routing, a discharge bridge tracked against 7- and 30-day follow-up, PHQ-9 / GAD-7 measurement-based care, and placement outcomes
 - Work under **role-based access** with a **hash-chained audit log**, and import census from the EHR via **FHIR R4**
 
@@ -58,7 +59,7 @@ npm install
 npm run dev
 # App available at http://localhost:5173/<base-path>/
 
-# 3. Run the test suite (331 tests: forecasting, optimization, screening, outcomes,
+# 3. Run the test suite (359 tests: forecasting, optimization, screening, outcomes,
 #    follow-up, cost, capacity, safety, roles, audit chain, FHIR, and UI rendering)
 npm test
 
@@ -140,7 +141,7 @@ git clone https://<your-internal-git>/<org>/acuitas.git
 cd acuitas
 cp .env.example .env.production    # leave it as-is for a first test build
 npm ci
-npm test                           # 331 tests should pass
+npm test                           # 359 tests should pass
 npm run build                      # the site is now in dist/
 ```
 
@@ -622,6 +623,23 @@ than claiming global optimality.
 
 ---
 
+### AcuiStep™ — IOP screening and intake
+
+`src/lib/iop.js` screens a referral to an intensive outpatient program in four
+layers: hard stops that need a higher level (ideation with plan, imminent
+violence, recent attempt without a safety plan, acute mania or psychosis,
+withdrawal, medical instability, or need in the PHP band or above for a new
+referral); intensity from the six AcuiPath dimensions, with step-downs from
+inpatient or PHP judged for continuity; participation and willingness; and
+logistics and coverage, which make the result conditional rather than changing
+it. It returns one of five verdicts, an eight-criterion checklist, the matched
+track, a treatment path, an intake task list (including Medicare's physician
+certification where it applies), a target start date and a chart summary.
+Tracks, schedules and capacity live in `appConfig/iopTracks`; intakes in
+`iopIntakes`, with the same access rules as the AcuiPath caseload. It is
+decision support aligned to LOCUS, CASII and ASAM Level 2.1 concepts, not those
+instruments.
+
 ### The outcome loop (Outcomes & ROI)
 
 `src/lib/outcomes.js`. Three loops, all computed from data the app already holds:
@@ -767,8 +785,9 @@ src/lib/firebase.js
 | `safetyEvents` | Safety events — unit, date, shift, type, severity |
 | `opPatients`, `opProviders` | AcuiPath caseload and provider panel |
 | `opDischarges`, `opAssessments`, `opOutcomes` | Discharge bridge, PHQ-9/GAD-7 scores, placement outcomes |
+| `iopIntakes` | AcuiStep IOP intakes: screening answers, verdict, track, task progress and status |
 | `auditLog` | Hash-chained audit entries (append-only under the rules) |
-| `appConfig/{key}` | Shared settings: `opPrograms`, `apThresholds`, `apTier1Triggers`, `costRates`, `censusPrefill`, `fhirLocationMap` |
+| `appConfig/{key}` | Shared settings: `opPrograms`, `apThresholds`, `apTier1Triggers`, `costRates`, `censusPrefill`, `fhirLocationMap`, `iopTracks` |
 
 All documents are plain JSON. Field names are documented in `src/lib/model.js`
 and in each module under `src/lib/`. In local mode the same data lives in the
@@ -824,6 +843,7 @@ acuity-app/
 │   │   ├── IdentityGate.jsx     # Sign-in: local identity picker, SSO sign-in screen
 │   │   ├── IntroVideo.jsx       # Animated welcome slideshow
 │   │   ├── LevelOfCare.jsx      # AcuiPath™ two-tier screening, caseload & view switcher
+│   │   ├── AcuiStep.jsx         # AcuiStep™ IOP intake, live verdict, queue, census, setup
 │   │   ├── Outcomes.jsx         # Outcomes & ROI: plan adherence, calibration, cost
 │   │   ├── PasswordGate.jsx     # Login screen (SHA-256 auth)
 │   │   ├── Reports.jsx          # Trend reports & data table
@@ -834,7 +854,7 @@ acuity-app/
 │   │   ├── WhatIf.jsx           # What-if scenario planner
 │   │   └── ui.jsx               # Shared UI components & theme
 │   └── lib/
-│       ├── __tests__/           # Test suite (331 tests)
+│       ├── __tests__/           # Test suite (359 tests)
 │       ├── audit.js             # Hash-chained audit log
 │       ├── capacity.js          # ED boarding vs open-bed outlook
 │       ├── cost.js              # Cost rates, spend, plan value, realized value
@@ -844,6 +864,8 @@ acuity-app/
 │       ├── firebaseAuth.js      # Firebase sign-in (firebase-mode builds only)
 │       ├── fuh.js               # Discharge bridge, 7/30-day follow-up
 │       ├── identity.js          # Sign-in mode and identity loading
+│       ├── iop.js               # AcuiStep™ IOP eligibility, track match, plan and tasks
+│       ├── iopData.js           # AcuiStep™ data hooks and sample intakes
 │       ├── forecast.js          # Time-series forecasting & backtesting
 │       ├── mbc.js               # PHQ-9 / GAD-7 scoring, trends, re-screen triggers
 │       ├── model.js             # Acuity scoring logic, thresholds, seed data

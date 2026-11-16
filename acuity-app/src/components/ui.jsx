@@ -121,6 +121,12 @@ const ICON_PATHS = {
       <path d="M3 13l9 5 9-5" />
     </>
   ),
+  steps: (
+    <>
+      <path d="M3 20h5v-5h5v-5h5V5h3" />
+      <circle cx="20.5" cy="5" r="1.6" fill="currentColor" stroke="none" />
+    </>
+  ),
   route: (
     <>
       <circle cx="6" cy="19" r="2.4" />

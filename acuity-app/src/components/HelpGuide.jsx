@@ -10,6 +10,7 @@ const SECTIONS = [
   { id: 'outcomes', label: 'Outcomes & ROI', icon: 'loop' },
   { id: 'capacity', label: 'Capacity & Safety', icon: 'bed' },
   { id: 'acuipath', label: 'AcuiPath™ Outpatient', icon: 'route' },
+  { id: 'acuistep', label: 'AcuiStep™ IOP', icon: 'steps' },
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports & Exports', icon: 'barChart' },
@@ -25,6 +26,8 @@ const FAQ = [
     'No. Acuitas is decision support. It organizes the evidence, makes a recommendation, and shows its reasoning. A licensed clinician or supervisor confirms or overrides every recommendation. Nothing is automatic: plans are not executed, placements are not booked, and PHP/IOP is never assigned automatically.'],
   ['Does Acuitas use AI? Is our data sent to an outside service?',
     'Acuitas uses transparent statistics: per-unit forecasting, measured prediction ranges, and an exact optimizer. Every calculation runs in your browser. There is no external model service, no vendor AI API, and no patient data in transit. In the evaluation build data stays in this browser; in an internal build it goes only to your own database.'],
+  ['How does AcuiStep decide whether someone is right for IOP?',
+    'In four layers. Hard stops first: active suicidal ideation with a plan, imminent violence, a recent attempt without a safety plan, acute mania or psychosis, withdrawal needing detox, or medical instability send the referral to a higher level, whatever else is true. Then intensity: the six AcuiPath dimensions place overall need against the outpatient, IOP and PHP bands, and a step-down from inpatient or PHP can be IOP even when need has fallen. Then participation and willingness. Last, logistics and coverage, which make the result conditional with the fix named rather than changing the clinical answer. Every criterion is shown, and the clinician decides.'],
   ['Do I need to enter patient names or MRNs?',
     'No, never. AcuiPath, the discharge bridge and safety events all use de-identified case numbers. The FHIR census import counts admitted encounters by location and keeps nothing else from the bundle.'],
   ['How accurate are the forecasts?',
@@ -184,6 +187,7 @@ export default function HelpGuide() {
                 { label: 'Outcomes & ROI', icon: 'loop' },
                 { label: 'Capacity & Safety', icon: 'bed' },
                 { label: 'AcuiPath™', icon: 'route' },
+                { label: 'AcuiStep™ IOP', icon: 'steps' },
                 { label: 'New Shift Entry', icon: 'plusCircle' },
                 { label: 'Staff Deployments', icon: 'users' },
                 { label: 'Reports', icon: 'barChart' },
@@ -220,6 +224,7 @@ export default function HelpGuide() {
             <li><b>Outcomes &amp; ROI</b> — whether plans were followed and worked, forecast calibration, and cost.</li>
             <li><b>Capacity &amp; Safety</b> — ED boarding demand against open beds, and safety-event risk by unit.</li>
             <li><b>AcuiPath™</b> — outpatient screening, routing, discharge follow-up, PHQ-9/GAD-7 and outcomes.</li>
+            <li><b>AcuiStep™ IOP</b> — intensive outpatient screening, eligibility, track matching, intake tasks and program census.</li>
             <li><b>New Shift Entry</b> — where staff log census, acuity points, and staffing for AM/PM shifts.</li>
             <li><b>Staff Deployments</b> — a log of who was moved between units and why, for staffing/budget records.</li>
             <li><b>Reports</b> — charts, trends, and downloadable data exports.</li>
@@ -443,6 +448,48 @@ export default function HelpGuide() {
             and whether they needed a higher level of care. The breakdown by tier, physician level and clinic shows a
             review prompt when the evidence supports one, for example if Tier 1 direct placements step up much more often.
           </Step>
+          <BrandMark />
+        </Card>
+      </div>
+
+      {/* ACUISTEP */}
+      <div ref={(el) => (refs.current.acuistep = el)}>
+        <Card title="AcuiStep™ — IOP screening & intake" sub="From referral to a clear verdict, the right track and a start date">
+          <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
+            AcuiStep takes an intensive outpatient referral through six short steps. The <b>Live verdict</b> panel updates as
+            you answer, so you always see where the referral stands. Use a case label, never a name or MRN.
+          </div>
+          <Step n="1">
+            <b>Referral.</b> Case label, date, adult or adolescent, where the referral came from, and the presenting concerns.
+            Step-downs from inpatient or PHP are judged for continuity and get a 7-day start target.
+          </Step>
+          <Step n="2">
+            <b>Safety and stability.</b> Ideation, recent attempts, self-harm, violence, and whether a safety plan is workable;
+            then psychosis, mania, substance use, medical status and ability to take part in 3-hour groups. Anything that needs
+            24-hour or day-hospital care is a <b>hard stop</b> and sends the referral up, whatever else is true.
+          </Step>
+          <Step n="3">
+            <b>Need.</b> The same six dimensions as AcuiPath. The meter shows where overall need falls against the outpatient,
+            IOP, PHP and 24-hour bands. Add a baseline PHQ-9 and GAD-7 here.
+          </Step>
+          <Step n="4">
+            <b>Readiness and coverage.</b> Willingness, schedule, transport, openness to a virtual track, payer and authorization.
+            These make a result <b>conditional</b>, with the fix named; they never change the clinical answer.
+          </Step>
+          <Step n="5">
+            <b>Review and save.</b> See every finding, the matched track with its schedule, a treatment path (review cadence, when
+            to step up, when to step down), the intake task list, and a summary you can copy into the chart.
+          </Step>
+          <Step n="6">
+            <b>Intake queue and census.</b> The queue orders every referral by status and target start and flags overdue starts.
+            Open a row to tick off tasks and set the status. <b>Program census</b> shows each track against capacity, and
+            administrators set the tracks, schedules and capacity in <b>Program setup</b>.
+          </Step>
+          <div style={{ fontSize: 12.5, lineHeight: 1.6, marginTop: 6, color: theme.sub }}>
+            Five verdicts: <b>Eligible for IOP</b>; <b>Eligible once items are resolved</b>; <b>Needs a higher level first</b>;
+            <b> Routine outpatient may be enough</b>; and <b>IOP cannot work as offered</b>. AcuiStep is aligned to the concepts behind
+            LOCUS, CASII and ASAM Level 2.1 but is not those instruments; the clinician confirms the level of care.
+          </div>
           <BrandMark />
         </Card>
       </div>

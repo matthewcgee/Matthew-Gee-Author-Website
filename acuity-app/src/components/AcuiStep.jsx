@@ -180,6 +180,12 @@ function IntakeForm({ io, role, identity, editing, onDone }) {
   const [a, setA] = useState(() => (editing ? { ...emptyIntake(), ...editing } : emptyIntake()))
   const [step, setStep] = useState(0)
   const [copied, setCopied] = useState(false)
+  // A case sent from AcuiPath arrives with safety, stability and readiness
+  // unconfirmed. Opening each of those steps is the clinician confirming it.
+  React.useEffect(() => {
+    const sec = STEPS[step].id
+    if ((a.pendingSections || []).includes(sec)) setA((p) => ({ ...p, pendingSections: p.pendingSections.filter((x) => x !== sec) }))
+  }, [step]) // eslint-disable-line react-hooks/exhaustive-deps
   const r = useMemo(() => screenIop(a, { tracks: io.tracks }), [a, io.tracks])
   const set = (k) => (v) => setA((p) => ({ ...p, [k]: v }))
   const setScore = (d, v) => setA((p) => ({ ...p, scores: { ...p.scores, [d]: v } }))
@@ -296,6 +302,11 @@ function IntakeForm({ io, role, identity, editing, onDone }) {
             )
           })}
         </div>
+        {a.fromAcuiPath && (a.pendingSections || []).length > 0 && (
+          <div style={{ fontSize: 12.5, background: theme.accentSoft, color: '#0b5a54', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}>
+            Sent from <b>AcuiPath</b>: case label, concerns, the six dimension scores and any PHQ-9 / GAD-7 carried over. Open <b>{a.pendingSections.map((s) => s[0].toUpperCase() + s.slice(1)).join(', ')}</b> to confirm the rest.
+          </div>
+        )}
         {body}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 18, gap: 8, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -407,7 +418,7 @@ function Queue({ io, role, onEdit, openId, setOpenId }) {
                   return (
                     <React.Fragment key={x.id}>
                       <tr onClick={() => setOpenId(open ? null : x.id)} style={{ cursor: 'pointer', background: open ? theme.panelAlt : undefined }}>
-                        <td style={{ padding: '8px', borderBottom: `1px solid ${theme.border}`, fontWeight: 700 }}>{x.caseLabel}<span style={{ display: 'block', fontWeight: 400, color: theme.sub, fontSize: 11 }}>{POPULATION_LABEL[x.population]}</span></td>
+                        <td style={{ padding: '8px', borderBottom: `1px solid ${theme.border}`, fontWeight: 700 }}>{x.caseLabel}<span style={{ display: 'block', fontWeight: 400, color: theme.sub, fontSize: 11 }}>{POPULATION_LABEL[x.population]}{x.fromAcuiPath ? ' · from AcuiPath' : ''}{(x.pendingSections || []).length ? ' · screen not finished' : ''}</span></td>
                         <td style={{ padding: '8px', borderBottom: `1px solid ${theme.border}` }}>{SOURCE_BY_ID[x.referralSource]?.label}</td>
                         <td style={{ padding: '8px', borderBottom: `1px solid ${theme.border}` }}>{daysWaiting(x, today)} d</td>
                         <td style={{ padding: '8px', borderBottom: `1px solid ${theme.border}` }}><Pill tone={DISPOSITIONS[r.disposition].tone}>{DISPOSITIONS[r.disposition].label}</Pill></td>
@@ -550,7 +561,7 @@ function Setup({ io }) {
 
 /* ------------------------------------------------------------------- root */
 
-export default function AcuiStep({ role, identity }) {
+export default function AcuiStep({ role, identity, focusId = null }) {
   const io = useIopData()
   const views = [
     { id: 'new', label: 'New intake', ok: can(role, 'op-screen') },
@@ -558,9 +569,9 @@ export default function AcuiStep({ role, identity }) {
     { id: 'census', label: 'Program census', ok: can(role, 'op-view') },
     { id: 'setup', label: 'Program setup', ok: can(role, 'op-manage') },
   ].filter((v) => v.ok)
-  const [view, setView] = useState(views[0]?.id || 'queue')
+  const [view, setView] = useState(focusId && can(role, 'op-view') ? 'queue' : (views[0]?.id || 'queue'))
   const [editing, setEditing] = useState(null)
-  const [openId, setOpenId] = useState(null)
+  const [openId, setOpenId] = useState(focusId)
   const [formKey, setFormKey] = useState(0)
 
   return (

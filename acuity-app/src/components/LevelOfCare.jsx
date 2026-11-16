@@ -12,6 +12,8 @@ import { SYMPTOMS, recommendProgram } from '../lib/programs.js'
 import { DEFAULT_TIER1_TRIGGERS, evaluateTier1, directPlacementDefaults } from '../lib/tier1.js'
 import { can } from '../lib/roles.js'
 import { useOutpatientData, loadOutpatientSample, clearOutpatientData } from '../lib/opData.js'
+import { useIopData, sendToAcuiStep, acuiPathRecommendsIop } from '../lib/iopData.js'
+import { AcuiStepMark } from './AcuiStep.jsx'
 import DischargeBridge from './acuipath/DischargeBridge.jsx'
 import MbcPanel from './acuipath/MbcPanel.jsx'
 import OpOutcomes from './acuipath/OpOutcomes.jsx'
@@ -255,6 +257,12 @@ function ResultPanel({ result }) {
           <span>{result.acuteSafety.reason}</span>
         </div>
       )}
+      {result.level.id === 'iop' && !result.acuteSafety.flag && (
+        <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center', padding: '9px 11px', borderRadius: 9, background: theme.accentSoft, color: '#0b5a54', fontSize: 11.5, fontWeight: 600, lineHeight: 1.45 }}>
+          <AcuiStepMark size={22} />
+          <span>AcuiPath recommends IOP. Saving sends this case to <b>AcuiStep&trade;</b> for IOP eligibility and intake.</span>
+        </div>
+      )}
       {result.phpIop.consider && (
         <div style={{ marginTop: 10, display: 'flex', gap: 7, alignItems: 'flex-start', padding: '9px 11px', borderRadius: 9, background: '#e0b34118', color: '#8a6a10', fontSize: 11.5, fontWeight: 600, lineHeight: 1.45 }}>
           <Icon name="layers" size={14} style={{ flexShrink: 0, marginTop: 1 }} />
@@ -283,8 +291,8 @@ function ResultPanel({ result }) {
           ))}
         </div>
         <div style={{ fontSize: 10.5, color: theme.sub, marginTop: 8, lineHeight: 1.5 }}>
-          Screening decides the clinic and the primary-physician level. It does not place into PHP/IOP — that is only an
-          advisory when the composite crosses the set threshold.
+          Screening decides the clinic and the primary-physician level. When it recommends IOP, saving sends the case to
+          AcuiStep&trade; for the IOP decision; a PHP/IOP advisory at the review threshold can be sent there with one click.
         </div>
       </div>
     </div>
@@ -1030,8 +1038,10 @@ const VIEWS = [
   { id: 'outcomes', label: 'Outcomes', perm: 'op-view' },
 ]
 
-export default function LevelOfCare({ role = 'admin', locations = [] }) {
+export default function LevelOfCare({ role = 'admin', locations = [], identity = null, onOpenAcuiStep }) {
   const d = useOutpatientData()
+  const io = useIopData()
+  const [sent, setSent] = useState(null)
   const views = VIEWS.filter((v) => can(role, v.perm))
   const [view, setView] = useState(views[0]?.id || 'caseload')
   const [rescreen, setRescreen] = useState(null)
@@ -1040,7 +1050,18 @@ export default function LevelOfCare({ role = 'admin', locations = [] }) {
   const canEdit = can(role, 'op-screen')
   const canManage = can(role, 'op-manage')
 
+  // A Tier 2 screen that lands on IOP goes straight to AcuiStep; a PHP/IOP
+  // advisory is offered with one click. Either way the clinician sees it.
+  const routeToAcuiStep = (pt) => {
+    if (acuiPathRecommendsIop(pt)) {
+      const id = sendToAcuiStep(io, pt, { assessments: d.assessments, by: identity?.name || null })
+      setSent({ kind: 'sent', name: pt.name, id })
+    } else if (pt.phpIopConsider && !pt.acuteSafety) {
+      setSent({ kind: 'offer', name: pt.name, pt })
+    } else setSent(null)
+  }
   const savePatient = (pt) => {
+    routeToAcuiStep(pt)
     if (rescreen) {
       d.patientsApi.upsert(pt)
       setRescreen(null)
@@ -1097,6 +1118,20 @@ export default function LevelOfCare({ role = 'admin', locations = [] }) {
           {' '}<strong>No patient-identifying information is required</strong> — use a case number, never a name or MRN.
         </span>
       </div>
+
+      {sent && (
+        <div role="status" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', padding: '11px 14px', marginBottom: 16, borderRadius: 12, background: '#fff', border: `1px solid ${theme.accent}`, boxShadow: '0 1px 3px rgba(11,45,77,0.06)' }}>
+          <AcuiStepMark size={34} />
+          <div style={{ flex: '1 1 320px', fontSize: 13, lineHeight: 1.45 }}>
+            {sent.kind === 'sent'
+              ? <><b>{sent.name}</b> was sent to <b>AcuiStep&trade; IOP</b>. Its six-dimension scores carried over; safety, stability and readiness are waiting to be confirmed there.</>
+              : <><b>{sent.name}</b> is at the PHP/IOP review threshold. Send it to <b>AcuiStep&trade;</b> to decide between IOP and a higher level.</>}
+          </div>
+          {sent.kind === 'sent' && onOpenAcuiStep && <Button onClick={() => onOpenAcuiStep(sent.id)}>Open in AcuiStep</Button>}
+          {sent.kind === 'offer' && canEdit && <Button onClick={() => { const id = sendToAcuiStep(io, sent.pt, { assessments: d.assessments, by: identity?.name || null }); setSent({ kind: 'sent', name: sent.name, id }) }}>Send to AcuiStep</Button>}
+          <Button variant="ghost" onClick={() => setSent(null)}>Dismiss</Button>
+        </div>
+      )}
 
       {view === 'screen' && canEdit && (
         <Screener

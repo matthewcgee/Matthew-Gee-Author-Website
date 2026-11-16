@@ -9,6 +9,9 @@
 
 import { useCollection, useConfigValue, audit } from './store.js'
 import { screenIop, emptyIntake, DEFAULT_IOP_TRACKS, normalizeTracks } from './iop.js'
+import { buildSampleOutpatient } from './demoData.js'
+import { screenSampleRecord } from './opData.js'
+import { DEFAULT_AP_THRESHOLDS } from './loc.js'
 
 export const IOP_KEYS = { intakes: 'bhai:iopIntakes', tracks: 'bhai:iopTracks' }
 
@@ -37,6 +40,69 @@ export function intakeRecord(answers, { id, tracks, status, tasksDone, by, creat
     createdAt: createdAt || Date.now(),
     updatedAt: Date.now(),
   }
+}
+
+/* -------------------------------------------------- AcuiPath → AcuiStep */
+
+// AcuiPath symptoms map onto AcuiStep presenting concerns for the track match.
+const SYMPTOM_TO_CONCERN = {
+  depression: 'depression', trd: 'depression', perinatal: 'depression', anxiety: 'anxiety', ocd: 'ocd',
+  trauma: 'trauma', eating: 'eating', substance: 'substance', psychosis: 'psychosis', mania: 'bipolar',
+}
+
+/** Should this AcuiPath record go to AcuiStep? Automatic when the screen recommends IOP. */
+export function acuiPathRecommendsIop(pt) {
+  return !!pt && pt.level === 'iop' && !pt.acuteSafety
+}
+
+/**
+ * Turn an AcuiPath case into AcuiStep answers. The six dimension scores carry
+ * over as they are; safety, stability and readiness were not asked in
+ * AcuiPath, so they are left for the clinician to confirm (`pendingSections`).
+ */
+export function intakeFromAcuiPath(pt, { assessments = [] } = {}) {
+  const latest = (inst) => assessments
+    .filter((a) => a.patientId === pt.id && a.instrument === inst && a.total != null)
+    .sort((x, y) => (x.date < y.date ? 1 : x.date > y.date ? -1 : (y.createdAt || 0) - (x.createdAt || 0)))[0]?.total
+  const concerns = [...new Set((pt.symptoms || []).map((s) => SYMPTOM_TO_CONCERN[s]).filter(Boolean))]
+  const phq9 = latest('PHQ-9'), gad7 = latest('GAD-7')
+  return {
+    ...emptyIntake(),
+    caseLabel: pt.name || '',
+    population: pt.population === 'adolescent' ? 'adolescent' : 'adult',
+    referralSource: pt.bridge ? 'inpatient' : 'acuipath',
+    referralDate: new Date().toISOString().slice(0, 10),
+    concerns,
+    substance: (pt.symptoms || []).includes('substance') ? 'use' : 'none',
+    scores: { ...emptyIntake().scores, ...(pt.scores || {}) },
+    phq9: phq9 ?? '',
+    gad7: gad7 ?? '',
+    telehealthOk: !!pt.telehealthOnly,
+    pendingSections: ['safety', 'stability', 'readiness'],
+    fromAcuiPath: pt.id,
+  }
+}
+
+/**
+ * Send an AcuiPath case to AcuiStep. One intake per AcuiPath case: a re-screen
+ * refreshes the carried-over scores and concerns of an intake still in
+ * screening, and never overwrites answers a clinician has already confirmed.
+ * Returns the intake id.
+ */
+export function sendToAcuiStep(io, pt, { assessments = [], by = null } = {}) {
+  const fresh = intakeFromAcuiPath(pt, { assessments })
+  const existing = io.intakes.find((x) => x.fromAcuiPath === pt.id)
+  if (existing) {
+    if (existing.status === 'screening' || existing.status === 'pending') {
+      const merged = { ...existing, scores: fresh.scores, concerns: [...new Set([...(existing.concerns || []), ...fresh.concerns])], phq9: existing.phq9 === '' ? fresh.phq9 : existing.phq9, gad7: existing.gad7 === '' ? fresh.gad7 : existing.gad7 }
+      io.intakesApi.upsert(intakeRecord(merged, { id: existing.id, tracks: io.tracks, status: existing.status, tasksDone: existing.tasksDone, by: existing.by, createdAt: existing.createdAt }))
+    }
+    return existing.id
+  }
+  const rec = intakeRecord(fresh, { tracks: io.tracks, by, status: 'screening' })
+  io.intakesApi.add(rec)
+  audit('acuistep.fromAcuiPath', rec.id, { acuipathId: pt.id })
+  return rec.id
 }
 
 /* ---------------------------------------------------------- sample intakes */
@@ -70,8 +136,16 @@ export function buildSampleIntakes(tracks) {
   })
 }
 
+/** Sample AcuiPath cases that screen to IOP, already sent across, as the live flow would. */
+export function buildSampleFromAcuiPath(tracks) {
+  return buildSampleOutpatient().patients
+    .map((p) => screenSampleRecord(p, DEFAULT_AP_THRESHOLDS))
+    .filter(acuiPathRecommendsIop)
+    .map((pt) => ({ ...intakeRecord(intakeFromAcuiPath(pt), { id: `iop_from_${pt.id}`, tracks, status: 'screening' }), demo: true }))
+}
+
 export async function loadIopSample(io) {
-  const sample = buildSampleIntakes(io.tracks)
+  const sample = [...buildSampleIntakes(io.tracks), ...buildSampleFromAcuiPath(io.tracks)]
   audit('data.sample', 'acuistep', { intakes: sample.length })
   io.setTracks(DEFAULT_IOP_TRACKS)
   await io.intakesApi.replace(sample)

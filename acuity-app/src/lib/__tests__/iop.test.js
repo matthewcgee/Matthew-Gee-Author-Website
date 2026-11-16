@@ -169,3 +169,59 @@ describe('AcuiStep program census', () => {
     expect(daysWaiting({ referralDate: '2026-11-01' }, new Date('2026-11-08T12:00:00'))).toBe(7)
   })
 })
+
+import { intakeFromAcuiPath, acuiPathRecommendsIop, sendToAcuiStep, buildSampleFromAcuiPath, intakeRecord as rec } from '../iopData.js'
+
+describe('AcuiPath → AcuiStep handoff', () => {
+  const pt = {
+    id: 'p1', name: 'Case 77', population: 'adult', level: 'iop', acuteSafety: false,
+    symptoms: ['depression', 'substance', 'mania'], scores: iopScores, telehealthOnly: true,
+  }
+  it('only an IOP recommendation without an acute-safety flag goes across automatically', () => {
+    expect(acuiPathRecommendsIop(pt)).toBe(true)
+    expect(acuiPathRecommendsIop({ ...pt, level: 'op' })).toBe(false)
+    expect(acuiPathRecommendsIop({ ...pt, acuteSafety: true })).toBe(false)
+  })
+  it('carries the scores, concerns and latest PHQ-9 / GAD-7, and leaves the rest to confirm', () => {
+    const a = intakeFromAcuiPath(pt, { assessments: [
+      { patientId: 'p1', instrument: 'PHQ-9', total: 12, date: '2026-10-01' },
+      { patientId: 'p1', instrument: 'PHQ-9', total: 17, date: '2026-10-20' },
+      { patientId: 'other', instrument: 'GAD-7', total: 20, date: '2026-10-20' },
+    ] })
+    expect(a).toMatchObject({ caseLabel: 'Case 77', referralSource: 'acuipath', scores: iopScores, phq9: 17, gad7: '', substance: 'use', telehealthOk: true, fromAcuiPath: 'p1' })
+    expect(a.concerns).toEqual(expect.arrayContaining(['depression', 'substance', 'bipolar']))
+    expect(a.pendingSections).toEqual(['safety', 'stability', 'readiness'])
+  })
+  it('an unfinished screen is never "eligible": it says what to confirm', () => {
+    const r = screenIop(intakeFromAcuiPath(pt, { assessments: [{ patientId: 'p1', instrument: 'PHQ-9', total: 15, date: '2026-10-20' }] }), T)
+    expect(r.disposition).toBe('conditional')
+    expect(r.findings.find((f) => f.id === 'finish-screen').text).toMatch(/safety, stability and readiness/)
+    expect(r.criteria.find((c) => c.id === 'safe').met).toBeNull()
+    expect(r.tasks[0].id).toBe('finish')
+  })
+  it('hard stops still apply to a sent case', () => {
+    const php = { risk: 3, function: 4, comorbidity: 3, stress: 4, support: 3, engagement: 3 }
+    expect(screenIop(intakeFromAcuiPath({ ...pt, scores: php }), T).disposition).toBe('higher')
+  })
+  it('sending twice keeps one intake and refreshes its scores while still in screening', () => {
+    const store = []
+    const io = {
+      intakes: store, tracks: undefined,
+      intakesApi: { add: (x) => store.push(x), upsert: (x) => { const k = store.findIndex((y) => y.id === x.id); store[k] = x } },
+    }
+    const id1 = sendToAcuiStep(io, pt)
+    const id2 = sendToAcuiStep(io, { ...pt, scores: { ...iopScores, risk: 3 } })
+    expect(id2).toBe(id1)
+    expect(store).toHaveLength(1)
+    expect(store[0].scores.risk).toBe(3)
+    store[0] = { ...store[0], status: 'admitted' }
+    sendToAcuiStep(io, { ...pt, scores: { ...iopScores, risk: 1 } })
+    expect(store[0].scores.risk).toBe(3) // an admitted intake is never rewritten
+  })
+  it('the sample sends AcuiPath\'s IOP cases across, unfinished', () => {
+    const s = buildSampleFromAcuiPath()
+    expect(s.length).toBeGreaterThan(0)
+    expect(s.every((x) => x.fromAcuiPath && x.status === 'screening' && x.pendingSections.length === 3)).toBe(true)
+    expect(rec(s[0]).pendingSections).toEqual(['safety', 'stability', 'readiness'])
+  })
+})

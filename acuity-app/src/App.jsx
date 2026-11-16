@@ -66,6 +66,7 @@ export default function App() {
   const [thresholds, setThresholds] = useState(() => normalizeThresholds(readStorage(KEYS.thresholds, null)))
   const [caps, setCaps] = useState(() => (LOCAL_MODE ? readStorage(KEYS.caps, {}) : {}))
   const [tab, setTab] = useState('status')
+  const [iopFocus, setIopFocus] = useState(null)
   const [toast, setToast] = useState('')
   const [showIntro, setShowIntro] = useState(false)
   const [settingsUnlocked, setSettingsUnlocked] = useState(() => sessionStorage.getItem('bhai:settingsUnlocked') === 'true')
@@ -646,8 +647,8 @@ export default function App() {
             {activeTab === 'capacity' && (
               <CapacitySafety locations={locations} entries={entries} thresholds={thresholds} caps={caps} role={role} />
             )}
-            {activeTab === 'levelofcare' && <LevelOfCare role={role} locations={locations} />}
-            {activeTab === 'acuistep' && <AcuiStep role={role} identity={identity} />}
+            {activeTab === 'levelofcare' && <LevelOfCare role={role} locations={locations} identity={identity} onOpenAcuiStep={(id) => { setIopFocus(id); setTab('acuistep') }} />}
+            {activeTab === 'acuistep' && <AcuiStep key={iopFocus || 'acuistep'} role={role} identity={identity} focusId={iopFocus} />}
             {activeTab === 'entry' && (
               <ShiftEntryForm
                 locations={locations}

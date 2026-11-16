@@ -45,6 +45,7 @@ export const REFERRAL_SOURCES = [
   { id: 'php', label: 'PHP step-down', stepDown: true },
   { id: 'ed', label: 'Emergency department' },
   { id: 'outpatient', label: 'Outpatient step-up' },
+  { id: 'acuipath', label: 'AcuiPath screen' },
   { id: 'pcp', label: 'Primary care' },
   { id: 'school', label: 'School / counselor' },
   { id: 'self', label: 'Self or family' },
@@ -195,6 +196,8 @@ export function emptyIntake() {
     payer: 'commercial',
     auth: 'not-needed',
     notes: '',
+    // Sections not yet confirmed in AcuiStep (set when AcuiPath sends a case over).
+    pendingSections: [],
   }
 }
 
@@ -281,7 +284,11 @@ export function screenIop(intake, { tracks, today } = {}) {
   if (gad7 != null && gad7 >= 15) add('note', 'gad7-severe', `GAD-7 ${gad7} (severe).`)
   if (phq9 == null) add('fix', 'phq9-missing', 'No baseline PHQ-9.', 'Baseline PHQ-9')
 
-  /* 6 · intensity: is IOP more than they need? */
+  /* 6 · sent from AcuiPath: the dimension scores are known, the rest is not */
+  const pending = Array.isArray(i.pendingSections) ? i.pendingSections : []
+  if (pending.length) add('fix', 'finish-screen', `Sent from AcuiPath with its six-dimension scores. Confirm ${listWords(pending)} to finish the IOP screen.`, 'Finish the AcuiStep screen')
+
+  /* 7 · intensity: is IOP more than they need? */
   const belowIop = loc.level.order <= 1 && !stepDown
   if (belowIop && !higher) add('note', 'intensity-low', `Overall need (${loc.total}/30) is in the ${loc.level.label.toLowerCase()} band; routine outpatient may be enough.`)
 
@@ -299,7 +306,7 @@ export function screenIop(intake, { tracks, today } = {}) {
   /* ----- criteria (what a reviewer checks, in order) */
   const has = (id) => findings.some((f) => f.id === id)
   const criteria = [
-    { id: 'more-than-op', label: 'Needs more than routine outpatient', met: !belowIop, detail: stepDown ? `Step-down from ${SOURCE_BY_ID[i.referralSource].label.replace(' step-down', '').toLowerCase()}; overall need ${loc.total}/30.` : `Overall need ${loc.total}/30 (${loc.level.label}).` },
+    { id: 'more-than-op', label: 'Needs more than routine outpatient', met: !belowIop, detail: stepDown ? `Step-down from ${SOURCE_BY_ID[i.referralSource].label.replace(' step-down', '').toLowerCase()}; overall need ${loc.total}/30.` : `Overall need ${loc.total}/30, in the ${loc.level.label} band.` },
     { id: 'not-24h', label: 'Does not need 24-hour or day-hospital care', met: !stops.length, detail: stops.length ? stops.map((s) => s.text.split(':')[0]).join('; ') : 'No hard stops.' },
     { id: 'safe', label: 'Can stay safe between sessions', met: !stops.some((s) => ['si-plan', 'violence', 'attempt-no-plan'].includes(s.id)) && !has('safety-plan') && !(has('si-active') && !i.safetyPlan), detail: i.safetyPlan ? 'Safety plan in place or not needed.' : 'Safety plan needed.' },
     { id: 'medical', label: 'Medically stable; no withdrawal management needed', met: i.medical !== 'unstable' && i.substance !== 'withdrawal', detail: OPTIONS.medical.find((o) => o.id === i.medical)?.label },
@@ -308,6 +315,12 @@ export function screenIop(intake, { tracks, today } = {}) {
     { id: 'attend', label: 'Can attend the schedule', met: i.schedule === 'yes' && i.transport === 'yes' ? true : (i.schedule === 'no' && !(i.telehealthOk && virtualTrackExists)) ? false : null, detail: [OPTIONS.schedule.find((o) => o.id === i.schedule)?.label, OPTIONS.transport.find((o) => o.id === i.transport)?.label].join('; ') },
     { id: 'coverage', label: 'Coverage in place', met: i.auth === 'approved' || i.auth === 'not-needed' ? true : i.auth === 'denied' ? false : null, detail: `${OPTIONS.payer.find((o) => o.id === i.payer)?.label}; authorization ${OPTIONS.auth.find((o) => o.id === i.auth)?.label.toLowerCase()}.` },
   ]
+
+  if (pending.length) {
+    const unknownIf = { safety: ['safe'], stability: ['medical', 'participate'], readiness: ['willing', 'attend', 'coverage'] }
+    const unknown = new Set(pending.flatMap((sec) => unknownIf[sec] || []))
+    for (const c of criteria) if (unknown.has(c.id) && c.met !== false) { c.met = null; c.detail = 'Not yet confirmed: sent from AcuiPath.' }
+  }
 
   /* ----- track */
   const track = matchTrack(i, trackList)
@@ -419,8 +432,9 @@ function buildTasks(i, { disposition, findings, track, stepDown }) {
     push('rescreen', 'Set a re-referral path if needs change', null)
     return t
   }
+  if ((i.pendingSections || []).length) push('finish', 'Finish the AcuiStep screen (safety, stability, readiness)', 'Sent from AcuiPath with its six-dimension scores.')
   push('consent', 'Consent to treatment and program agreement')
-  push('roi', `Release of information for ${SOURCE_BY_ID[i.referralSource]?.label.toLowerCase() || 'the referral source'} and primary care`)
+  push('roi', i.referralSource === 'acuipath' || i.referralSource === 'self' ? 'Release of information for primary care and other treating providers' : `Release of information for the ${SOURCE_BY_ID[i.referralSource]?.label.toLowerCase() || 'referral source'} team and primary care`)
   if (i.auth === 'pending' || i.auth === 'denied') push('auth', i.auth === 'denied' ? 'Appeal the authorization or find funding' : 'Obtain insurance authorization')
   if (i.payer === 'medicare') push('cert', 'Physician certification (≥ 9 hours a week) and plan of care', 'Medicare IOP requirement.')
   push('psych-eval', 'Psychiatric evaluation booked for week one')
@@ -443,7 +457,8 @@ function buildTasks(i, { disposition, findings, track, stepDown }) {
 
 function summarize(i, r) {
   const parts = []
-  const who = `${POPULATION_LABEL[i.population] || 'Adult'} referral${i.caseLabel ? ` (${i.caseLabel})` : ''} from ${(SOURCE_BY_ID[i.referralSource]?.label || 'unknown source').toLowerCase()}`
+  const src = i.referralSource === 'acuipath' ? 'an AcuiPath screen' : (SOURCE_BY_ID[i.referralSource]?.label || 'an unknown source').toLowerCase()
+  const who = `${POPULATION_LABEL[i.population] || 'Adult'} referral${i.caseLabel ? ` (${i.caseLabel})` : ''} from ${src}`
   parts.push(`${who}. AcuiStep IOP screen: ${r.dispositionLabel.toLowerCase()}.`)
   parts.push(`Overall need ${r.loc.total}/30, in the ${r.loc.level.label} band; ${r.criteriaMet} of ${r.criteria.length} IOP criteria met.`)
   if (r.higherLevel) parts.push(`Recommended: ${r.higherLevel.label}. Reason: ${r.findings.filter((f) => f.sev === 'stop').map((f) => f.text.split(':')[0]).join('; ')}.`)
@@ -453,6 +468,10 @@ function summarize(i, r) {
   if (r.disposition === 'eligible' || r.disposition === 'conditional') parts.push(`Target start by ${r.targetStart.date}.`)
   parts.push('Decision support only; the treating clinician confirms the level of care.')
   return parts.join(' ')
+}
+
+function listWords(xs) {
+  return xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`
 }
 
 /* ------------------------------------------------------------- program view */

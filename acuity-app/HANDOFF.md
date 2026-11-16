@@ -59,7 +59,7 @@ npm install
 npm run dev
 # App available at http://localhost:5173/<base-path>/
 
-# 3. Run the test suite (359 tests: forecasting, optimization, screening, outcomes,
+# 3. Run the test suite (365 tests: forecasting, optimization, screening, outcomes,
 #    follow-up, cost, capacity, safety, roles, audit chain, FHIR, and UI rendering)
 npm test
 
@@ -141,7 +141,7 @@ git clone https://<your-internal-git>/<org>/acuitas.git
 cd acuitas
 cp .env.example .env.production    # leave it as-is for a first test build
 npm ci
-npm test                           # 359 tests should pass
+npm test                           # 365 tests should pass
 npm run build                      # the site is now in dist/
 ```
 
@@ -636,7 +636,12 @@ it. It returns one of five verdicts, an eight-criterion checklist, the matched
 track, a treatment path, an intake task list (including Medicare's physician
 certification where it applies), a target start date and a chart summary.
 Tracks, schedules and capacity live in `appConfig/iopTracks`; intakes in
-`iopIntakes`, with the same access rules as the AcuiPath caseload. It is
+`iopIntakes`, with the same access rules as the AcuiPath caseload. When an
+AcuiPath Tier 2 screen recommends IOP, saving it sends the case to AcuiStep
+(`sendToAcuiStep` in `iopData.js`): one intake per AcuiPath case, carrying the
+six dimension scores, symptoms and latest PHQ-9 / GAD-7, with safety, stability
+and readiness marked as not yet confirmed. An unfinished intake can never read
+as fully eligible. It is
 decision support aligned to LOCUS, CASII and ASAM Level 2.1 concepts, not those
 instruments.
 
@@ -854,7 +859,7 @@ acuity-app/
 │   │   ├── WhatIf.jsx           # What-if scenario planner
 │   │   └── ui.jsx               # Shared UI components & theme
 │   └── lib/
-│       ├── __tests__/           # Test suite (359 tests)
+│       ├── __tests__/           # Test suite (365 tests)
 │       ├── audit.js             # Hash-chained audit log
 │       ├── capacity.js          # ED boarding vs open-bed outlook
 │       ├── cost.js              # Cost rates, spend, plan value, realized value

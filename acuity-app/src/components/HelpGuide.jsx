@@ -427,6 +427,8 @@ export default function HelpGuide() {
             <b>Tier 2 — in-depth screen</b>, with a phone screen or patient discussion. Rate six dimensions 1–5; every
             rating shows what each level means. The result gives the clinic, whether an attending must be the primary
             physician, an advisory-only PHP/IOP flag, and an acute-safety flag that pulls the case out of routine routing.
+            When the screen recommends IOP, saving sends the case straight to AcuiStep&trade; IOP with its scores, symptoms and
+            latest PHQ-9 / GAD-7; a case at the PHP/IOP review threshold gets a one-click <b>Send to AcuiStep</b>.
           </Step>
           <Step n="3">
             <b>Caseload &amp; assignment</b> matches each case to a provider by role, clinic, specialty, supervision level
@@ -461,7 +463,9 @@ export default function HelpGuide() {
           </div>
           <Step n="1">
             <b>Referral.</b> Case label, date, adult or adolescent, where the referral came from, and the presenting concerns.
-            Step-downs from inpatient or PHP are judged for continuity and get a 7-day start target.
+            Step-downs from inpatient or PHP are judged for continuity and get a 7-day start target. Cases AcuiPath sends over
+            arrive in the queue marked <b>from AcuiPath · screen not finished</b>: open them and confirm Safety, Stability and
+            Readiness, the parts AcuiPath does not ask.
           </Step>
           <Step n="2">
             <b>Safety and stability.</b> Ideation, recent attempts, self-harm, violence, and whether a safety plan is workable;

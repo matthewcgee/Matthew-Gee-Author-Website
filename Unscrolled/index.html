@@ -170,6 +170,10 @@ a{color:inherit}
 .more{margin-top:14px;width:100%}
 @media(max-width:760px){.pray{grid-template-columns:1fr}}
 
+.pray-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,230px);gap:clamp(24px,5vw,56px);align-items:center}
+.pray-head video{width:100%;aspect-ratio:9/16;height:auto;display:block;border-radius:18px;background:var(--night2);border:1px solid var(--line-l);box-shadow:0 24px 60px rgba(0,0,0,.5)}
+@media(max-width:700px){.pray-head{grid-template-columns:1fr}.pray-head video{max-width:230px}}
+
 /* footer */
 .foot{padding-block:clamp(56px,8vw,88px);text-align:center;border-top:1px solid var(--line-l)}
 .foot .logo{font-size:2.2rem}
@@ -332,9 +336,16 @@ a{color:inherit}
 
 <section class="scene dark seq" id="prayer">
   <div class="wrap">
-    <p class="kicker rise">Prayer wall</p>
-    <h2 class="big rise s1">You don&rsquo;t have to<br><span class="gold">carry it alone.</span></h2>
-    <p class="soft rise s2" style="margin-top:18px">Post it here. We&rsquo;ll pray with you.</p>
+    <div class="pray-head">
+      <div>
+        <p class="kicker rise">Prayer wall</p>
+        <h2 class="big rise s1">You don&rsquo;t have to<br><span class="gold">carry it alone.</span></h2>
+        <p class="soft rise s2" style="margin-top:18px">Post it here. We&rsquo;ll pray with you.</p>
+      </div>
+      <video class="rise s2" controls playsinline preload="none" poster="../images/unscrolled-poster-prayer.jpg" aria-label="How the Unscrolled prayer wall works">
+        <source src="../videos/unscrolled-prayer-wall.mp4" type="video/mp4">
+      </video>
+    </div>
     <div class="pray">
       <form class="card pform" id="prayerForm">
         <label for="pName">Name (optional)</label>

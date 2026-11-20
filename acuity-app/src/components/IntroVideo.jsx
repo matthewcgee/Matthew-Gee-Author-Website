@@ -12,10 +12,25 @@ const SCENES = [
     body: 'One platform, from the inpatient floor to the outpatient clinic. Acuitas turns the data you already collect into decisions you can act on, and shows its reasoning for every one.',
   },
   {
-    icon: 'shield',
+    icon: 'pulse',
     eyebrow: 'Built From the Frontlines',
-    title: 'Designed by the people who live it',
-    body: "Acuitas was born from real shifts — the surges, the short-staffed nights, the 2 a.m. calls. It turns that lived experience into a tool that protects patients and staff alike.",
+    title: 'Nurses feel a hard shift coming',
+    body: "Nurses read a unit's rhythm, its tension and its ebb and flow, long before any number can show it. Acuitas was born from real shifts — the surges, the short-staffed nights, the 2 a.m. calls — to put evidence behind what nurses already sense.",
+    dur: 7000,
+  },
+  {
+    icon: 'alert',
+    eyebrow: 'The Cycle',
+    title: 'When a shift looks unsafe, people pull back',
+    body: 'Staff who can see a brutal shift coming, with no help in sight, brace for trouble. Fear, frustration and real risk turn into call-outs and intermittent leave. The unit runs short, care slips, and the next shift looks even worse.',
+    dur: 7000,
+  },
+  {
+    icon: 'target',
+    eyebrow: 'Breaking the Cycle',
+    title: 'See it early. Staff it before it starts.',
+    body: 'Acuitas sees the hard shift coming up to three days out and lays out the staffing plan before anyone walks in. When people can see that help is already on the way, the shift they dreaded becomes one they can manage.',
+    dur: 7000,
   },
   {
     icon: 'barChart',
@@ -69,7 +84,7 @@ export default function IntroVideo({ onClose }) {
   useEffect(() => {
     if (paused) return
     if (scene >= SCENES.length - 1) return
-    const t = setTimeout(() => setScene((s) => s + 1), SCENE_DURATION)
+    const t = setTimeout(() => setScene((s) => s + 1), SCENES[scene].dur || SCENE_DURATION)
     return () => clearTimeout(t)
   }, [scene, paused])
 
@@ -137,7 +152,7 @@ export default function IntroVideo({ onClose }) {
                   height: '100%',
                   background: '#ffffff',
                   width: i < scene ? '100%' : i > scene ? '0%' : undefined,
-                  animation: i === scene && !paused ? `barfill ${SCENE_DURATION}ms linear forwards` : undefined,
+                  animation: i === scene && !paused ? `barfill ${SCENES[i].dur || SCENE_DURATION}ms linear forwards` : undefined,
                 }}
               />
             </div>

@@ -1224,9 +1224,8 @@ section {
 .modal-close--video:hover { background: rgba(201,164,84,0.5); }
 .modal-unmute-btn {
   position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 14px;
+  left: 14px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1246,6 +1245,10 @@ section {
 }
 .modal-unmute-btn:hover { background: rgba(201,164,84,0.2); border-color: var(--color-gold); }
 .modal-unmute-btn.is-hidden { display: none; }
+@media (max-width: 560px) {
+  .modal-unmute-btn { top: 8px; left: 8px; padding: 7px 12px; font-size: 0.62rem; letter-spacing: 0.12em; gap: 6px; }
+  .modal-unmute-btn svg { width: 16px; height: 16px; }
+}
 
 /* ---- Autumn popup modal ---- */
 .modal-card--autumn {

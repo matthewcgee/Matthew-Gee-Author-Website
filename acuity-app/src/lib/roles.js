@@ -30,7 +30,7 @@ export const PERMISSIONS = {
   view: 'See boards, forecasts and reports',
   'enter-shift': 'Log shift entries',
   deploy: 'Log staff deployments',
-  calc: 'Use AcuiCalc and push to ED points',
+  calc: 'Use AcuiCalc™ and push to ED points',
   'plan-record': 'Record deployment plans for the outcome loop',
   scenario: 'Run what-if scenarios',
   'outcomes-view': 'See outcomes, calibration and ROI',
@@ -45,6 +45,7 @@ export const PERMISSIONS = {
   'op-outcomes': 'Record outpatient outcomes',
   import: 'Import data, including FHIR census',
   settings: 'Change settings and locations',
+  calibrate: 'Change the AcuiCalc™ calibration (point values, zones and zone responses)',
   'audit-view': 'See and verify the audit log',
 }
 

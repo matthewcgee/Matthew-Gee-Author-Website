@@ -94,6 +94,17 @@ service cloud.firestore {
       allow read: if anyRole();
       allow write: if hasRole(['admin', 'supervisor']);
     }
+    // AcuiCalc™ calibration: one per health system, Administrator only, and
+    // versions are append-only. Each save adds exactly one version and leaves
+    // every earlier version exactly as it was.
+    match /appConfig/acuiCalibration {
+      allow read: if anyRole();
+      allow create: if hasRole(['admin']) && request.resource.data.value.versions.size() >= 1;
+      allow update: if hasRole(['admin'])
+        && request.resource.data.value.versions.size() == resource.data.value.versions.size() + 1
+        && request.resource.data.value.versions[0:resource.data.value.versions.size()] == resource.data.value.versions;
+      allow delete: if false;
+    }
     match /appConfig/{key} {
       allow read: if anyRole();
       allow write: if hasRole(['admin']);

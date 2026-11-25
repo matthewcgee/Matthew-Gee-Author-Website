@@ -47,7 +47,7 @@ export function eventRatesByStage({ events, entries, locations, thresholds, type
   for (const loc of locations || []) {
     const th = thresholdsFor(loc, thresholds)
     for (const p of buildSeries(entries, loc, thresholds, 'acuity')) {
-      const st = computeStage(p.value, th)
+      const st = p.stage || computeStage(p.value, th)
       if (!(st in shifts)) continue
       shifts[st] += 1
       stageAt.set(`${loc.id}|${p.date}|${p.shift}`, st)

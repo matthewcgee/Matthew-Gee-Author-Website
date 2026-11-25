@@ -14,7 +14,7 @@ const SECTIONS = [
   { id: 'entry', label: 'New Shift Entry', icon: 'plusCircle' },
   { id: 'deployments', label: 'Staff Deployments', icon: 'users' },
   { id: 'reports', label: 'Reports & Exports', icon: 'barChart' },
-  { id: 'acuity', label: 'AcuiCalc™ — Acuity Calculator™', icon: 'sparkle' },
+  { id: 'acuity', label: 'AcuiCalc™', icon: 'sparkle' },
   { id: 'settings', label: 'Settings & Admin', icon: 'settings' },
   { id: 'access', label: 'People, Roles & Audit', icon: 'lock' },
   { id: 'faq', label: 'FAQ', icon: 'help' },
@@ -664,9 +664,9 @@ export default function HelpGuide() {
         </Card>
       </div>
 
-      {/* ACUITY CALCULATOR */}
+      {/* AcuiCalc™ */}
       <div ref={(el) => (refs.current.acuity = el)}>
-        <Card title="AcuiCalc™ — Acuity Calculator™" sub="A two-step flow: Acuity Scoring first, then Peds Modifiers for pediatric patients">
+        <Card title="AcuiCalc™" sub="A two-step flow: Acuity Scoring first, then Peds Modifiers for pediatric patients">
           <div style={{ fontSize: 13, lineHeight: 1.6, marginBottom: 8 }}>
             AcuiCalc™ lives on its own tab in the sidebar. It uses a two-step approach — <b>Step 1</b> applies
             to all patients; <b>Step 2</b> applies only to pediatric patients who need modifier points added on
@@ -856,15 +856,19 @@ export default function HelpGuide() {
             Department) and its nursing-driven census cap.
           </Step>
           <Step n="3">
-            <b>Default Thresholds</b> — set the Green/Yellow cutoffs used to determine status color for
-            Inpatient units and the ED. System defaults: Inpatient GREEN ≤ 1.5 UAI / YELLOW ≤ 2.5 UAI;
-            ED GREEN ≤ 21 total points / YELLOW ≤ 27 total points (reflecting the four-category scoring
-            rubric including MASS). Leave custom fields blank on individual units to use these region defaults.
+            <b>AcuiCalc™ calibration</b> (Administrators only) — one calibration for the whole health system;
+            every unit and ED uses it. You can adjust point values within ±25% of the shipped default, the GREEN and
+            YELLOW cutoffs for inpatient units, EDs and pediatric EDs, and the action each zone triggers. The four
+            domains and the wording of every score level are locked. Every change needs a written reason and the
+            frontline nurses who reviewed it, becomes a new version (v1, v2, …), and is written to the audit log.
+            Shipped defaults: Inpatient GREEN ≤ 1.5 / YELLOW ≤ 2.5 acuity per staff; ED GREEN ≤ 21 / YELLOW ≤ 27
+            total points; Pediatric ED GREEN ≤ {PEDIATRIC_ED_THRESHOLDS.greenMax} / YELLOW ≤ {PEDIATRIC_ED_THRESHOLDS.yellowMax} total points.
           </Step>
           <Step n="4">
-            <b>Custom Green Max / Yellow Max</b> — each location row also has its own threshold override.
-            Fill in both fields to give that unit its own Green/Yellow cutoffs instead of the region default;
-            leave both blank to use the default.
+            <b>Versions and history</b> — each saved shift score keeps the calibration version it was calculated
+            under, so a change never re-scores the past. The active version shows on AcuiCalc™ and the Region
+            Status Board. <b>Calibration history</b> lists every version, read-only. <b>Restore shipped defaults</b>
+            saves the defaults as a new version.
           </Step>
           <Step n="5">
             <b>Data Management</b> — Export All Data (JSON) for backups, Import Data (JSON) to restore from a
@@ -883,10 +887,9 @@ export default function HelpGuide() {
               lineHeight: 1.6,
             }}
           >
-            <b>Recommended Pediatric ED thresholds:</b> for a Pediatric ED location, set{' '}
-            <b>Custom Green Max = {PEDIATRIC_ED_THRESHOLDS.greenMax}</b> and{' '}
-            <b>Custom Yellow Max = {PEDIATRIC_ED_THRESHOLDS.yellowMax}</b>. This makes the unit turn YELLOW at
-            54 total points and RED at 72 — 20% above the initial 45 / 60 pilot bands.
+            <b>Pediatric EDs:</b> set the location's <b>Zone set</b> to <b>Pediatric Emergency Department</b>. It then
+            reads the system-wide pediatric ED zones (shipped: YELLOW at {PEDIATRIC_ED_THRESHOLDS.greenMax + 1} total
+            points and RED at {PEDIATRIC_ED_THRESHOLDS.yellowMax + 1} — 20% above the initial 45 / 60 pilot bands).
           </div>
           <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 8 }}>
             Note: Census caps on the Status Board can be updated by any charge nurse directly on the unit's

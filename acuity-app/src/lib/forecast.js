@@ -14,7 +14,7 @@
 // so a unit whose history is too thin or too erratic to model falls back to a
 // simpler estimator instead of pretending to precision it doesn't have.
 
-import { computeEntryValue } from './model.js'
+import { computeEntryValue, entryStage } from './model.js'
 
 export const SHIFTS = ['AM', 'PM']
 export const SLOTS_PER_DAY = SHIFTS.length
@@ -177,6 +177,9 @@ export function buildSeries(entries, loc, thresholds, metric = 'acuity') {
       points: e.points ?? null,
       staff: e.staff ?? null,
       capInPlace: !!e.capInPlace,
+      // The stage this shift was scored at, under the calibration stamped on
+      // it, so history never re-colors when the calibration changes.
+      ...(metric === 'acuity' ? { stage: entryStage(e, loc, thresholds) } : {}),
     })
   }
   return out.sort((a, b) => a.slot - b.slot)

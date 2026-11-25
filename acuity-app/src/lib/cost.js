@@ -88,7 +88,7 @@ export function costSummary({ entries, deployments, locations, thresholds, rates
   for (const loc of locations || []) {
     const th = thresholdsFor(loc, thresholds)
     const series = buildSeries(entries, loc, thresholds, 'acuity').filter((p) => inWindow(p.date, from, to))
-    const red = loc.type === 'ed' ? 0 : series.filter((p) => p.value > th.yellowMax).length
+    const red = loc.type === 'ed' ? 0 : series.filter((p) => (p.stage ? p.stage === 'RED' : p.value > th.yellowMax)).length
     redShifts += red
     let bh = 0
     if (loc.type === 'ed') {

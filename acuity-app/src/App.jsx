@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { collection, deleteDoc, doc, getDocs, increment, onSnapshot, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { theme, Icon, Toast } from './components/ui.jsx'
 import AcuitasLogo from './components/AcuitasLogo.jsx'
@@ -22,6 +22,11 @@ import AcuiStep from './components/AcuiStep.jsx'
 import Outcomes from './components/Outcomes.jsx'
 import CapacitySafety from './components/CapacitySafety.jsx'
 import { AccessPanel, AuditLogPanel, FhirImport } from './components/Governance.jsx'
+import CalibrationPanel from './components/CalibrationPanel.jsx'
+import {
+  activeCalibration, calibrationByVersion, calibrationState, calibratedThresholds,
+  orgScopedLocation, proposeCalibration, resetCalibration, stampEntry, withLegacyStamps,
+} from './lib/calibration.js'
 import { IdentityPicker, SignInScreen } from './components/IdentityGate.jsx'
 import PasswordGate, { EXPECTED_HASH } from './components/PasswordGate.jsx'
 import { ROLES, can, canSeeTab } from './lib/roles.js'
@@ -78,6 +83,18 @@ export default function App() {
   const [planLog, planLogApi] = useCollection('planLog', { localKey: 'bhai:planLog', auditAs: 'planLog' })
   const [safetyEvents, safetyApi] = useCollection('safetyEvents', { localKey: 'bhai:safetyEvents', auditAs: 'safetyEvents' })
   const [censusPrefill, setCensusPrefill] = useConfigValue('censusPrefill', { localKey: 'bhai:censusPrefill', initial: {} })
+
+  // AcuiCalc™ calibration: one per health system, versioned. Writes go through
+  // saveCalibration below, which records its own detailed audit entry.
+  const [storedCalibration, setStoredCalibration] = useConfigValue('acuiCalibration', { localKey: 'acuitas:calibration', initial: null, audited: false })
+  const calState = useMemo(() => calibrationState(storedCalibration, thresholds), [storedCalibration, thresholds])
+  const calibration = useMemo(() => activeCalibration(calState), [calState])
+  const baselineCalibration = useMemo(() => calibrationByVersion(calState, 1) || calibration, [calState, calibration])
+  const scoringThresholds = useMemo(() => calibratedThresholds(calibration), [calibration])
+  // Every unit and ED reads the system-wide calibration; no per-unit overrides.
+  const orgLocations = useMemo(() => (locations ? locations.map(orgScopedLocation) : locations), [locations])
+  // Scores saved before calibration existed are read as v1, never re-scored.
+  const scoredEntries = useMemo(() => withLegacyStamps(entries, locations, baselineCalibration), [entries, locations, baselineCalibration])
   const op = useOutpatientData()
   const iop = useIopData()
 
@@ -410,8 +427,9 @@ export default function App() {
 
   // In local mode these update React state directly; the existing effects
   // persist that state to the browser, so the data survives a reload.
-  const addEntry = (entry) => {
-    audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, census: entry.census })
+  const addEntry = (raw) => {
+    const entry = stampEntry(raw, (locations || []).find((l) => l.id === raw.locId), calibration)
+    audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, census: entry.census, calibrationVersion: entry.calibrationVersion })
     if (LOCAL_MODE) return setEntries((prev) => [...(prev || []), entry])
     setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
   }
@@ -431,10 +449,26 @@ export default function App() {
     deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
   }
 
+  // Saving a calibration change or reset. Validation and the Administrator
+  // check run in calibration.js against the signed-in role.
+  function saveCalibration(result) {
+    if (!result.ok) return result
+    setStoredCalibration(result.state)
+    audit(result.audit.action, result.audit.target, result.audit.detail)
+    setToast(`${result.audit.action === 'calibration.reset' ? 'Shipped defaults restored' : 'Calibration saved'} as v${result.version.version}`)
+    return result
+  }
+  const changeMeta = ({ reason, reviewers }) => ({ actor: identity?.name || 'unknown', role, reason, reviewers })
+
+  // Points pushed from AcuiCalc™ add to today's ED entry for that shift. A new
+  // entry is stamped with the active calibration; an existing entry keeps the
+  // stamp it was created under.
   async function pushAcuityToED(locId, shift, points) {
     const todayStr = today()
     const list = entries.filter((e) => e.locId === locId && e.date === todayStr && e.shift === shift)
     const existing = list[list.length - 1]
+    const loc = (locations || []).find((l) => l.id === locId)
+    audit('acuicalc.push', locId, { date: todayStr, shift, points, calibrationVersion: calibration.version, addedTo: existing ? existing.id : null })
     if (LOCAL_MODE) {
       if (existing) {
         return setEntries((prev) =>
@@ -443,16 +477,16 @@ export default function App() {
       }
       return setEntries((prev) => [
         ...(prev || []),
-        {
+        stampEntry({
           id: uid(), locId, date: todayStr, shift, census: null, points, staff: null,
-          notes: 'Added via Patient Acuity Calculator', pilot: false, createdAt: Date.now(),
-        },
+          notes: 'Added via AcuiCalc™', pilot: false, createdAt: Date.now(),
+        }, loc, calibration),
       ])
     }
     if (existing) {
       await updateDoc(doc(db, 'entries', existing.id), { points: increment(points) }).catch((e) => console.error('push acuity', e))
     } else {
-      const entry = {
+      const entry = stampEntry({
         id: uid(),
         locId,
         date: todayStr,
@@ -460,10 +494,10 @@ export default function App() {
         census: null,
         points,
         staff: null,
-        notes: 'Added via Patient Acuity Calculator',
+        notes: 'Added via AcuiCalc™',
         pilot: false,
         createdAt: Date.now(),
-      }
+      }, loc, calibration)
       await setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('push acuity', e))
     }
   }
@@ -636,23 +670,23 @@ export default function App() {
           <ErrorBoundary key={activeTab}>
           <div className="fade-in">
             {activeTab === 'status' && (
-              <StatusBoard locations={locations} entries={entries} thresholds={thresholds} caps={caps} onUpdateCap={updateCap} />
+              <StatusBoard locations={orgLocations} entries={scoredEntries} thresholds={scoringThresholds} caps={caps} onUpdateCap={updateCap} calibration={calibration} />
             )}
             {activeTab === 'command' && (
-              <CommandCenter locations={locations} entries={entries} thresholds={thresholds} caps={caps} role={role} identity={identity} />
+              <CommandCenter locations={orgLocations} entries={scoredEntries} thresholds={scoringThresholds} caps={caps} role={role} identity={identity} />
             )}
             {activeTab === 'outcomes' && (
-              <Outcomes locations={locations} entries={entries} deployments={deployments} thresholds={thresholds} role={role} />
+              <Outcomes locations={orgLocations} entries={scoredEntries} deployments={deployments} thresholds={scoringThresholds} role={role} />
             )}
             {activeTab === 'capacity' && (
-              <CapacitySafety locations={locations} entries={entries} thresholds={thresholds} caps={caps} role={role} />
+              <CapacitySafety locations={orgLocations} entries={scoredEntries} thresholds={scoringThresholds} caps={caps} role={role} />
             )}
             {activeTab === 'levelofcare' && <LevelOfCare role={role} locations={locations} identity={identity} onOpenAcuiStep={(id) => { setIopFocus(id); setTab('acuistep') }} />}
             {activeTab === 'acuistep' && <AcuiStep key={iopFocus || 'acuistep'} role={role} identity={identity} focusId={iopFocus} />}
             {activeTab === 'entry' && (
               <ShiftEntryForm
-                locations={locations}
-                thresholds={thresholds}
+                locations={orgLocations}
+                thresholds={scoringThresholds}
                 censusPrefill={censusPrefill || {}}
                 onConsumePrefill={(locId) => {
                   const next = { ...(censusPrefill || {}) }
@@ -681,10 +715,10 @@ export default function App() {
             )}
             {activeTab === 'reports' && (
               <Reports
-                locations={locations}
-                entries={entries}
+                locations={orgLocations}
+                entries={scoredEntries}
                 deployments={deployments}
-                thresholds={thresholds}
+                thresholds={scoringThresholds}
                 onDeleteEntry={can(role, 'remove-records') ? (id) => {
                   removeEntry(id)
                   setToast('Entry removed')
@@ -693,7 +727,8 @@ export default function App() {
             )}
             {activeTab === 'calculator' && (
               <AcuityCalculator
-                locations={locations}
+                locations={orgLocations}
+                calibration={calibration}
                 onPushToED={(locId, shift, points) => {
                   pushAcuityToED(locId, shift, points)
                   setToast('Pushed to ED acuity')
@@ -714,21 +749,17 @@ export default function App() {
               {can(role, 'settings') && (
               <Settings
                 locations={locations}
-                thresholds={thresholds}
                 onChangeLocations={(next) => {
                   audit('locations.update', null, { count: next.length })
                   setLocations(next)
                   setToast('Locations updated')
                 }}
-                onChangeThresholds={(next) => {
-                  audit('thresholds.update', null, null)
-                  setThresholds(next)
-                  setToast('Thresholds updated')
-                }}
                 onImport={async (data) => {
                   audit('data.import', null, { entries: data.entries?.length ?? 0, deployments: data.deployments?.length ?? 0 })
                   if (data.locations) setLocations(data.locations)
-                  if (data.thresholds) setThresholds(normalizeThresholds(data.thresholds))
+                  // Thresholds in a backup are not applied: scoring follows the
+                  // governed AcuiCalc™ calibration, which only an Administrator
+                  // changes, with a reason, in the calibration panel.
                   if (data.entries) await replaceCollection('entries', data.entries)
                   if (data.deployments) await replaceCollection('deployments', data.deployments)
                   if (data.caps) restoreCaps(data.caps)
@@ -776,6 +807,7 @@ export default function App() {
                 }}
                 getExportData={() => ({
                   locations, entries, deployments, thresholds, caps, planLog, safetyEvents,
+                  calibration: calState,
                   outpatient: {
                     patients: op.patients, providers: op.providers, discharges: op.discharges,
                     assessments: op.assessments, outcomes: op.outcomes, programs: op.programs,
@@ -783,6 +815,13 @@ export default function App() {
                   iop: { intakes: iop.intakes, tracks: iop.tracks },
                 })}
               />
+              )}
+              {can(role, 'calibrate') && (
+                <CalibrationPanel
+                  state={calState}
+                  onPropose={(draft, meta) => saveCalibration(proposeCalibration(calState, draft, changeMeta(meta)))}
+                  onReset={(meta) => saveCalibration(resetCalibration(calState, changeMeta(meta)))}
+                />
               )}
               {can(role, 'import') && <FhirImport locations={locations} entries={entries} onApply={applyFhirCensus} />}
               <AccessPanel identity={identity} authMode={AUTH_MODE} onSwitch={AUTH_MODE === 'local' ? chooseIdentity : null} />

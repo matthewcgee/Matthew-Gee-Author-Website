@@ -6,6 +6,8 @@ import { today } from '../lib/storage.js'
 import { forecastLocation } from '../lib/forecast.js'
 import { assessForecast } from '../lib/risk.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
+import { CalibrationBadge } from './CalibrationPanel.jsx'
+import { zoneResponse } from '../lib/calibration.js'
 
 const SHIFT_ORDER = { AM: 0, PM: 1 }
 
@@ -92,7 +94,9 @@ function CapEditor({ value, onSave }) {
   )
 }
 
-export default function StatusBoard({ locations, entries, thresholds, caps, onUpdateCap }) {
+// `calibration` is the active system-wide AcuiCalc™ calibration: its version
+// is shown in the header and its zone responses on each card.
+export default function StatusBoard({ locations, entries, thresholds, caps, onUpdateCap, calibration = null }) {
   const todayStr = today()
 
   // Next-shift outlook per unit. Kept in a memo because fitting each unit's
@@ -140,6 +144,7 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <AcuitasLogo size={26} dark={false} showWordmark={false} />
           <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>Region Status Board</div>
+          <CalibrationBadge calibration={calibration} />
         </div>
         <div style={{ fontSize: 12.5, color: theme.sub }}>
           Most recent acuity reading per location, with census vs. nursing-driven census caps.
@@ -310,10 +315,16 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
                           color: needsStaff ? STAGE_COLORS[stage] : theme.sub,
                         }}
                       >
-                        {needsStaff ? `Deploy ${parts.join(', ')}` : 'Staffing is at target for current acuity'}
+                        {needsStaff ? `Deploy ${parts.join(', ')}` : zoneResponse(calibration, 'GREEN')}
                       </div>
                     )
                   })()}
+
+                  {latest && (stage === 'YELLOW' || stage === 'RED' || (isEd && stage === 'GREEN')) && (
+                    <div data-zone-response={stage} style={{ marginTop: 6, fontSize: 11.5, color: theme.sub, lineHeight: 1.4 }}>
+                      <span style={{ fontWeight: 700, color: STAGE_COLORS[stage] }}>{stage}:</span> {zoneResponse(calibration, stage)}
+                    </div>
+                  )}
 
                   <div style={{ fontSize: 11, color: theme.sub, marginTop: 10, opacity: 0.8 }}>
                     {loc.market} · {loc.region}

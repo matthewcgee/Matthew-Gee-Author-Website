@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react'
 import { Card, Field, Button, Icon, theme } from './ui.jsx'
 import { uid } from '../lib/storage.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
+import { zoneSetFor } from '../lib/model.js'
+import { INSTRUMENT_NAME } from '../lib/calibration.js'
 
 const emptyLocation = () => ({
   id: uid(),
@@ -12,13 +14,12 @@ const emptyLocation = () => ({
   type: 'inpatient',
   censusCap: '',
   thresholds: null,
+  zoneSet: null,
 })
 
 export default function Settings({
   locations,
-  thresholds,
   onChangeLocations,
-  onChangeThresholds,
   onImport,
   onClear,
   onLoadSample,
@@ -26,7 +27,6 @@ export default function Settings({
   getExportData,
 }) {
   const [newLoc, setNewLoc] = useState(emptyLocation)
-  const [thresholdDrafts, setThresholdDrafts] = useState({})
   const fileInputRef = useRef(null)
 
   const setNew = (key) => (e) => setNewLoc((l) => ({ ...l, [key]: e.target.value }))
@@ -50,39 +50,11 @@ export default function Settings({
     onChangeLocations(locations.filter((l) => l.id !== id))
   }
 
-  const updateLocationThreshold = (id, key, value) => {
-    const loc = locations.find((l) => l.id === id)
-    const type = loc.type === 'ed' ? 'ed' : 'inpatient'
-    const draft = thresholdDrafts[id] || {
-      greenMax: loc.thresholds?.greenMax ?? '',
-      yellowMax: loc.thresholds?.yellowMax ?? '',
-    }
-    const nextDraft = { ...draft, [key]: value }
-    setThresholdDrafts((d) => ({ ...d, [id]: nextDraft }))
-
-    const g = nextDraft.greenMax === '' ? null : Number(nextDraft.greenMax)
-    const y = nextDraft.yellowMax === '' ? null : Number(nextDraft.yellowMax)
-    if (g == null && y == null) {
-      updateLocation(id, { thresholds: null })
-    } else if (g != null && y != null) {
-      updateLocation(id, { thresholds: { unit: loc.thresholds?.unit || thresholds[type].unit, greenMax: g, yellowMax: y } })
-    }
-    // If only one of the two fields has a value, leave thresholds as-is —
-    // the draft below keeps the typed value visible until both are filled.
-  }
-
-  const thresholdDraftValue = (loc, key) => {
-    const draft = thresholdDrafts[loc.id]
-    if (draft && key in draft) return draft[key]
-    return loc.thresholds?.[key] ?? ''
-  }
-
-  const updateThreshold = (type, key, value) => {
-    onChangeThresholds({
-      ...thresholds,
-      [type]: { ...thresholds[type], [key]: Number(value) },
-    })
-  }
+  // Zones come from the system-wide AcuiCalc™ calibration. An ED only picks
+  // which of its zone sets applies (adult or pediatric); it can't set its own.
+  // Any override saved by an earlier build is left in place only so the scores
+  // saved under it keep reading the way they were calculated.
+  const setZoneSet = (loc, value) => updateLocation(loc.id, { zoneSet: value })
 
   const exportAll = () => {
     const data = getExportData()
@@ -114,7 +86,7 @@ export default function Settings({
   }
 
   const clearAll = () => {
-    if (window.confirm('Clear all locations, shift entries, deployments, and thresholds? This cannot be undone.')) {
+    if (window.confirm('Clear all locations, shift entries and deployments? This cannot be undone. The AcuiCalc\u2122 calibration and its history are kept.')) {
       onClear()
     }
   }
@@ -135,7 +107,7 @@ export default function Settings({
           <div style={{ fontFamily: theme.display, fontSize: 18, fontWeight: 700 }}>Settings</div>
         </div>
         <div style={{ fontSize: 12.5, color: theme.sub }}>
-          Manage locations, census caps, thresholds, and data.
+          Manage locations, census caps and data. Acuity zones are set system-wide in the {INSTRUMENT_NAME} calibration below.
         </div>
       </div>
 
@@ -183,23 +155,15 @@ export default function Settings({
                 disabled={loc.type === 'ed'}
               />
             </Field>
-            <Field label="Custom Green Max" hint="Blank = use default thresholds">
-              <input
-                type="number"
-                step="0.1"
-                value={thresholdDraftValue(loc, 'greenMax')}
-                onChange={(e) => updateLocationThreshold(loc.id, 'greenMax', e.target.value)}
-                placeholder="default"
-              />
-            </Field>
-            <Field label="Custom Yellow Max" hint="Both fields required to override">
-              <input
-                type="number"
-                step="0.1"
-                value={thresholdDraftValue(loc, 'yellowMax')}
-                onChange={(e) => updateLocationThreshold(loc.id, 'yellowMax', e.target.value)}
-                placeholder="default"
-              />
+            <Field label="Zone set" hint={`From the system-wide ${INSTRUMENT_NAME} calibration`}>
+              {loc.type === 'ed' ? (
+                <select value={zoneSetFor(loc)} onChange={(e) => setZoneSet(loc, e.target.value)}>
+                  <option value="ed">Emergency Department</option>
+                  <option value="pedsEd">Pediatric Emergency Department</option>
+                </select>
+              ) : (
+                <select value="inpatient" disabled><option value="inpatient">Inpatient</option></select>
+              )}
             </Field>
             <div>
               <Button variant="danger" onClick={() => removeLocation(loc.id)}>Remove</Button>
@@ -226,31 +190,6 @@ export default function Settings({
           </div>
           <Button type="submit">Add Location</Button>
         </form>
-      </Card>
-
-      <Card title="Default Thresholds" sub="Used when a location has no custom thresholds">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Inpatient (UAI)</div>
-            <Field label="Green max">
-              <input type="number" step="0.1" value={thresholds.inpatient.greenMax} onChange={(e) => updateThreshold('inpatient', 'greenMax', e.target.value)} />
-            </Field>
-            <div style={{ height: 8 }} />
-            <Field label="Yellow max">
-              <input type="number" step="0.1" value={thresholds.inpatient.yellowMax} onChange={(e) => updateThreshold('inpatient', 'yellowMax', e.target.value)} />
-            </Field>
-          </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8 }}>Emergency Department</div>
-            <Field label="Green max">
-              <input type="number" step="0.1" value={thresholds.ed.greenMax} onChange={(e) => updateThreshold('ed', 'greenMax', e.target.value)} />
-            </Field>
-            <div style={{ height: 8 }} />
-            <Field label="Yellow max">
-              <input type="number" step="0.1" value={thresholds.ed.yellowMax} onChange={(e) => updateThreshold('ed', 'yellowMax', e.target.value)} />
-            </Field>
-          </div>
-        </div>
       </Card>
 
       {localMode && (

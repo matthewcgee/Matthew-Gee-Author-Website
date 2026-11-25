@@ -1,8 +1,10 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Card, Field, Button, Badge, theme, grid } from './ui.jsx'
 import { ADULT_ACUITY_CRITERIA, PEDIATRIC_MODIFIER_GROUPS, scorePediatricModifiers, MASS_ESCALATION } from '../lib/model.js'
 import { uid } from '../lib/storage.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
+import { CalibrationBadge } from './CalibrationPanel.jsx'
+import { calibratedCriteria } from '../lib/calibration.js'
 
 const emptySelections = (criteria) => {
   const sel = {}
@@ -10,15 +12,19 @@ const emptySelections = (criteria) => {
   return sel
 }
 
-function scoreFor(criteria, selections) {
+export function scoreFor(criteria, selections) {
   let total = 0
   criteria.forEach((g) => g.items.forEach((item) => {
     if (selections[item.id]) total += item.points
   }))
-  return total
+  return Math.round(total * 100) / 100
 }
 
-export default function AcuityCalculator({ locations, onPushToED }) {
+// `calibration` is the system-wide AcuiCalc™ calibration. Its point values sit
+// on the locked domains and level descriptions; without one, the shipped
+// defaults apply.
+export default function AcuityCalculator({ locations, onPushToED, calibration = null }) {
+  const criteria = useMemo(() => (calibration ? calibratedCriteria(calibration) : ADULT_ACUITY_CRITERIA), [calibration])
   const [mode, setMode] = useState('scoring')
   const [initials, setInitials] = useState('')
   const [selections, setSelections] = useState(() => emptySelections(ADULT_ACUITY_CRITERIA))
@@ -31,7 +37,7 @@ export default function AcuityCalculator({ locations, onPushToED }) {
   const [edLocId, setEdLocId] = useState('')
   const [edShift, setEdShift] = useState('AM')
 
-  const score = scoreFor(ADULT_ACUITY_CRITERIA, selections)
+  const score = scoreFor(criteria, selections)
 
   const pedsModScore = scorePediatricModifiers(pedsMods)
   const pedsBaseNum = Number(pedsBase) || 0
@@ -43,7 +49,7 @@ export default function AcuityCalculator({ locations, onPushToED }) {
 
   const addPatient = () => {
     if (!initials.trim()) return
-    setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score, mode: 'adult' }])
+    setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score, mode: 'adult', calibrationVersion: calibration?.version ?? 1 }])
     setInitials('')
     setSelections(emptySelections(ADULT_ACUITY_CRITERIA))
   }
@@ -58,7 +64,7 @@ export default function AcuityCalculator({ locations, onPushToED }) {
 
   const addPedsPatient = () => {
     if (!initials.trim()) return
-    setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score: pedsTotal, mode: 'peds' }])
+    setPatients((list) => [...list, { id: uid(), initials: initials.trim().toUpperCase(), score: pedsTotal, mode: 'peds', calibrationVersion: calibration?.version ?? 1 }])
     setInitials('')
     setPedsBase('')
     setPedsBasePushed(false)
@@ -80,7 +86,8 @@ export default function AcuityCalculator({ locations, onPushToED }) {
       <div className="fade-in-up" style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <AcuitasLogo size={26} dark={false} showWordmark={false} />
-          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>AcuiCalc&#8482; &mdash; Acuity Calculator&#8482;</div>
+          <div style={{ fontFamily: theme.display, fontSize: 20, fontWeight: 700 }}>AcuiCalc&#8482;</div>
+          <CalibrationBadge calibration={calibration} />
         </div>
         <div style={{ fontSize: 12.5, color: theme.sub }}>
           Score an individual patient's acuity, then push the total directly to ED acuity points.
@@ -193,7 +200,7 @@ export default function AcuityCalculator({ locations, onPushToED }) {
           </div>
 
           <div style={grid(3)}>
-            {ADULT_ACUITY_CRITERIA.map((group) => (
+            {criteria.map((group) => (
               <div key={group.group}>
                 <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 4, color: theme.text }}>{group.group}</div>
                 {group.note && (
@@ -297,6 +304,9 @@ export default function AcuityCalculator({ locations, onPushToED }) {
                   <span style={{ fontWeight: 700 }}>{p.initials}</span>
                   <Badge color={theme.accentSoft}>{p.score} pts</Badge>
                   {p.mode === 'peds' && <Badge color={theme.accentSoft}>Peds</Badge>}
+                  {calibration && p.calibrationVersion !== calibration.version && (
+                    <Badge color={theme.accentSoft}>scored under v{p.calibrationVersion}</Badge>
+                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <Button

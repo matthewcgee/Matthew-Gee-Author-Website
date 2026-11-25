@@ -142,7 +142,7 @@ export function collectionApi(name, localKey, store, { auditAs = name, audited =
 }
 
 /** A shared, synced single value, used for settings like clinic lists and rates. */
-export function useConfigValue(name, { localKey, initial, auditAs = name } = {}) {
+export function useConfigValue(name, { localKey, initial, auditAs = name, audited = true } = {}) {
   const store = getValueStore(name, localKey, initial)
   const value = useSyncExternalStore(
     (cb) => { store.listeners.add(cb); return () => store.listeners.delete(cb) },
@@ -150,11 +150,11 @@ export function useConfigValue(name, { localKey, initial, auditAs = name } = {})
     () => store.value
   )
   const set = useMemo(() => (next) => {
-    audit(`${auditAs}.update`, null, summarize(next))
+    if (audited) audit(`${auditAs}.update`, null, summarize(next))
     store.set(next)
     if (LOCAL_MODE) writeStorage(localKey, next)
     else setDoc(doc(db, 'appConfig', name), { value: clean(next) }).catch((e) => console.error(`config ${name}`, e))
-  }, [store, localKey, name, auditAs])
+  }, [store, localKey, name, auditAs, audited])
   return [value, set]
 }
 

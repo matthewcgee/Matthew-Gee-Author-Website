@@ -59,7 +59,7 @@ npm install
 npm run dev
 # App available at http://localhost:5173/<base-path>/
 
-# 3. Run the test suite (365 tests: forecasting, optimization, screening, outcomes,
+# 3. Run the test suite (414 tests: forecasting, optimization, screening, outcomes,
 #    follow-up, cost, capacity, safety, roles, audit chain, FHIR, and UI rendering)
 npm test
 
@@ -147,7 +147,7 @@ git clone https://<your-internal-git>/<org>/acuitas.git
 cd acuitas
 cp .env.example .env.production    # leave it as-is for a first test build
 npm ci
-npm test                           # 365 tests should pass
+npm test                           # 414 tests should pass
 npm run build                      # the site is now in dist/
 ```
 
@@ -230,7 +230,7 @@ organization's standard backup policy.
 4. Remove the Firebase library from the build, and self-host the typefaces
    (today they load from Google Fonts), so the browser contacts no Google
    service at all.
-5. Run the 365 automated tests, then the "Confirm it works" checks in the
+5. Run the 414 automated tests, then the "Confirm it works" checks in the
    day-one checklist.
 
 The input is IT's choice of database; the developer sizes and schedules the
@@ -342,7 +342,7 @@ security rules check the signed-in Firebase user, so the other sign-in modes
 
 **Make it service-line wide** (the approved shared database)
 - [ ] IT chooses the database: Option 1 (self-hosted Supabase) or Option 2 (standard database and data service); compliance confirms coverage
-- [ ] Developer builds the data adapter for it, removes the Firebase library and self-hosts the fonts; 365 tests pass
+- [ ] Developer builds the data adapter for it, removes the Firebase library and self-hosts the fonts; 414 tests pass
 - [ ] Database created on the organization's infrastructure; one table per collection; backups and point-in-time recovery on
 - [ ] Access rules in place (row-level security, or data-service checks), including the append-only audit log
 - [ ] Single sign-on: gateway mode with Entra ID (or Supabase Auth with Entra ID); directory groups mapped to Acuitas roles
@@ -419,16 +419,45 @@ A signed-in user with no mapped role gets **Viewer** — never more.
 |---|---|
 | Administrator | Everything, including settings, users, clinic configuration and the audit log |
 | House supervisor | Deployments, recorded plans, scenarios, capacity & safety, FHIR import, removing records |
-| Charge nurse | Shift entries, deployments, AcuiCalc, safety events |
+| Charge nurse | Shift entries, deployments, AcuiCalc™, safety events |
 | Outpatient clinician | AcuiPath screening, AcuiStep IOP intake, discharge follow-up, PHQ-9 / GAD-7, outpatient outcomes |
 | Quality & finance | Outcomes, calibration, cost rates, scenarios, audit log (read-mostly) |
 | Viewer | Read-only boards and reports |
 
 The full matrix lives in `src/lib/roles.js` and is shown in the app under Settings → People & access.
 
+### AcuiCalc™ governed local calibration
+
+Acuitas is an operational staffing tool, not a diagnostic test. Each health
+system can tune AcuiCalc™ to match how its own nurses describe acuity, inside
+guard rails that keep the measure consistent and testable (`src/lib/calibration.js`,
+edited under Settings → AcuiCalc™ calibration):
+
+- **Locked core.** The four domains (Observation Status, Behavioral Risk,
+  Clinical Complexity, MASS Behavioral Severity) and every score-level
+  description are frozen. No user, administrators included, can edit them.
+- **Point values** move at most `WEIGHT_LIMIT_PCT` (default 0.25, i.e. ±25%)
+  from the shipped default. Values outside the limit are rejected with the
+  allowed range.
+- **Zone cutoffs and responses.** GREEN/YELLOW cutoffs for inpatient units, EDs
+  and pediatric EDs, and the action each zone triggers. Zones must stay in order
+  with no gaps or overlaps. Shipped defaults are the production values
+  (1.5/2.5, 21/27, 53/71).
+- **One calibration per health system.** Every unit and ED uses it; per-unit
+  overrides are gone. An ED only chooses which system zone set it reads
+  (ED or Pediatric ED).
+- **Change control.** Administrator only (`calibrate` permission), with a
+  written reason and the frontline nurses who reviewed it. Each change is a new
+  version (v1, v2, …) and an audit entry with the old and new values. On
+  Firestore, `appConfig/acuiCalibration` is admin-only and append-only.
+- **Versioned scores.** Each saved shift score stores `calibrationVersion` and
+  the zones it was scored under; a later calibration never re-scores history.
+  Scores saved before calibration existed are read as v1.
+- **Reset** restores the shipped defaults as a new version.
+
 ### Audit log
 
-Every change — shift entries, deployments, caps, locations, thresholds, imports,
+Every change — shift entries, deployments, caps, locations, AcuiCalc™ calibrations, imports,
 recorded plans, safety events, every AcuiPath and AcuiStep record, cost rates, sign-ins — is
 written to an audit log: who, in which role, what, which record, when. Entries
 form a **SHA-256 hash chain**; each stores the hash of the entry before it, so
@@ -865,7 +894,7 @@ src/lib/firebase.js
 | `opDischarges`, `opAssessments`, `opOutcomes` | Discharge bridge, PHQ-9/GAD-7 scores, placement outcomes |
 | `iopIntakes` | AcuiStep IOP intakes: screening answers, verdict, track, task progress and status |
 | `auditLog` | Hash-chained audit entries (append-only under the rules) |
-| `appConfig/{key}` | Shared settings: `opPrograms`, `apThresholds`, `apTier1Triggers`, `costRates`, `censusPrefill`, `fhirLocationMap`, `iopTracks` |
+| `appConfig/{key}` | Shared settings: `acuiCalibration` (versioned AcuiCalc™ calibration), `opPrograms`, `apThresholds`, `apTier1Triggers`, `costRates`, `censusPrefill`, `fhirLocationMap`, `iopTracks` |
 
 All documents are plain JSON. Field names are documented in `src/lib/model.js`
 and in each module under `src/lib/`. In local mode the same data lives in the
@@ -920,6 +949,7 @@ acuitas/
 │   ├── components/
 │   │   ├── AcuityCalculator.jsx # AcuiCalc™ two-step scoring tool
 │   │   ├── AcuitasLogo.jsx      # Brand logo component
+│   │   ├── CalibrationPanel.jsx # AcuiCalc™ calibration editor, version badge, history
 │   │   ├── acuipath/            # AcuiPath views: DischargeBridge, MbcPanel, OpOutcomes
 │   │   ├── CapacitySafety.jsx   # ED boarding outlook and safety-event risk
 │   │   ├── charts.jsx           # Small accessible SVG chart kit
@@ -943,8 +973,9 @@ acuitas/
 │   │   ├── __tests__/           # Screen rendering tests
 │   │   └── ui.jsx               # Shared UI components & theme
 │   └── lib/
-│       ├── __tests__/           # Engine tests (365 tests in all, 19 files)
+│       ├── __tests__/           # Engine tests (414 tests in all, 21 files)
 │       ├── audit.js             # Hash-chained audit log
+│       ├── calibration.js       # AcuiCalc™ governed calibration: limits, zones, versions
 │       ├── capacity.js          # ED boarding vs open-bed outlook
 │       ├── cost.js              # Cost rates, spend, plan value, realized value
 │       ├── demoData.js          # Synthetic demo region and de-identified samples

@@ -36,11 +36,35 @@ export function computeStage(value, thresholds) {
   return 'RED'
 }
 
+// Which system-wide zone set a location reads: inpatient, ED, or pediatric ED.
+// A pediatric ED is an ED assigned to that set, or (from earlier builds) an ED
+// whose per-unit override was the recommended pediatric 53/71.
+export function zoneSetFor(location) {
+  if (location?.type !== 'ed') return 'inpatient'
+  if (location.zoneSet === 'pedsEd') return 'pedsEd'
+  if (location.zoneSet == null) {
+    const t = location.thresholds
+    if (t && t.greenMax === PEDIATRIC_ED_THRESHOLDS.greenMax && t.yellowMax === PEDIATRIC_ED_THRESHOLDS.yellowMax) return 'pedsEd'
+  }
+  return 'ed'
+}
+
+// The app passes locations through orgScopedLocation (calibration.js), which
+// removes per-unit overrides, so every unit reads the system-wide zones. The
+// override branch remains for unstamped history saved under earlier builds.
 export function thresholdsFor(location, globalThresholds) {
-  const type = location?.type === 'ed' ? 'ed' : 'inpatient'
-  return (location?.thresholds && location.thresholds.greenMax != null)
-    ? location.thresholds
-    : (globalThresholds?.[type] || DEFAULT_THRESHOLDS[type])
+  if (location?.thresholds && location.thresholds.greenMax != null) return location.thresholds
+  const set = zoneSetFor(location)
+  if (set === 'pedsEd') return globalThresholds?.pedsEd || PEDIATRIC_ED_THRESHOLDS
+  return globalThresholds?.[set] || DEFAULT_THRESHOLDS[set]
+}
+
+// The cutoffs a saved shift score was calculated under: its calibration stamp
+// when it has one, otherwise the location's current zones.
+export function entryThresholds(entry, location, globalThresholds) {
+  const z = entry?.zones
+  if (z && z.greenMax != null && z.yellowMax != null) return z
+  return thresholdsFor(location, globalThresholds)
 }
 
 export function computeEntryValue(entry, location, globalThresholds) {
@@ -52,8 +76,7 @@ export function computeEntryValue(entry, location, globalThresholds) {
 
 export function entryStage(entry, location, globalThresholds) {
   const value = computeEntryValue(entry, location, globalThresholds)
-  const th = thresholdsFor(location, globalThresholds)
-  return computeStage(value, th)
+  return computeStage(value, entryThresholds(entry, location, globalThresholds))
 }
 
 function staffNeededForTarget(entry, target) {
@@ -69,7 +92,7 @@ export function staffNeededForThresholds(entry, location, globalThresholds) {
   if (!entry || location?.type === 'ed') return null
 
   const stage = entryStage(entry, location, globalThresholds)
-  const th = thresholdsFor(location, globalThresholds)
+  const th = entryThresholds(entry, location, globalThresholds)
 
   return {
     stage,

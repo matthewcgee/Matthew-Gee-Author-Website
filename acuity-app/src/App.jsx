@@ -466,7 +466,7 @@ export default function App() {
   // persist that state to the browser, so the data survives a reload.
   const addEntry = (raw) => {
     const entry = stampEntry(raw, (locations || []).find((l) => l.id === raw.locId), calibration)
-    audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, census: entry.census, calibrationVersion: entry.calibrationVersion, nurseRating: entry.nurseRating ?? null })
+    audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, oneToOne: entry.oneToOne ?? null, census: entry.census, calibrationVersion: entry.calibrationVersion, instrumentVersion: entry.instrumentVersion, nurseRating: entry.nurseRating ?? null })
     if (LOCAL_MODE) return setEntries((prev) => [...(prev || []), entry])
     setRecord('entries', entry.id, entry).catch((e) => console.error('add entry', e))
   }

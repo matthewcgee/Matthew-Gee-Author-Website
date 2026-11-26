@@ -32,6 +32,16 @@ import { can } from './roles.js'
 
 export const INSTRUMENT_NAME = 'AcuiCalc™'
 
+// The AcuiCalc™ instrument itself (its items and how a score is formed), as
+// distinct from a system's calibration of it. Stamped on every saved shift so
+// analyses never mix shifts scored under different definitions.
+//   1  Original instrument.
+//   2  Observation above the unit's routine level only (routine Q15 checks for
+//      every patient are not scored). Inpatient acuity per staff divides by
+//      staff on shift minus patients on 1:1, since each 1:1 takes one staff
+//      member entirely.
+export const INSTRUMENT_VERSION = 2
+
 // The single knob for how far an administrator may move any point value from
 // its shipped default, as a fraction (0.25 = ±25%).
 export const WEIGHT_LIMIT_PCT = 0.25
@@ -453,6 +463,7 @@ export function stampEntry(entry, location, cal) {
   const th = calibratedThresholds(cal)[set]
   return {
     ...entry,
+    instrumentVersion: INSTRUMENT_VERSION,
     calibrationVersion: cal.version,
     zoneSet: set,
     zones: { greenMax: th.greenMax, yellowMax: th.yellowMax },
@@ -478,6 +489,7 @@ export function withLegacyStamps(entries, locations, baselineCal) {
     return {
       ...e,
       calibrationVersion: e.calibrationVersion ?? baselineCal.version,
+      instrumentVersion: e.instrumentVersion ?? 1,
       zoneSet: zoneSetFor(loc),
       zones: { greenMax: th.greenMax, yellowMax: th.yellowMax },
       calibrationInferred: true,

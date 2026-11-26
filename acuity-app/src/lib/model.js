@@ -80,11 +80,28 @@ export function entryThresholds(entry, location, globalThresholds) {
   return thresholdsFor(location, globalThresholds)
 }
 
+// A patient on constant (1:1) observation takes one staff member entirely, so
+// an inpatient unit's acuity per staff divides by the staff left for everyone
+// else: staff on shift minus patients on 1:1. It never drops below one, so a
+// shift with every staff member on a 1:1 still reads as far into RED rather
+// than dividing by zero. (AcuiCalc™ instrument 2; shifts saved without a 1:1
+// count read exactly as before.)
+export function oneToOneCount(entry) {
+  const n = Number(entry?.oneToOne)
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+}
+
+export function availableStaff(staff, oneToOne = 0) {
+  const s = Number(staff) || 0
+  if (s <= 0) return 0
+  return Math.max(s - (Number(oneToOne) || 0), 1)
+}
+
 export function computeEntryValue(entry, location, globalThresholds) {
   if (location?.type === 'ed') {
     return entry.points || 0
   }
-  return safeDiv(entry.points, entry.staff)
+  return safeDiv(entry.points, availableStaff(entry.staff, oneToOneCount(entry)))
 }
 
 export function entryStage(entry, location, globalThresholds) {
@@ -94,9 +111,10 @@ export function entryStage(entry, location, globalThresholds) {
 
 function staffNeededForTarget(entry, target) {
   const points = entry.points || 0
-  const staff = entry.staff || 0
+  // Staff free for the rest of the unit: those on a 1:1 are already committed.
+  const free = (entry.staff || 0) - oneToOneCount(entry)
   if (!points || target <= 0) return 0
-  return Math.max(0, Math.ceil(points / target - staff))
+  return Math.max(0, Math.ceil(points / target - free))
 }
 
 // How many additional staff would move this IP unit to YELLOW and to GREEN.
@@ -117,9 +135,10 @@ export function staffNeededForThresholds(entry, location, globalThresholds) {
 export const ADULT_ACUITY_CRITERIA = [
   {
     group: 'Observation Status',
+    note: 'Score observation above the unit\'s routine level only. Checks every patient on the unit receives (for example, routine Q15) are not scored. Each patient on 1:1 is also entered on New Shift Entry, where it takes one staff member out of the count.',
     items: [
       { id: 'obs_1to1', label: 'Constant Observation (1:1)', points: 5 },
-      { id: 'obs_q15', label: 'Q15 Observation', points: 3 },
+      { id: 'obs_q15', label: 'Q15 Observation (above the unit\'s routine level)', points: 3 },
       { id: 'obs_los', label: 'Line-of-sight', points: 2 },
     ],
   },

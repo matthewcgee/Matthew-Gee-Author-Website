@@ -66,7 +66,8 @@ describe('downtime shift worksheet', () => {
     expect(ed).not.toContain('Staff on shift')
     const ip = text(shiftWorksheetHtml([IP], v1))
     expect(ip).toContain('Staff on shift')
-    expect(ip).toContain('Points staff')
+    expect(ip).toContain('Patients on 1:1')
+    expect(ip).toContain('Your rating M / S / U')
   })
 
   it('has a week of AM and PM rows and a blank page when there are no units', () => {

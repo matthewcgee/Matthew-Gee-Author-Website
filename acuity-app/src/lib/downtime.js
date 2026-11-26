@@ -44,8 +44,9 @@ const STYLE = `
   .cols { display: flex; gap: 14px; } .cols > div { flex: 1; }
 `
 
-function doc(title, body) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${STYLE}</style></head><body>${body}</body></html>`
+function doc(title, body, { landscape = false } = {}) {
+  const page = landscape ? '@page { size: letter landscape; margin: 0.45in; }' : ''
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>${STYLE}${page}</style></head><body>${body}</body></html>`
 }
 
 function savedOn(cal) {
@@ -77,7 +78,7 @@ export function zoneCardHtml(calibration) {
     <table><tr><th>Zone set</th><th>GREEN</th><th>YELLOW</th><th>RED</th><th>Measured as</th></tr>
       ${ZONE_SET_IDS.map((s) => cutoffRow(s, th)).join('')}
     </table>
-    <div class="note">Inpatient units: acuity per staff = total AcuiCalc&#8482; points for the unit &divide; staff on shift. Emergency departments: the total of AcuiCalc&#8482; points.</div>
+    <div class="note">Inpatient units: acuity per staff = total AcuiCalc&#8482; points for the unit &divide; (staff on shift &minus; patients on 1:1), never less than 1, because each 1:1 takes one staff member entirely. Emergency departments: the total of AcuiCalc&#8482; points. Observation that every patient on the unit receives (for example, routine Q15) is not scored.</div>
     <h2>Zone responses</h2>
     <table>${ZONE_STAGES.map((s) => `<tr><th style="width:90px">${s}</th><td>${escapeHtml(zoneResponse(calibration, s))}</td></tr>`).join('')}</table>
     <div class="warn">${MASS_ESCALATION.map((m) => escapeHtml(m.label)).join('<br>')}</div>
@@ -109,8 +110,8 @@ function worksheetPage(loc, calibration) {
     ? `GREEN ${fmt(th[set].greenMax)} or less &middot; YELLOW above ${fmt(th[set].greenMax)} to ${fmt(th[set].yellowMax)} &middot; RED above ${fmt(th[set].yellowMax)} (${escapeHtml(ZONE_SETS[set].unit)})`
     : ZONE_SET_IDS.map((s) => `${escapeHtml(ZONE_SETS[s].label)}: GREEN &le; ${fmt(th[s].greenMax)}, YELLOW &le; ${fmt(th[s].yellowMax)}`).join(' &middot; ')
   const head = isEd
-    ? ['Date', 'Shift', 'Census', 'BH points', 'BH arrivals', 'Boarders', 'Boarding hours', 'Zone G / Y / R', 'Charge RN', 'Entered in Acuitas']
-    : ['Date', 'Shift', 'Census', 'Acuity points', 'Staff on shift', 'Points &divide; staff', 'Zone G / Y / R', 'Staff moved in / out', 'Charge RN', 'Entered in Acuitas']
+    ? ['Date', 'Shift', 'Census', 'BH points', 'BH arrivals', 'Boarders', 'Boarding hours', 'Zone G / Y / R', 'Your rating M / S / U', 'Charge RN', 'Entered in Acuitas']
+    : ['Date', 'Shift', 'Census', 'Acuity points', 'Staff on shift', 'Patients on 1:1', 'Points &divide; (staff &minus; 1:1)', 'Zone G / Y / R', 'Your rating M / S / U', 'Staff moved in / out', 'Charge RN', 'Entered in Acuitas']
   const rows = Array.from({ length: WORKSHEET_ROWS }, (_, i) =>
     `<tr>${head.map((h, c) => `<td>${c === 1 ? (i % 2 ? 'PM' : 'AM') : ''}</td>`).join('')}</tr>`).join('')
   return `<div class="page">
@@ -118,14 +119,14 @@ function worksheetPage(loc, calibration) {
     <div class="sub">Unit: <b>${name}</b>${loc ? ` &middot; ${isEd ? 'Emergency department' : 'Inpatient'}` : ''} &middot; ${INSTRUMENT_NAME} calibration ${escapeHtml(versionLabel(calibration))}</div>
     <div class="note">${zones}</div>
     <table class="write"><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>${rows}</table>
-    <div class="note">Record each shift within 2 hours of its start. Log staff moves in Staff Deployments when Acuitas returns, and enter every shift in New Shift Entry; then initial the last column. No patient names, initials or MRNs on this sheet.</div>
+    <div class="note">Rate the shift yourself (Manageable / Strained / Unsafe) before working out the zone; your rating never changes the zone. Record each shift within 2 hours of its start. Log staff moves in Staff Deployments when Acuitas returns, and enter every shift in New Shift Entry; then initial the last column. No patient names, initials or MRNs on this sheet.</div>
   </div>`
 }
 
 /** One worksheet page per unit (or a single blank page when no units exist). */
 export function shiftWorksheetHtml(locations, calibration) {
   const list = (locations || []).length ? locations : [null]
-  return doc('Shift Acuity Worksheet', list.map((l) => worksheetPage(l, calibration)).join(''))
+  return doc('Shift Acuity Worksheet', list.map((l) => worksheetPage(l, calibration)).join(''), { landscape: true })
 }
 
 /** Print an HTML document from a hidden frame (no pop-up window needed). */

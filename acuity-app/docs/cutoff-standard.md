@@ -10,9 +10,17 @@ on this shift manageable, strained or unsafe?**
 
 | Setting | Score | Why |
 |---|---|---|
-| Inpatient unit | AcuiCalc™ points ÷ staff on shift | Staffing is logged each shift, so workload per caregiver is measured directly |
+| Inpatient unit | AcuiCalc™ points ÷ (staff on shift − patients on 1:1), never less than 1 | Staffing is logged each shift, so workload per caregiver is measured directly. A 1:1 takes one staff member entirely, so that person is not counted as sharing the rest of the unit |
 | Emergency department | Total AcuiCalc™ points | The ED score is not divided by staff, so its cutoffs carry the staffing inside them |
 | Pediatric ED | Total points, including pediatric modifiers | As the ED |
+
+**Routine observation is not scored.** Observation that every patient on a
+unit receives (for example, routine Q15 checks) is the unit's baseline, not
+acuity. AcuiCalc™ scores only observation above the unit's routine level.
+
+These two rules are AcuiCalc™ instrument 2. Every saved shift records the
+instrument version it was scored under. Shifts saved earlier are instrument 1
+and are never re-scored.
 
 ## 2. Starting points
 
@@ -48,32 +56,27 @@ unit that nurses know well. The reference is a typical adult unit: average
 census 18, normally staffed with 4–5, so 3.6–4.5 patients per staff member
 before any acuity is counted.
 
-| Staff on shift | GREEN | YELLOW | RED |
-|---|---|---|---|
-| 4 | 6 points or less | 6.5–10 | above 10 |
-| 5 | 7.5 or less | 8–12.5 | above 12.5 |
+Acuity per staff = points ÷ (staff on shift − patients on 1:1).
 
-| Shift on the reference unit | Points | 4 staff | 5 staff |
-|---|---|---|---|
-| Two patients on detox | 4 | GREEN | GREEN |
-| One 1:1 | 5 | GREEN | GREEN |
-| One 1:1 + one restraint | 9 | YELLOW | YELLOW |
-| Two 1:1s | 10 | YELLOW | YELLOW |
-| Two 1:1s + an aggression | 14 | RED | RED |
-| Every patient on Q15 | 54 | RED | RED |
+| Shift on the reference unit | Points | 1:1s | 4 staff | 5 staff |
+|---|---|---|---|---|
+| Two patients on detox | 4 | 0 | GREEN (1.0) | GREEN (0.8) |
+| One 1:1 | 5 | 1 | YELLOW (1.67) | GREEN (1.25) |
+| One 1:1 + one restraint | 9 | 1 | RED (3.0) | YELLOW (2.25) |
+| Two 1:1s | 10 | 2 | RED (5.0) | RED (3.33) |
+| Two 1:1s + an aggression | 14 | 2 | RED (7.0) | RED (4.67) |
+| Routine Q15 for every patient (not scored) | 0 | 0 | GREEN | GREEN |
 
-Questions this raises, to settle before day 1:
+These results come from the instrument 2 rules (section 1), adopted after
+this check found two problems in the original scoring:
 
-- **A 1:1 uses a whole staff member.** Two 1:1s on 4 staff leave 2 people
-  for 16 patients, yet the zone is YELLOW. Either the cutoffs or the 1:1 weight
-  are too lenient for that case, or a 1:1 should count as a staff member
-  removed from the denominator.
-- **Baseline observation.** If Q15 checks are routine for every patient on a
-  unit, counting them as acuity puts the unit in RED every shift. Score Q15
-  only when it is above the unit's routine observation level.
-- **Census is not in the zone.** The zone moves with acuity and staff, not
-  with headcount: 22 patients score the same as 18 if the points are the same.
-  Headcount is tracked separately against the unit's nursing census cap.
+- Two 1:1s on 4 staff, which leaves 2 people for 16 patients, read only YELLOW.
+- Routine Q15 checks put the unit in RED every shift.
+
+Census is still not part of the zone. The zone moves with acuity and staff,
+not with headcount: 22 patients score the same as 18 if the points and staff
+are the same. Headcount is tracked separately against the unit's nursing
+census cap.
 
 ## 3. Evidence: the contrasting-groups method
 

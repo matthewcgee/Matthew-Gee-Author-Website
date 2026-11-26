@@ -550,6 +550,10 @@ export default function HelpGuide({ locations = null, calibration = null } = {})
           <Step n="6">
             <b>Staff on Shift</b> — number of RNs/MHTs staffed (not shown for the ED, since ED status is based
             on total points only).
+          
+            Then <b>Patients on 1:1</b> — how many patients are on constant observation. Each one takes a staff
+            member out of the count, so acuity per staff = points ÷ (staff on shift − patients on 1:1). Four staff
+            with one 1:1 are scored as three staff covering everyone else.
           </Step>
           <Step n="7">
             <b>Notes</b> — optional free text for anything worth flagging.
@@ -703,7 +707,7 @@ export default function HelpGuide({ locations = null, calibration = null } = {})
           <Step n="3">
             Check every box that applies across <b>four scoring categories</b>:
             <ul style={{ marginTop: 6, paddingLeft: 20, lineHeight: 1.7 }}>
-              <li><b>A. Observation Status</b> — level of observation required (1:1=5 pts, Q15=3 pts, line-of-sight=2 pts).</li>
+              <li><b>A. Observation Status</b> — level of observation required (1:1=5 pts, Q15=3 pts, line-of-sight=2 pts). Score only observation above the unit&rsquo;s routine level: if every patient on the unit is on Q15 checks, Q15 is not scored.</li>
               <li><b>B. Behavioral Risk (last 24 hours)</b> — aggression, restraints, PRN sedation, suicide/self-injury, homicidal ideation.</li>
               <li><b>C. Clinical Complexity</b> — psychosis, mania, detox protocol, elopement risk, forensic hold, severe personality disorder behavior.</li>
               <li>

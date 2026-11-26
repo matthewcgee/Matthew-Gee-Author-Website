@@ -14,7 +14,7 @@
 //   regionAcuity            scale every unit's predicted acuity
 //   floatStaff              float staff available to the optimizer
 
-import { computeStage, thresholdsFor } from './model.js'
+import { computeStage, thresholdsFor, availableStaff, oneToOneCount } from './model.js'
 import { probabilityAbove } from './risk.js'
 import { recommendDeployment } from './optimize.js'
 
@@ -39,8 +39,10 @@ function scenarioUnit({ loc, latest, forecast, censusForecast, cap, thresholds, 
   const mult = (Number(scenario.acuityMultiplier?.[loc.id]) || 1) * (Number(scenario.regionAcuity) || 1)
   // The forecast is acuity per staff at today's staffing; recover the point
   // load, scale it, and spread it over the scenario's staffing.
-  const points = point.p50 * baseStaff * mult
-  const uai = staff > 0 ? points / staff : Infinity
+  // Staff committed to 1:1s stay committed in the scenario.
+  const reserved = oneToOneCount(latest)
+  const points = point.p50 * availableStaff(baseStaff, reserved) * mult
+  const uai = staff > 0 ? points / availableStaff(staff, reserved) : Infinity
   const stage = staff > 0 ? computeStage(uai, th) : 'RED'
   const pRed = staff > 0 ? probabilityAbove({ ...point, p50: uai }, th.yellowMax) : 1
 

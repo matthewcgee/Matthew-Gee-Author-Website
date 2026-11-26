@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Card, Field, Button, Badge, theme } from './ui.jsx'
 import { uid, today } from '../lib/storage.js'
-import { computeEntryValue, computeStage, thresholdsFor, STAGE_COLORS } from '../lib/model.js'
+import { computeEntryValue, computeStage, thresholdsFor, availableStaff, STAGE_COLORS } from '../lib/model.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
 import { SHIFT_RATINGS } from '../lib/cutoffEvidence.js'
 
@@ -12,6 +12,7 @@ const emptyForm = (locId) => ({
   census: '',
   points: '',
   staff: '',
+  oneToOne: '',
   capInPlace: false,
   bhArrivals: '',
   boarders: '',
@@ -46,6 +47,7 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
   const previewEntry = {
     points: Number(form.points) || 0,
     staff: Number(form.staff) || 0,
+    oneToOne: Number(form.oneToOne) || 0,
     census: Number(form.census) || 0,
   }
   const previewValue = loc ? computeEntryValue(previewEntry, loc, thresholds) : null
@@ -64,6 +66,9 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
       census: form.census === '' ? null : Number(form.census),
       points: Number(form.points) || 0,
       staff: isEd ? null : Number(form.staff) || 0,
+      // Patients on constant (1:1) observation: each takes one staff member
+      // out of the count that shares the rest of the unit's acuity.
+      ...(isEd ? {} : { oneToOne: Math.max(0, Math.floor(Number(form.oneToOne) || 0)) }),
       capInPlace: !isEd && form.capInPlace,
       ...(isEd ? { bhArrivals: optNum(form.bhArrivals), boarders: optNum(form.boarders), boardingHours: optNum(form.boardingHours) } : {}),
       notes: form.notes,
@@ -163,6 +168,11 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
                   <input type="number" min="0" step="0.1" value={form.staff} onChange={set('staff')} required />
                 </Field>
               )}
+              {!isEd && (
+                <Field label="Patients on 1:1" hint="Constant observation. Each takes one staff member out of the count.">
+                  <input type="number" min="0" step="1" value={form.oneToOne} onChange={set('oneToOne')} placeholder="0" />
+                </Field>
+              )}
             </div>
 
             {isEd && (
@@ -210,7 +220,12 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, marginBottom: 4 }}>
                 <span style={{ fontSize: 12.5, color: theme.sub }}>Computed:</span>
                 <span style={{ fontWeight: 700 }}>{previewValue.toFixed(isEd ? 0 : 2)}</span>
-                <span style={{ fontSize: 12, color: theme.sub }}>{previewTh.unit}</span>
+                <span style={{ fontSize: 12, color: theme.sub }}>
+                  {previewTh.unit}
+                  {!isEd && previewEntry.oneToOne > 0 && previewEntry.staff > 0
+                    ? ` · ${previewEntry.points} points ÷ ${availableStaff(previewEntry.staff, previewEntry.oneToOne)} staff free (${previewEntry.staff} on shift − ${previewEntry.oneToOne} on 1:1)`
+                    : ''}
+                </span>
                 <Badge color={STAGE_COLORS[previewStage]}>{previewStage}</Badge>
               </div>
             )}

@@ -11,7 +11,7 @@
 // — an empirical predictive distribution, not an assumed bell curve — so the
 // numbers degrade honestly when a unit's history is short or erratic.
 
-import { thresholdsFor, computeStage, safeDiv } from './model.js'
+import { thresholdsFor, computeStage, safeDiv, availableStaff, oneToOneCount } from './model.js'
 import { mean, median, slotOfWeek, labelSlotOfWeek } from './forecast.js'
 
 export const RISK_BANDS = [
@@ -280,9 +280,10 @@ export function explainForecast(forecast, point) {
 export function decomposeUai(prev, curr) {
   if (!prev || !curr) return null
   const p0 = Number(prev.points) || 0
-  const s0 = Number(prev.staff) || 0
+  // Staff free for the unit: those on a 1:1 are committed (computeEntryValue).
+  const s0 = availableStaff(prev.staff, oneToOneCount(prev))
   const p1 = Number(curr.points) || 0
-  const s1 = Number(curr.staff) || 0
+  const s1 = availableStaff(curr.staff, oneToOneCount(curr))
   if (!s0 || !s1) return null
 
   const from = safeDiv(p0, s0)

@@ -23,7 +23,7 @@
 // evidence that it will still be GREEN next shift, and a risk with no history
 // behind it cannot be quantified.
 
-import { computeStage, thresholdsFor, safeDiv } from './model.js'
+import { computeStage, thresholdsFor, safeDiv, availableStaff, oneToOneCount } from './model.js'
 import { probabilityAbove } from './risk.js'
 import { buildSeries, SEASON_LENGTH } from './forecast.js'
 
@@ -69,6 +69,7 @@ export function donorEligibility({
   th,
   staffFloor = DEFAULT_STAFF_FLOOR,
   minHistory = DONOR_MIN_HISTORY,
+  reserved = 0,
 }) {
   if (observations < minHistory) {
     return { eligible: false, reason: DONOR_INELIGIBLE.THIN_HISTORY, observations, required: minHistory }
@@ -76,7 +77,7 @@ export function donorEligibility({
   if (staff - 1 < staffFloor) {
     return { eligible: false, reason: DONOR_INELIGIBLE.AT_FLOOR, observations, required: minHistory }
   }
-  if (unitRisk({ points, staff, th }).stage !== 'GREEN') {
+  if (unitRisk({ points, staff, th, reserved }).stage !== 'GREEN') {
     return { eligible: false, reason: DONOR_INELIGIBLE.NOT_GREEN, observations, required: minHistory }
   }
   return { eligible: true, reason: null, observations, required: minHistory }
@@ -88,12 +89,14 @@ export function donorEligibility({
  * Exposure-weighted: a 20-bed unit sitting in RED puts more patients at risk
  * than a 6-bed unit in RED, and the optimizer should feel that difference.
  */
-export function unitRisk({ points, staff, th, exposure = 1 }) {
+export function unitRisk({ points, staff, th, exposure = 1, reserved = 0 }) {
   const s = Number(staff) || 0
   const p = Number(points) || 0
   if (s <= 0) return { uai: Infinity, stage: 'RED', risk: STAGE_WEIGHT.RED * 4 * exposure }
 
-  const uai = safeDiv(p, s)
+  // `reserved` = staff committed to patients on 1:1, who cannot share the
+  // rest of the unit's load (the same rule as computeEntryValue).
+  const uai = safeDiv(p, availableStaff(s, reserved))
   const stage = computeStage(uai, th)
   const greenMax = th.greenMax > 0 ? th.greenMax : 1
   const excess = Math.max(0, (uai - greenMax) / greenMax)
@@ -143,19 +146,22 @@ export function buildUnitStates({
     const forecast = forecasts[loc.id]
     const nextPoint = forecast?.ok ? forecast.points?.[0] : null
 
-    // Forecast mode predicts acuity-per-staff; multiplying by current staffing
-    // recovers the point load that staffing decisions actually act on.
+    // Staff committed to 1:1s on the latest shift stay committed.
+    const reserved = oneToOneCount(latest)
+
+    // Forecast mode predicts acuity-per-staff; multiplying by the staff free
+    // for the unit recovers the point load that staffing decisions act on.
     const points = mode === 'forecast' && nextPoint
-      ? Math.max(0, nextPoint.p50 * staff)
+      ? Math.max(0, nextPoint.p50 * availableStaff(staff, reserved))
       : Number(latest.points) || 0
 
     const exposure = Number(latest.census) > 0 ? Number(latest.census) : 1
-    const base = unitRisk({ points, staff, th, exposure })
+    const base = unitRisk({ points, staff, th, exposure, reserved })
 
     // Counted through buildSeries so "a logged shift" means exactly what it
     // means to the forecast engine — one reading per shift, duplicates resolved.
     const observations = buildSeries(entries, loc, thresholds).length
-    const donor = donorEligibility({ observations, points, staff, th, staffFloor, minHistory: donorMinHistory })
+    const donor = donorEligibility({ observations, points, staff, th, staffFloor, minHistory: donorMinHistory, reserved })
 
     states.push({
       loc,
@@ -164,6 +170,7 @@ export function buildUnitStates({
       mode,
       points,
       staff,
+      reserved,
       exposure,
       observations,
       donor,
@@ -173,17 +180,17 @@ export function buildUnitStates({
       forecastPoint: nextPoint,
       // How many staff this unit could release while still holding GREEN — zero
       // for any unit not yet eligible to donate at all.
-      releasable: donor.eligible ? releasableStaff({ points, staff, th, staffFloor }) : 0,
+      releasable: donor.eligible ? releasableStaff({ points, staff, th, staffFloor, reserved }) : 0,
     })
   }
 
   return states
 }
 
-function releasableStaff({ points, staff, th, staffFloor = DEFAULT_STAFF_FLOOR }) {
+function releasableStaff({ points, staff, th, staffFloor = DEFAULT_STAFF_FLOOR, reserved = 0 }) {
   let k = 0
   while (k < MAX_PULL_PER_UNIT && staff - (k + 1) >= staffFloor) {
-    const { stage } = unitRisk({ points, staff: staff - (k + 1), th })
+    const { stage } = unitRisk({ points, staff: staff - (k + 1), th, reserved })
     if (stage !== 'GREEN') break
     k++
   }
@@ -241,7 +248,7 @@ export function optimizeAllocation(states, { floatStaff = 0, moveCost = DEFAULT_
     for (let k = -u.releasable; k <= Math.min(maxAddPerUnit, float + maxPull); k++) {
       const staff = u.staff + k
       if (staff < DEFAULT_STAFF_FLOOR) continue
-      const { uai, stage, risk } = unitRisk({ points: u.points, staff, th: u.th, exposure: u.exposure })
+      const { uai, stage, risk } = unitRisk({ points: u.points, staff, th: u.th, exposure: u.exposure, reserved: u.reserved })
       // `k || 0` normalizes the -0 that appears when releasable is 0.
       opts.push({ k: k || 0, staff, uai, stage, cost: risk + Math.abs(k) * moveCost })
     }
@@ -298,7 +305,7 @@ export function optimizeAllocation(states, { floatStaff = 0, moveCost = DEFAULT_
   }
 
   const optimizedRisk = states.reduce((sum, u, i) => {
-    const { risk } = unitRisk({ points: u.points, staff: u.staff + deltas[i], th: u.th, exposure: u.exposure })
+    const { risk } = unitRisk({ points: u.points, staff: u.staff + deltas[i], th: u.th, exposure: u.exposure, reserved: u.reserved })
     return sum + risk
   }, 0)
 
@@ -329,7 +336,7 @@ export function planMoves(states, allocation, { forecasts = {} } = {}) {
 
   const units = states.map((u, i) => {
     const delta = allocation.deltas[i] || 0
-    const after = unitRisk({ points: u.points, staff: u.staff + delta, th: u.th, exposure: u.exposure })
+    const after = unitRisk({ points: u.points, staff: u.staff + delta, th: u.th, exposure: u.exposure, reserved: u.reserved })
     const forecast = forecasts[u.loc.id]
     const point = forecast?.ok ? forecast.points?.[0] : null
 

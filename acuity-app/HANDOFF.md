@@ -452,6 +452,12 @@ edited under Settings → AcuiCalc™ calibration):
   is the signed-in person, a reason and reviewers are present, points within
   the limit, zones in order. Moving a unit between zone sets is audited unit by
   unit. On Firestore, `appConfig/acuiCalibration` is admin-only and append-only.
+- **AcuiCalc™ instrument 2.** Inpatient acuity per staff = points ÷ (staff on
+  shift − patients on 1:1), never below 1, because each 1:1 takes one staff
+  member entirely. New Shift Entry records patients on 1:1. Observation every
+  patient on a unit receives (routine Q15) is not scored. Each saved shift
+  records `instrumentVersion`, and earlier shifts read as instrument 1,
+  unchanged.
 - **Cutoff evidence.** Charge nurses rate each shift Manageable, Strained or
   Unsafe before the zone is shown. Outcomes & ROI → Cutoff evidence tests each
   cutoff against those ratings by the contrasting-groups method (95% bootstrap

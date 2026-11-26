@@ -296,7 +296,7 @@ export default function Reports({ locations, entries, deployments, thresholds, o
                   animationDuration={700}
                 >
                   {stageDistribution.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} stroke="none" />
+                    <Cell key={entry.name} fill={entry.color} stroke="none" aria-label={`${entry.name}: ${entry.value}`} />
                   ))}
                 </Pie>
                 <Tooltip contentStyle={{ background: theme.panelAlt, border: `1px solid ${theme.border}`, borderRadius: 8 }} />

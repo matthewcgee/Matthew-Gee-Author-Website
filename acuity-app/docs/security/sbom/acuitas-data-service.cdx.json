@@ -1,0 +1,4985 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.5.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:cc8f2a44-b4c9-4b30-80a7-9906cc7f6483",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-11-26T03:22:20.650Z",
+    "lifecycles": [
+      {
+        "phase": "build"
+      }
+    ],
+    "tools": [
+      {
+        "vendor": "npm",
+        "name": "cli",
+        "version": "10.9.9"
+      }
+    ],
+    "component": {
+      "bom-ref": "acuitas-data-service@1.0.0",
+      "type": "library",
+      "name": "api",
+      "version": "1.0.0",
+      "scope": "required",
+      "description": "Acuitas data service: the shared-database API for Azure Static Web Apps, Azure Functions, App Service or an on-premises Node server.",
+      "purl": "pkg:npm/acuitas-data-service@1.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": ""
+        },
+        {
+          "name": "cdx:npm:package:private",
+          "value": "true"
+        }
+      ],
+      "externalReferences": []
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "@azure-rest/core-client@2.9.0",
+      "type": "library",
+      "name": "@azure-rest/core-client",
+      "version": "2.9.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Core library for interfacing with Azure Rest Clients",
+      "purl": "pkg:npm/%40azure-rest/core-client@2.9.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure-rest/core-client"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure-rest/core-client/-/core-client-2.9.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-client-rest/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ebddf7bcd2ea874e9147baee9a7aeadd4648781b512de0470cf32b89e0cf2258e209a30cc2dd27470fbe9dddd33b18a886d6ac36d9b6f6b0be6fff5954a08eaa"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/abort-controller@2.2.0",
+      "type": "library",
+      "name": "@azure/abort-controller",
+      "version": "2.2.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Microsoft Azure SDK for JavaScript - Aborter",
+      "purl": "pkg:npm/%40azure/abort-controller@2.2.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/abort-controller"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/abort-controller/-/abort-controller-2.2.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/abort-controller/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7cd0235a703f9d9da3cf7d64c51fc0a916944fc7b01c1c3f5ae048a2c2b49a8332d42f5ee556a56c37c5748c49cd538e61a62457f6f61754b81ff6878aa7d542"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-auth@1.11.0",
+      "type": "library",
+      "name": "@azure/core-auth",
+      "version": "1.11.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Provides low-level interfaces and helper methods for authentication in Azure SDK",
+      "purl": "pkg:npm/%40azure/core-auth@1.11.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-auth"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-auth/-/core-auth-1.11.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/core-auth/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2146727724d49039d876cb4e5bda4538e5109418c07a92b9b5e8a10c4df1eb2c6c3c9b3f86c01a698a5e1b1771ae0b4e8896c12928ca5bb30393b00485be0b46"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-client@1.11.2",
+      "type": "library",
+      "name": "@azure/core-client",
+      "version": "1.11.2",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Core library for interfacing with AutoRest generated code",
+      "purl": "pkg:npm/%40azure/core-client@1.11.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-client"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-client/-/core-client-1.11.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-client/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6a3b8853568ca13b3f11162b2a722a42b579573dd12fc9b00c2e5175e7485d4bd1ee98ba716cde626b742df373ebe5bdd42b823b85891b4cc0ebe3e15355fe87"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-lro@2.7.2",
+      "type": "library",
+      "name": "@azure/core-lro",
+      "version": "2.7.2",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Isomorphic client library for supporting long-running operations in node.js and browser.",
+      "purl": "pkg:npm/%40azure/core-lro@2.7.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-lro"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-lro/-/core-lro-2.7.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-lro/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d1822971ca17f26fe4d343bb9830cc749a5bafa99fd725a8d9d7e6c6de40f17559555333d9248a6846cc09e251be043421a4a5aa18d3e3ba78855211472f74c7"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-paging@1.7.0",
+      "type": "library",
+      "name": "@azure/core-paging",
+      "version": "1.7.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Core types for paging async iterable iterators",
+      "purl": "pkg:npm/%40azure/core-paging@1.7.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-paging"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-paging/-/core-paging-1.7.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/core-paging/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ec6100a08b1aa01afa2842cd45bf27ca9a300aabe4f1d9c21c50988385c3e25390198d86aa3420e48864463c811513b5f0219232ad393da36a48e13d190ae8de"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-process@1.0.0",
+      "type": "library",
+      "name": "@azure/core-process",
+      "version": "1.0.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Secure, cross-platform process launching for Node.js",
+      "purl": "pkg:npm/%40azure/core-process@1.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-process"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-process/-/core-process-1.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/core-process"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fec86727ea283bc58fc4384f11e23fda8450bae6e7d7a819e82be56e959b12cc197f3c08f6d23fb0c007985df1d4bb90f726585df2d6dd38f318c2c40b96e52a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-rest-pipeline@1.25.1",
+      "type": "library",
+      "name": "@azure/core-rest-pipeline",
+      "version": "1.25.1",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Isomorphic client library for making HTTP requests in node.js and browser.",
+      "purl": "pkg:npm/%40azure/core-rest-pipeline@1.25.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-rest-pipeline"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-rest-pipeline/-/core-rest-pipeline-1.25.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/core-rest-pipeline/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7d3200dc2026fdc74e0ea89790eea360e22453662595deefabae4a19cef4813c25d76b0b42c0bcbfb239b7ab69d8dd827d438dcd9057c9e170eca12ee8ab36ce"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-tracing@1.4.0",
+      "type": "library",
+      "name": "@azure/core-tracing",
+      "version": "1.4.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Provides low-level interfaces and helper methods for tracing in Azure SDK",
+      "purl": "pkg:npm/%40azure/core-tracing@1.4.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-tracing"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-tracing/-/core-tracing-1.4.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-tracing/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "786c310f402d9dcaf1781338b46f11e793dcdeb757d61356d9689b240818a42540e84f779afbd51fe2dcb2ca158ce06b48a592e79c84207b24d17f1cb4799f39"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/core-util@1.14.0",
+      "type": "library",
+      "name": "@azure/core-util",
+      "version": "1.14.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Core library for shared utility methods",
+      "purl": "pkg:npm/%40azure/core-util@1.14.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/core-util"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/core-util/-/core-util-1.14.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/core/core-util/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f67da958aeb5bde02e374576d2df653aea15e0214c772019d72819cef04693fa410494626ff3e32fd3cb5dafda23609c3e9c877ea56cc71a8b09897ab9995f0f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/functions@4.17.1",
+      "type": "library",
+      "name": "@azure/functions",
+      "version": "4.17.1",
+      "scope": "required",
+      "author": "Microsoft",
+      "description": "Microsoft Azure Functions NodeJS Framework",
+      "purl": "pkg:npm/%40azure/functions@4.17.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/functions"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/functions/-/functions-4.17.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-functions-nodejs-library.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-functions-nodejs-library"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-functions-nodejs-library/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "baf7c0a14fe3f3da75209e298b5af80c9cacce799b74b57f299831dba4f1177cf4e829eed8d8a23592c72fcdca9bda07cbeb12b9a4942ae12c763df6b4bdc2e8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/functions-extensions-base@0.3.0",
+      "type": "library",
+      "name": "@azure/functions-extensions-base",
+      "version": "0.3.0",
+      "scope": "required",
+      "author": "Microsoft",
+      "description": "Node.js Azure Storage Client extension implementations for Azure Functions",
+      "purl": "pkg:npm/%40azure/functions-extensions-base@0.3.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/functions-extensions-base"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/functions-extensions-base/-/functions-extensions-base-0.3.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-functions-nodejs-extensions.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-functions-nodejs-extensions-base#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-functions-nodejs-extensions/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0aec7484bbb9657942fca6fecaf2558512c87647c5c2e8b61de4f9a0664bd34aff182514921193cd17d952344de01abbdbd98fbf7a243ee733db3ed23102d2b4"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/identity@4.14.1",
+      "type": "library",
+      "name": "@azure/identity",
+      "version": "4.14.1",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Provides credential implementations for Azure SDK libraries that can authenticate with Microsoft Entra ID",
+      "purl": "pkg:npm/%40azure/identity@4.14.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/identity"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/identity/-/identity-4.14.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/identity/identity/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "1c7bae16b98dd6eb85f43e40e9a028e5e1f3345357e10f8fe1292c66a0cab1ee58689145cbfcc32c6df05c7115d8554681eb59dd033c8c6511341b674187f535"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/keyvault-common@2.1.1",
+      "type": "library",
+      "name": "@azure/keyvault-common",
+      "version": "2.1.1",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Common internal functionality for all of the Azure Key Vault clients in the Azure SDK for JavaScript",
+      "purl": "pkg:npm/%40azure/keyvault-common@2.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/keyvault-common"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/keyvault-common/-/keyvault-common-2.1.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/keyvault/keyvault-common/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4b1a6898945305f0d3427ba28b7c35d169d93502463cd8b5e6d44f74f510cfb06ac81df293defa92712e792ed1d07f6448bb576cfd302595d187411b45343497"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/keyvault-keys@4.11.0",
+      "type": "library",
+      "name": "@azure/keyvault-keys",
+      "version": "4.11.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Isomorphic client library for Azure KeyVault's keys.",
+      "purl": "pkg:npm/%40azure/keyvault-keys@4.11.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/keyvault-keys"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/keyvault-keys/-/keyvault-keys-4.11.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/keyvault/keyvault-keys/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6a3e058956f08a60bf6af57848a2766409a42b51fb7e1e17587619541a200d195b5091ee35366a31194e23840a848bea1d085632bcb0da136db31caf8d8f471f"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/logger@1.4.0",
+      "type": "library",
+      "name": "@azure/logger",
+      "version": "1.4.0",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Microsoft Azure SDK for JavaScript - Logger",
+      "purl": "pkg:npm/%40azure/logger@1.4.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/logger"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/logger/-/logger-1.4.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/logger/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "adb004db92947e353fb375c751d26071ea023f97443a9331f39274e2417e40c76d6bbdd792e1bd2461c78a7721f972282a905daa58e29fe2aa511a49ae24b32c"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/msal-browser@5.30.0",
+      "type": "library",
+      "name": "@azure/msal-browser",
+      "version": "5.30.0",
+      "scope": "required",
+      "author": "Microsoft",
+      "description": "Microsoft Authentication Library for js",
+      "purl": "pkg:npm/%40azure/msal-browser@5.30.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/msal-browser"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/msal-browser/-/msal-browser-5.30.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/AzureAD/microsoft-authentication-library-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/AzureAD/microsoft-authentication-library-for-js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/AzureAD/microsoft-authentication-library-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a3f003c56c4415c56b13ae5aeecb0e1aec678afabc95ccbeda148694e3b0b67d2019dea28b0977abcfc1315468ad813cd5407faf807ef161845315a7a8feebc8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/msal-common@16.17.0",
+      "type": "library",
+      "name": "@azure/msal-common",
+      "version": "16.17.0",
+      "scope": "required",
+      "author": "Microsoft",
+      "description": "Microsoft Authentication Library for js",
+      "purl": "pkg:npm/%40azure/msal-common@16.17.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/msal-common"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/msal-common/-/msal-common-16.17.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/AzureAD/microsoft-authentication-library-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/AzureAD/microsoft-authentication-library-for-js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/AzureAD/microsoft-authentication-library-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "acdbed126ec0c738f5f277889340bc923af56576c9b079160ea19e7427ce88b5418d20b158171b276ebf23b83da30a1e18a528cab3a0b3bddc224ed6c4b77da8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@azure/msal-node@7.2.3",
+      "type": "library",
+      "name": "@azure/msal-node",
+      "version": "7.2.3",
+      "scope": "required",
+      "author": "Microsoft",
+      "description": "Microsoft Authentication Library for Node",
+      "purl": "pkg:npm/%40azure/msal-node@7.2.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@azure/msal-node"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@azure/msal-node/-/msal-node-7.2.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/AzureAD/microsoft-authentication-library-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/AzureAD/microsoft-authentication-library-for-js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/AzureAD/microsoft-authentication-library-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "791228e57b90009aee6e8e39d788049e6444288df9d38e4b22d8ee70e10afd8350623dcb844a5811b05daa396eff099df5172aa76737189e329c5a04a9bcb7b2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@js-joda/core@5.7.0",
+      "type": "library",
+      "name": "@js-joda/core",
+      "version": "5.7.0",
+      "scope": "required",
+      "author": "pithu",
+      "description": "a date and time library for javascript",
+      "purl": "pkg:npm/%40js-joda/core@5.7.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@js-joda/core"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@js-joda/core/-/core-5.7.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/js-joda/js-joda.git"
+        },
+        {
+          "type": "website",
+          "url": "https://js-joda.github.io/js-joda"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/js-joda/js-joda/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "581bb850b555c7248b2f32b53e9abe39d7cff9a7514b89ed983413f75e6bcc327efa2f7981cda366433907a2d6100c0dde5197a5f89edf23c0068cdd0f72b756"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@tediousjs/connection-string@0.5.0",
+      "type": "library",
+      "name": "@tediousjs/connection-string",
+      "version": "0.5.0",
+      "scope": "required",
+      "author": "Dan Hensby",
+      "description": "SQL ConnectionString parser",
+      "purl": "pkg:npm/%40tediousjs/connection-string@0.5.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@tediousjs/connection-string"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@tediousjs/connection-string/-/connection-string-0.5.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/tediousjs/connection-string.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/tediousjs/connection-string#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/tediousjs/connection-string/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "eea4a065b8a77030c3172470782204bd950b140c398b3fc37ae9e1beec692f7d677e7b57dcfe187781e41c1460f47f0276a6357b95853753d9233fd110bf4c55"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@types/node@26.6.11",
+      "type": "library",
+      "name": "@types/node",
+      "version": "26.6.11",
+      "scope": "required",
+      "description": "TypeScript definitions for node",
+      "purl": "pkg:npm/%40types/node@26.6.11",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@types/node"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@types/node/-/node-26.6.11.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/DefinitelyTyped/DefinitelyTyped.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b94c90d972c4cfe117877e25992dc684aae4aa7ffc154eca522291a64df8ec0b766e69cc556b2ce39cb3f1be051bfb54b66575b55ffe4d59084c8b4f44ec9e79"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@types/readable-stream@4.0.25",
+      "type": "library",
+      "name": "@types/readable-stream",
+      "version": "4.0.25",
+      "scope": "required",
+      "description": "TypeScript definitions for readable-stream",
+      "purl": "pkg:npm/%40types/readable-stream@4.0.25",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@types/readable-stream"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@types/readable-stream/-/readable-stream-4.0.25.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/DefinitelyTyped/DefinitelyTyped.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/readable-stream"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/DefinitelyTyped/DefinitelyTyped/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ec6b312fc59de57de387bdffaa05bb5829db06f192743f14dc4e098aebacdfff08f8f376d03b65909b70161affb089977c30d0d99d378bff70362205dd3552b3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "@typespec/ts-http-runtime@0.3.11",
+      "type": "library",
+      "name": "@typespec/ts-http-runtime",
+      "version": "0.3.11",
+      "scope": "required",
+      "author": "Microsoft Corporation",
+      "description": "Isomorphic client library for making HTTP requests in node.js and browser.",
+      "purl": "pkg:npm/%40typespec/ts-http-runtime@0.3.11",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/@typespec/ts-http-runtime"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/@typespec/ts-http-runtime/-/ts-http-runtime-0.3.11.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Azure/azure-sdk-for-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Azure/azure-sdk-for-js/tree/main/sdk/core/ts-http-runtime/README.md"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Azure/azure-sdk-for-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "29995a716ef315d70838072936257953d7f2d137e0c3bc5d11ce2b572b94b504be511d529f7d8f5ee033f8027bd18d32cd35a1eb6fe9104a4599650997a6324b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "abort-controller@3.0.0",
+      "type": "library",
+      "name": "abort-controller",
+      "version": "3.0.0",
+      "scope": "required",
+      "author": "Toru Nagashima",
+      "description": "An implementation of WHATWG AbortController interface.",
+      "purl": "pkg:npm/abort-controller@3.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/abort-controller"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/abort-controller/-/abort-controller-3.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/mysticatea/abort-controller.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/mysticatea/abort-controller#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/mysticatea/abort-controller/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "87c950f2d69c6589d1def3504e089b8feb4e0c7239ffe974e80bb63dcae2bff1a67add1e6a3e13c161f8d6c3bdc271c3890b048f5f6ad1daf375675e007b707a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "agent-base@7.1.4",
+      "type": "library",
+      "name": "agent-base",
+      "version": "7.1.4",
+      "scope": "required",
+      "author": "Nathan Rajlich",
+      "description": "Turn a function into an `http.Agent` instance",
+      "purl": "pkg:npm/agent-base@7.1.4",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/agent-base"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/agent-base/-/agent-base-7.1.4.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/TooTallNate/proxy-agents.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/TooTallNate/proxy-agents#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/TooTallNate/proxy-agents/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "32703e613f1fc1f24f801c779bad0c36a6a49b7d173a4c88a07d72ea1b9342f0b43f0646ee48bc35a70b05cacf6cda28f2f119cbb269ba4efe8cc3be094a2f4d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "base64-js@1.5.1",
+      "type": "library",
+      "name": "base64-js",
+      "version": "1.5.1",
+      "scope": "required",
+      "author": "T. Jameson Little",
+      "description": "Base64 encoding/decoding in pure JS",
+      "purl": "pkg:npm/base64-js@1.5.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/base64-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/beatgammit/base64-js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/beatgammit/base64-js"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/beatgammit/base64-js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "00aa5a6251e7f2de1255b3870b2f9be7e28a82f478bebb03f2f6efadb890269b3b7ca0d3923903af2ea38b4ad42630b49336cd78f2f0cf1abc8b2a68e35a9e58"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "bl@6.1.6",
+      "type": "library",
+      "name": "bl",
+      "version": "6.1.6",
+      "scope": "required",
+      "description": "Buffer List: collect buffers and access with a standard readable Buffer interface, streamable too!",
+      "purl": "pkg:npm/bl@6.1.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/bl"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/bl/-/bl-6.1.6.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/rvagg/bl.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/rvagg/bl"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/rvagg/bl/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8cbb0f80dfd84af3d483d517d0a77bdc25e99b63ec83d17131e0925e79375813b708c4f5d093308a3b9b8467c70a716ee933e7d5e8b76fdef9771bfb2b6a5656"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "buffer@6.0.3",
+      "type": "library",
+      "name": "buffer",
+      "version": "6.0.3",
+      "scope": "required",
+      "author": "Feross Aboukhadijeh",
+      "description": "Node.js Buffer API, for the browser",
+      "purl": "pkg:npm/buffer@6.0.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/buffer"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/buffer/-/buffer-6.0.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/feross/buffer.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/feross/buffer"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/feross/buffer/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "153882a4dc6dc226591c465b71b4c87198c44552029fdcaafe90c591397de7f031cc3d6768172d37b60eebcae233f80b48363bb1dacc6f2f21a1f00362ebaa38"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "buffer-equal-constant-time@1.0.1",
+      "type": "library",
+      "name": "buffer-equal-constant-time",
+      "version": "1.0.1",
+      "scope": "required",
+      "author": "GoInstant Inc., a salesforce.com company",
+      "description": "Constant-time comparison of Buffers",
+      "purl": "pkg:npm/buffer-equal-constant-time@1.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/buffer-equal-constant-time"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/buffer-equal-constant-time/-/buffer-equal-constant-time-1.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+ssh://git@github.com/goinstant/buffer-equal-constant-time.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/goinstant/buffer-equal-constant-time#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/goinstant/buffer-equal-constant-time/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "cd1a54883c1dff193a003a8f3004c6f2f73d54fae4724ed3d3b388c748278e62409c79d35573501b7bdfbd636e899224c2ef4aaca740d6224a7ec7d357113a34"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "bundle-name@4.1.1",
+      "type": "library",
+      "name": "bundle-name",
+      "version": "4.1.1",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Get bundle name from a bundle identifier (macOS): `com.apple.Safari` → `Safari`",
+      "purl": "pkg:npm/bundle-name@4.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/bundle-name"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/bundle-name/-/bundle-name-4.1.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/bundle-name.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/bundle-name#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/bundle-name/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0dd1fcd7fccf2d54b5d445205aaded12eff19fe13396394c628a0335dcd61271616b7477341329315d54a982298d81d5fd282914a3085f53a1ee8d3a4a333fa0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "commander@11.1.0",
+      "type": "library",
+      "name": "commander",
+      "version": "11.1.0",
+      "scope": "required",
+      "author": "TJ Holowaychuk",
+      "description": "the complete solution for node.js command-line programs",
+      "purl": "pkg:npm/commander@11.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/commander"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/commander/-/commander-11.1.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/tj/commander.js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/tj/commander.js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/tj/commander.js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c8f55abdfc82711866a2b0bbad69641e7d796f8c03560566040ee457841506c17b92fffd4ca2406c05d54f1bd39f03fc1c72a34422430a529b7228984bba740d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "cookie@0.7.2",
+      "type": "library",
+      "name": "cookie",
+      "version": "0.7.2",
+      "scope": "required",
+      "author": "Roman Shtylman",
+      "description": "HTTP server cookie parsing and serialization",
+      "purl": "pkg:npm/cookie@0.7.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/cookie"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/cookie/-/cookie-0.7.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/jshttp/cookie.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/jshttp/cookie#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/jshttp/cookie/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ca48b95e72ae7fbe74979d2e193965b7a90a20b6389d0d5e34841ab685c40726797568272aa6e7aa64eb044e41e0dee5acc24a436cad58c8933b6a34bfa130ff"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "debug@4.4.3",
+      "type": "library",
+      "name": "debug",
+      "version": "4.4.3",
+      "scope": "required",
+      "author": "Josh Junon",
+      "description": "Lightweight debugging utility for Node.js and the browser",
+      "purl": "pkg:npm/debug@4.4.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/debug"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/debug/-/debug-4.4.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/debug-js/debug.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/debug-js/debug#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/debug-js/debug/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "446c305a7c10be455f6af295b76d8518bc3ec5849dcc04709b4aeee83853540dee994e6165cdbc57790ee2cb6062bcab4e52e9baf808f468a28e5b408cd6dca8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "default-browser@5.5.1",
+      "type": "library",
+      "name": "default-browser",
+      "version": "5.5.1",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Get the default browser",
+      "purl": "pkg:npm/default-browser@5.5.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/default-browser"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/default-browser/-/default-browser-5.5.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/default-browser.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/default-browser#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/default-browser/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9b5a40cda26067f82cb04aa53a12643c9a7c5e5cbb4325bac5cae451ad8a29c0de0d210c3fb5fcc62a54dec9d471f8ac4d0c74c3500669efbd52d2527d59d71b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "default-browser-id@5.0.1",
+      "type": "library",
+      "name": "default-browser-id",
+      "version": "5.0.1",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Get the bundle identifier of the default browser (macOS). Example: com.apple.Safari",
+      "purl": "pkg:npm/default-browser-id@5.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/default-browser-id"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/default-browser-id/-/default-browser-id-5.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/default-browser-id.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/default-browser-id#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/default-browser-id/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "c75542c5d5f8b7ef3055f775b28ffdc3ebd0e2fc7b94a776429e6d0d1bad12bc2647ce4e8267d7ed194b44c59a7d1318ee16c489721bb9d36b8ce00f6bf84bf1"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "define-lazy-prop@3.0.0",
+      "type": "library",
+      "name": "define-lazy-prop",
+      "version": "3.0.0",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Define a lazily evaluated property on an object",
+      "purl": "pkg:npm/define-lazy-prop@3.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/define-lazy-prop"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/define-lazy-prop/-/define-lazy-prop-3.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/define-lazy-prop.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/define-lazy-prop#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/define-lazy-prop/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "37e31e5d8a2aaf7a4e827f317f244f44437b8076a42d88e1b07856193ddf58088be08900b74883c35e108a2126d9b137d1ce575f9ab416d000dc22b97fdfc152"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "ecdsa-sig-formatter@1.0.11",
+      "type": "library",
+      "name": "ecdsa-sig-formatter",
+      "version": "1.0.11",
+      "scope": "required",
+      "author": "D2L Corporation",
+      "description": "Translate ECDSA signatures between ASN.1/DER and JOSE-style concatenation",
+      "purl": "pkg:npm/ecdsa-sig-formatter@1.0.11",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/ecdsa-sig-formatter"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ecdsa-sig-formatter/-/ecdsa-sig-formatter-1.0.11.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+ssh://git@github.com/Brightspace/node-ecdsa-sig-formatter.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Brightspace/node-ecdsa-sig-formatter#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Brightspace/node-ecdsa-sig-formatter/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "9da825dd162b6cdbfa91091e248a6de8d259cbcb702c1ff6bedcfac8df59e2f44a1cde3f41924811baa88402d283029d9e4b2e63793901d769e6583cb15a1571"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "event-target-shim@5.0.1",
+      "type": "library",
+      "name": "event-target-shim",
+      "version": "5.0.1",
+      "scope": "required",
+      "author": "Toru Nagashima",
+      "description": "An implementation of WHATWG EventTarget interface.",
+      "purl": "pkg:npm/event-target-shim@5.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/event-target-shim"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/event-target-shim/-/event-target-shim-5.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/mysticatea/event-target-shim.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/mysticatea/event-target-shim"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/mysticatea/event-target-shim/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8bfd976e74b3feec51094ebe35d54980a5834cce36efe32a61b910cc3df6d43b8240952a3ae24a200d08336f96db1b581dd28e999e1d47a7c4c6c7784972fe59"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "events@3.3.0",
+      "type": "library",
+      "name": "events",
+      "version": "3.3.0",
+      "scope": "required",
+      "author": "Irakli Gozalishvili",
+      "description": "Node's event emitter for all engines.",
+      "purl": "pkg:npm/events@3.3.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/events"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/events/-/events-3.3.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/Gozala/events.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Gozala/events#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "http://github.com/Gozala/events/issues/"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "990c3ed9f9106c02f343b574318d08a9d9d734e793b4fe2bd2537dcfb0006b009782a79aedb0e28b6d0062b201ac577f1f1d0cd8e733e92d75d4268591471bd1"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "http-proxy-agent@7.0.2",
+      "type": "library",
+      "name": "http-proxy-agent",
+      "version": "7.0.2",
+      "scope": "required",
+      "author": "Nathan Rajlich",
+      "description": "An HTTP(s) proxy `http.Agent` implementation for HTTP",
+      "purl": "pkg:npm/http-proxy-agent@7.0.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/http-proxy-agent"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/http-proxy-agent/-/http-proxy-agent-7.0.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/TooTallNate/proxy-agents.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/TooTallNate/proxy-agents#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/TooTallNate/proxy-agents/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "4f58240226180d6631dd5e419b2bbb1dc7dcbcbee652b4d688ceb239f6b73c8a6156227f8053dbbe2750faf7aa48e1dc8bf3f105c0da6de50d0b3a4e3832598a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "https-proxy-agent@7.0.6",
+      "type": "library",
+      "name": "https-proxy-agent",
+      "version": "7.0.6",
+      "scope": "required",
+      "author": "Nathan Rajlich",
+      "description": "An HTTP(s) proxy `http.Agent` implementation for HTTPS",
+      "purl": "pkg:npm/https-proxy-agent@7.0.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/https-proxy-agent"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-7.0.6.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/TooTallNate/proxy-agents.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/TooTallNate/proxy-agents#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/TooTallNate/proxy-agents/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "bcaf4fe7f8947dd97de4023e255c94b88715b5de287efb6b3abdc736d336cb10bd6e731b11da77c74d4e8503678dbf082588b7f159531379815f071fbf2c2e4b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "iconv-lite@0.6.3",
+      "type": "library",
+      "name": "iconv-lite",
+      "version": "0.6.3",
+      "scope": "required",
+      "author": "Alexander Shtuchkin",
+      "description": "Convert character encodings in pure javascript.",
+      "purl": "pkg:npm/iconv-lite@0.6.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/iconv-lite"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.6.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/ashtuchkin/iconv-lite.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/ashtuchkin/iconv-lite"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/ashtuchkin/iconv-lite/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e1f0a4efdc2c84c773329dab1f4eaa5ab244e22a25a8b842507f8e8ae22053ef91074fbde0d9432fcd5ab4eec65f9e6e50ab9ea34b711cdb6f13223a0fb59d33"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "ieee754@1.2.1",
+      "type": "library",
+      "name": "ieee754",
+      "version": "1.2.1",
+      "scope": "required",
+      "author": "Feross Aboukhadijeh",
+      "description": "Read/write IEEE754 floating point numbers from/to a Buffer or array-like object",
+      "purl": "pkg:npm/ieee754@1.2.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/ieee754"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ieee754/-/ieee754-1.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/feross/ieee754.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/feross/ieee754#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/feross/ieee754/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "75ccaa843bd7d42e3a95765c56a0a92be16d31141574830debf0dfe63b36ce8b94b2a1bb23ab05c62b480beeca60adbd29d5ce2c776ef732f8b059e85509ea68"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "inherits@2.0.4",
+      "type": "library",
+      "name": "inherits",
+      "version": "2.0.4",
+      "scope": "required",
+      "description": "Browser-friendly inheritance fully compatible with standard node.js inherits()",
+      "purl": "pkg:npm/inherits@2.0.4",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/inherits"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/isaacs/inherits.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/isaacs/inherits#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/isaacs/inherits/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "93fbc6697e3f6256b75b3c8c0af4d039761e207bea38ab67a8176ecd31e9ce9419cc0b2428c859d8af849c189233dcc64a820578ca572b16b8758799210a9ec1"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "is-docker@3.0.0",
+      "type": "library",
+      "name": "is-docker",
+      "version": "3.0.0",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Check if the process is running inside a Docker container",
+      "purl": "pkg:npm/is-docker@3.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-docker"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-docker/-/is-docker-3.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/is-docker.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/is-docker#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/is-docker/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7a58dc8040e5127b3fec05c5a2c0792bfda708ce0fec540f90673f0d62f2e6b985116bd96b21ab8a4d5df7f4086399c9e1ff58b15bc1900ea42691e7f6b21275"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "is-in-ssh@1.0.0",
+      "type": "library",
+      "name": "is-in-ssh",
+      "version": "1.0.0",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Check if the process is running in an SSH session",
+      "purl": "pkg:npm/is-in-ssh@1.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-in-ssh"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-in-ssh/-/is-in-ssh-1.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/is-in-ssh.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/is-in-ssh#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/is-in-ssh/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "8d86ba43dac7f74911d6f281e8d33baaa7759a07b7171e03870e535652b531406a8443ae09a82b10731ebcdb8271b1029976744e15e4466f989abe751f010f03"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "is-inside-container@1.0.0",
+      "type": "library",
+      "name": "is-inside-container",
+      "version": "1.0.0",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Check if the process is running inside a container (Docker/Podman)",
+      "purl": "pkg:npm/is-inside-container@1.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-inside-container"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-inside-container/-/is-inside-container-1.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/is-inside-container.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/is-inside-container#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/is-inside-container/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "28860b08226085f1d9c6a8d8044eeb132d0e06e4dde710874bbb47560bc22e4c7b4ad2286b1c0d5b784200b80452315f79193e306fd0c66a7fbed113105ded44"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "is-wsl@3.1.1",
+      "type": "library",
+      "name": "is-wsl",
+      "version": "3.1.1",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Check if the process is running inside Windows Subsystem for Linux (Bash on Windows)",
+      "purl": "pkg:npm/is-wsl@3.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/is-wsl"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/is-wsl/-/is-wsl-3.1.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/is-wsl.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/is-wsl#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/is-wsl/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "7baaef7540a240202eba666c971449591fc3a2ae15a4f47cda4a9c96f712d1e7e0b78df44a5188934e6f742379f3e56bce0b4871f34e0e3a335627a5c9c0f84b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "js-md4@0.3.2",
+      "type": "library",
+      "name": "js-md4",
+      "version": "0.3.2",
+      "scope": "required",
+      "author": "Chen, Yi-Cyuan",
+      "description": "A simple MD4 hash function for JavaScript supports UTF-8 encoding.",
+      "purl": "pkg:npm/js-md4@0.3.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/js-md4"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/js-md4/-/js-md4-0.3.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/emn178/js-md4.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/emn178/js-md4"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/emn178/js-md4/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fc60e77d062c96db2346cc1084df5f86fdc4330dac0a951daddc725833942bb7b20fefabde0461ce089081cff1e0c02fda2d62b90e25c4ee66bea337be3e1bc0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "jsonwebtoken@9.0.3",
+      "type": "library",
+      "name": "jsonwebtoken",
+      "version": "9.0.3",
+      "scope": "required",
+      "author": "auth0",
+      "description": "JSON Web Token implementation (symmetric and asymmetric)",
+      "purl": "pkg:npm/jsonwebtoken@9.0.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/jsonwebtoken"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/jsonwebtoken/-/jsonwebtoken-9.0.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/auth0/node-jsonwebtoken.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/auth0/node-jsonwebtoken#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/auth0/node-jsonwebtoken/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "313ff13f40abb9b15134b34abf12760587f2e776649befb96d7f5db6e3dba80790a5355ed0c4131616a8f3e0a9fff126269db8e31b7a0ebc3f1951060948f8d2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "jwa@2.0.1",
+      "type": "library",
+      "name": "jwa",
+      "version": "2.0.1",
+      "scope": "required",
+      "author": "Brian J. Brennan",
+      "description": "JWA implementation (supports all JWS algorithms)",
+      "purl": "pkg:npm/jwa@2.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/jwa"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/jwa/-/jwa-2.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianloveswords/node-jwa.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianloveswords/node-jwa#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianloveswords/node-jwa/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "851174e1fa8920ff006db92ae4d28637405baf7271950faa859b9f5d5af40efba32b2f776426d764c1c32f810eb687526c25b13aa47c312d6d5c0e61c2a0970e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "jws@4.0.1",
+      "type": "library",
+      "name": "jws",
+      "version": "4.0.1",
+      "scope": "required",
+      "author": "Brian J Brennan",
+      "description": "Implementation of JSON Web Signatures",
+      "purl": "pkg:npm/jws@4.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/jws"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/jws/-/jws-4.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianloveswords/node-jws.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianloveswords/node-jws#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianloveswords/node-jws/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "10a23f33fcaa3e7706514878e31cf43f14a275716bffeaf4a40ef4fa0218863bfe7adef2c4cfacdbd63e5460e4a2f4687d07a6d1fb3b52f7f8f9898077245db8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lodash.includes@4.3.0",
+      "type": "library",
+      "name": "lodash.includes",
+      "version": "4.3.0",
+      "scope": "required",
+      "author": "John-David Dalton",
+      "description": "The lodash method `_.includes` exported as a module.",
+      "purl": "pkg:npm/lodash.includes@4.3.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.includes"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash.includes/-/lodash.includes-4.3.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/lodash/lodash/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "5b7071ea67644531ad9492123af543fe56ea8d394f3d40d33279576459d5c22f4d289ead88093a2d5765859326d7b5598acaa129c833a4ee56cfdd4f0ade5bd3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lodash.isboolean@3.0.3",
+      "type": "library",
+      "name": "lodash.isboolean",
+      "version": "3.0.3",
+      "scope": "required",
+      "author": "John-David Dalton",
+      "description": "The lodash method `_.isBoolean` exported as a module.",
+      "purl": "pkg:npm/lodash.isboolean@3.0.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.isboolean"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash.isboolean/-/lodash.isboolean-3.0.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/lodash/lodash/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "073e66ba9cb64956cf1d4441f7c540730f9a1e1e2f455e483cd8482d40ac3b3466b13992435ee322eaa8a407a7b56a1e864b7119df5efe16c85eaf7cd3fd5026"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lodash.isinteger@4.0.4",
+      "type": "library",
+      "name": "lodash.isinteger",
+      "version": "4.0.4",
+      "scope": "required",
+      "author": "John-David Dalton",
+      "description": "The lodash method `_.isInteger` exported as a module.",
+      "purl": "pkg:npm/lodash.isinteger@4.0.4",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.isinteger"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash.isinteger/-/lodash.isinteger-4.0.4.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/lodash/lodash/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0c1c2d11637671a1d0f7f8a688d784039cacd49a11b517d8ddded5f7092ab5bc9c9c0993bd14666c72835786b411873aefcfdd89ad23aed7b8b6363054169950"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lodash.isnumber@3.0.3",
+      "type": "library",
+      "name": "lodash.isnumber",
+      "version": "3.0.3",
+      "scope": "required",
+      "author": "John-David Dalton",
+      "description": "The lodash method `_.isNumber` exported as a module.",
+      "purl": "pkg:npm/lodash.isnumber@3.0.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.isnumber"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash.isnumber/-/lodash.isnumber-3.0.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/lodash/lodash/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "418ab3a5fc0edff0967f75cff99fad910b1f68b2ff1275255d6564224e4550f738b017537a112a64e36ec91b763faecf5c093e35799305c73def3c3db75150af"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lodash.isplainobject@4.0.6",
+      "type": "library",
+      "name": "lodash.isplainobject",
+      "version": "4.0.6",
+      "scope": "required",
+      "author": "John-David Dalton",
+      "description": "The lodash method `_.isPlainObject` exported as a module.",
+      "purl": "pkg:npm/lodash.isplainobject@4.0.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.isplainobject"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash.isplainobject/-/lodash.isplainobject-4.0.6.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/lodash/lodash/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a125f3696ca908c1e43c2dcdbc111a3c77f42ac0399af3eb38f810583b1b83c9fba2b676f743340660bf8e0459e2f709e834c0863aec49881db16fc5f8c14e04"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lodash.isstring@4.0.1",
+      "type": "library",
+      "name": "lodash.isstring",
+      "version": "4.0.1",
+      "scope": "required",
+      "author": "John-David Dalton",
+      "description": "The lodash method `_.isString` exported as a module.",
+      "purl": "pkg:npm/lodash.isstring@4.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.isstring"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash.isstring/-/lodash.isstring-4.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/lodash/lodash/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "d302717f11f5c203b71ab6ee3fe7534e4ee8a7ee8be354025db188344983fa7cbf1bf782a86cf1c82b21ef5e7d4be9a00c37286ab9c1c3a3c2d4f4b9fb050683"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "lodash.once@4.1.1",
+      "type": "library",
+      "name": "lodash.once",
+      "version": "4.1.1",
+      "scope": "required",
+      "author": "John-David Dalton",
+      "description": "The lodash method `_.once` exported as a module.",
+      "purl": "pkg:npm/lodash.once@4.1.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/lodash.once"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/lodash.once/-/lodash.once-4.1.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/lodash/lodash.git"
+        },
+        {
+          "type": "website",
+          "url": "https://lodash.com/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/lodash/lodash/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "49be3ceda4ce0abf5dad054bf292313b356169f3a364df54539e2188df0f537b8089257b971d7260da5b3667b1d8f2ba752268353489514b304fae75cb0c3732"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "ms@2.1.3",
+      "type": "library",
+      "name": "ms",
+      "version": "2.1.3",
+      "scope": "required",
+      "description": "Tiny millisecond conversion utility",
+      "purl": "pkg:npm/ms@2.1.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/ms"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/vercel/ms.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/vercel/ms#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/vercel/ms/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e85973b9b4cb646dc9d9afcd542025784863ceae68c601f268253dc985ef70bb2fa1568726afece715c8ebf5d73fab73ed1f7100eb479d23bfb57b45dd645394"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "mssql@11.0.3",
+      "type": "library",
+      "name": "mssql",
+      "version": "11.0.3",
+      "scope": "required",
+      "author": "Patrik Simek",
+      "description": "Microsoft SQL Server client for Node.js.",
+      "purl": "pkg:npm/mssql@11.0.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/mssql"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/mssql/-/mssql-11.0.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/tediousjs/node-mssql.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/tediousjs/node-mssql#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/tediousjs/node-mssql/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e0e1f9c709f42fca24c8e27493d4379495be651e112f595c7f58c4cb26d5c6d2fd1a55614699da891155bbed1f9a0a8c20893532f3fb9fee8b7dbe9fe67cefa5"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "native-duplexpair@1.0.0",
+      "type": "library",
+      "name": "native-duplexpair",
+      "version": "1.0.0",
+      "scope": "required",
+      "author": "Anna Henningsen",
+      "description": "Make a full duplex stream with 2 Duplex endpoints, using the native version of `Duplex`",
+      "purl": "pkg:npm/native-duplexpair@1.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/native-duplexpair"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/native-duplexpair/-/native-duplexpair-1.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/tediousjs/native-duplexpair.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/tediousjs/native-duplexpair#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/tediousjs/native-duplexpair/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "13b410a0cfb78ef36d966c9fa91674fd4ef954580296cf9f4a46e6976329816916cb3de8c7c639f203617eece2b9060634d4006c564941c939e4b1c29c22ba08"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "open@11.0.4",
+      "type": "library",
+      "name": "open",
+      "version": "11.0.4",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Open stuff like URLs, files, executables. Cross-platform.",
+      "purl": "pkg:npm/open@11.0.4",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/open"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/open/-/open-11.0.4.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/open.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/open#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/open/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "fbe6657ed9b49152cf9b30b4eade9ea6e5a67113036c8e33e4fdcd357f7bf5603f936dfe36d48eca7106cec55f67082e2b0da68b9ba65609c194940cc11cf83e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pg@8.23.1",
+      "type": "library",
+      "name": "pg",
+      "version": "8.23.1",
+      "scope": "required",
+      "author": "Brian Carlson",
+      "description": "PostgreSQL client - pure javascript & libpq with the same API",
+      "purl": "pkg:npm/pg@8.23.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pg"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg/-/pg-8.23.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianc/node-postgres.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianc/node-postgres"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianc/node-postgres/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "68bf7a00700db568cf2c338baa7871fa7829f7e50aec44c453c549ac3086bec4928bf9862dc598b12e877ab83b96668125ee2ec2b7eab1aee04c415a4a2cc3a1"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pg-cloudflare@1.4.1",
+      "type": "library",
+      "name": "pg-cloudflare",
+      "version": "1.4.1",
+      "scope": "optional",
+      "description": "A socket implementation that can run on Cloudflare Workers using native TCP connections.",
+      "purl": "pkg:npm/pg-cloudflare@1.4.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pg-cloudflare"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-cloudflare/-/pg-cloudflare-1.4.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianc/node-postgres.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianc/node-postgres#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianc/node-postgres/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e8f41bb05599729f44989130cb97064362daf80316a4fe3a9606dbf17f94fd7b07214c1e603342a5eb8a724e51c4bd8c755162ee4adb6c48b99d7e1987b261ad"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pg-connection-string@2.14.1",
+      "type": "library",
+      "name": "pg-connection-string",
+      "version": "2.14.1",
+      "scope": "required",
+      "author": "Blaine Bublitz",
+      "description": "Functions for dealing with a PostgreSQL connection string",
+      "purl": "pkg:npm/pg-connection-string@2.14.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pg-connection-string"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-connection-string/-/pg-connection-string-2.14.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianc/node-postgres.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianc/node-postgres/tree/master/packages/pg-connection-string"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianc/node-postgres/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a91de418d3c12e908db73d1ebdb280d18fcc4455f0492753fa94c9bd8a7f6d74dc45e65bbd7d64cc5d08c93735427c6a17b0196ce78184d2fc47999841957f30"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pg-int8@1.0.1",
+      "type": "library",
+      "name": "pg-int8",
+      "version": "1.0.1",
+      "scope": "required",
+      "description": "64-bit big-endian signed integer-to-string conversion",
+      "purl": "pkg:npm/pg-int8@1.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pg-int8"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-int8/-/pg-int8-1.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/charmander/pg-int8.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/charmander/pg-int8#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/charmander/pg-int8/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "582b5a6d2eadddcf129290c15256f59233acee5ebac6c19d2a920f66c838c11f81dfebbd500ba6da8752b05f6d9efc60f348786712d6332e294633ac148a90a7"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pg-pool@3.14.0",
+      "type": "library",
+      "name": "pg-pool",
+      "version": "3.14.0",
+      "scope": "required",
+      "author": "Brian M. Carlson",
+      "description": "Connection pool for node-postgres",
+      "purl": "pkg:npm/pg-pool@3.14.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pg-pool"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-pool/-/pg-pool-3.14.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianc/node-postgres.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianc/node-postgres/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "80ab4f9057503d4dc392ca2854b8bd2ec8d9c6bb015192296beeda571f8b579a4d8742b33f86657ae776a68f82a27af16ee5c6049e877deafa85d829201a416b"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pg-protocol@1.16.1",
+      "type": "library",
+      "name": "pg-protocol",
+      "version": "1.16.1",
+      "scope": "required",
+      "description": "The postgres client/server binary protocol, implemented in TypeScript",
+      "purl": "pkg:npm/pg-protocol@1.16.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pg-protocol"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-protocol/-/pg-protocol-1.16.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianc/node-postgres.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianc/node-postgres#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianc/node-postgres/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a7d54e14c88707f65b2404deb5b83ef7d3f1b2c4d5490467cae3d243aee6375fb52813a365a67cdd943396d9f13e12704ac0b79f0563275d0354995eadb1732e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pg-types@2.2.0",
+      "type": "library",
+      "name": "pg-types",
+      "version": "2.2.0",
+      "scope": "required",
+      "author": "Brian M. Carlson",
+      "description": "Query result type converters for node-postgres",
+      "purl": "pkg:npm/pg-types@2.2.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pg-types"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pg-types/-/pg-types-2.2.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/brianc/node-pg-types.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/brianc/node-pg-types"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/brianc/node-pg-types/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "a9300096b12c97cb383a211063af700ef70c21d40deb0773e688d088ecba61132eca7c5e9ce3743b9a02a4923a96c85ceac720018f2abc9d8e9ffa7e09763418"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "pgpass@1.0.5",
+      "type": "library",
+      "name": "pgpass",
+      "version": "1.0.5",
+      "scope": "required",
+      "author": "Hannes Hörl",
+      "description": "Module for reading .pgpass",
+      "purl": "pkg:npm/pgpass@1.0.5",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/pgpass"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/pgpass/-/pgpass-1.0.5.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/hoegaarden/pgpass.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/hoegaarden/pgpass#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/hoegaarden/pgpass/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "15d5bdaff8d066149ea21b35677b08d72c4540d16f31c9e67ee8f85813144f13ab0322cc693704d5a00c0624e56cc35a5ef04242e562d11ee177cb9d0d23fbba"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "postgres-array@2.0.0",
+      "type": "library",
+      "name": "postgres-array",
+      "version": "2.0.0",
+      "scope": "required",
+      "author": "Ben Drucker",
+      "description": "Parse postgres array columns",
+      "purl": "pkg:npm/postgres-array@2.0.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/postgres-array"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-array/-/postgres-array-2.0.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/bendrucker/postgres-array.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/bendrucker/postgres-array#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/bendrucker/postgres-array/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "56966b52a53903af5e4325b6739080d63b4b79c0ac37653f6c3e958a5ac50d6ab9fb95081153bb9dacd2dd311c1dfd73b8f60efeca86bd4bd6eb683ce915d9b8"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "postgres-bytea@1.0.1",
+      "type": "library",
+      "name": "postgres-bytea",
+      "version": "1.0.1",
+      "scope": "required",
+      "author": "Ben Drucker",
+      "description": "Postgres bytea parser",
+      "purl": "pkg:npm/postgres-bytea@1.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/postgres-bytea"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-bytea/-/postgres-bytea-1.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/bendrucker/postgres-bytea.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/bendrucker/postgres-bytea#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/bendrucker/postgres-bytea/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "e7ee47a979ec64f13ae4825948c919b544404597a57a5da85d410ef2b1fcdd54bf8711f9befd6e1eab8f839c19b3cc8c01f76ff7bd4853e91c3d47338bb35505"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "postgres-date@1.0.7",
+      "type": "library",
+      "name": "postgres-date",
+      "version": "1.0.7",
+      "scope": "required",
+      "author": "Ben Drucker",
+      "description": "Postgres date column parser",
+      "purl": "pkg:npm/postgres-date@1.0.7",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/postgres-date"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-date/-/postgres-date-1.0.7.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/bendrucker/postgres-date.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/bendrucker/postgres-date#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/bendrucker/postgres-date/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "b2e0e68cb55083bf2730ad94678e788401be3805be1d03d9ea7fbe4cd0d45fe2f4fae5252f2c27a3124a0e8bb9d599becd30a3ac297436ae89f42e613fdbcafd"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "postgres-interval@1.2.0",
+      "type": "library",
+      "name": "postgres-interval",
+      "version": "1.2.0",
+      "scope": "required",
+      "author": "Ben Drucker",
+      "description": "Parse Postgres interval columns",
+      "purl": "pkg:npm/postgres-interval@1.2.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/postgres-interval"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/postgres-interval/-/postgres-interval-1.2.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/bendrucker/postgres-interval.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/bendrucker/postgres-interval#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/bendrucker/postgres-interval/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f5985728cfebc37e74375a2fb961db1b19c687f48d278727c4788cd2bc44e15378d70b20f0ff335a7f61bff6ee2b4d113f85af94ecabfd10438a9b72c556e465"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "powershell-utils@0.2.1",
+      "type": "library",
+      "name": "powershell-utils",
+      "version": "0.2.1",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Utilities for executing PowerShell commands",
+      "purl": "pkg:npm/powershell-utils@0.2.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/powershell-utils"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/powershell-utils/-/powershell-utils-0.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/powershell-utils.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/powershell-utils#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/powershell-utils/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0becbdc7dd1412501d743666578a8ec7d5b9dc1eb53ceedc22a5b3d9d42c5a5c2cc2eab89abf0d130cad74629ba186d09466776b0ae44de36f7198993479d0f0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "process@0.11.10",
+      "type": "library",
+      "name": "process",
+      "version": "0.11.10",
+      "scope": "required",
+      "author": "Roman Shtylman",
+      "description": "process information for node.js and browsers",
+      "purl": "pkg:npm/process@0.11.10",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/process"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/process/-/process-0.11.10.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/shtylman/node-process.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/shtylman/node-process#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/shtylman/node-process/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "71d19e7ff76b585a32743d49b0ccee15ff35d349d997e193fb269c7366c471e7797fd463938cfe5ad1544c1bbd3e13a2f63fe37e604fbb498c118e3021d005f0"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "readable-stream@4.8.0",
+      "type": "library",
+      "name": "readable-stream",
+      "version": "4.8.0",
+      "scope": "required",
+      "description": "Node.js Streams, a user-land copy of the stream library from Node.js",
+      "purl": "pkg:npm/readable-stream@4.8.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/readable-stream"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/readable-stream/-/readable-stream-4.8.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/nodejs/readable-stream.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/nodejs/readable-stream"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/nodejs/readable-stream/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "da38534d4dc48a5a7fd83313ef581b728a82df97901dab0c247d111e4631c25c48bf7f8547a639c401592301062f12a48d9604165b2230d21dc14aa32b694b1d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "rfdc@1.4.1",
+      "type": "library",
+      "name": "rfdc",
+      "version": "1.4.1",
+      "scope": "required",
+      "author": "David Mark Clements",
+      "description": "Really Fast Deep Clone",
+      "purl": "pkg:npm/rfdc@1.4.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/rfdc"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/rfdc/-/rfdc-1.4.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/davidmarkclements/rfdc.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/davidmarkclements/rfdc#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/davidmarkclements/rfdc/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ab56f737942445459497b8b2ca569a8f790ea484f43768bd32a2044173fbdc656c37d730ddf771f17eb77049968491a2d8f3c2176dc88e9ee4b66777f6b6b020"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "run-applescript@7.1.0",
+      "type": "library",
+      "name": "run-applescript",
+      "version": "7.1.0",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Run AppleScript and get the result",
+      "purl": "pkg:npm/run-applescript@7.1.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/run-applescript"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/run-applescript/-/run-applescript-7.1.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/run-applescript.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/run-applescript#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/run-applescript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "0cf7b9a5515a02c8a749a57a42343a81d89e7560dc4426d4ba241f41adb099657bfb10bd6c6ba5188f3e4dd466a059003da05793c0ab01b9e56362129e2278ed"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "safe-buffer@5.2.1",
+      "type": "library",
+      "name": "safe-buffer",
+      "version": "5.2.1",
+      "scope": "required",
+      "author": "Feross Aboukhadijeh",
+      "description": "Safer Node.js Buffer API",
+      "purl": "pkg:npm/safe-buffer@5.2.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/safe-buffer"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/feross/safe-buffer.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/feross/safe-buffer"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/feross/safe-buffer/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "ae9dd2a34eca71d9a629b1af81a37141226bedb1954959394bd12ad45fa9a5b468ef4f9879a0f1930e4377c34f37e183e9b8e7626d95b8fb825e6a6e62f9825d"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "safer-buffer@2.1.2",
+      "type": "library",
+      "name": "safer-buffer",
+      "version": "2.1.2",
+      "scope": "required",
+      "author": "Nikita Skovoroda",
+      "description": "Modern Buffer API polyfill without footguns",
+      "purl": "pkg:npm/safer-buffer@2.1.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/safer-buffer"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/ChALkeR/safer-buffer.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/ChALkeR/safer-buffer#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/ChALkeR/safer-buffer/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "619a372bcd920fb462ca2d04d4440fa232f3ee4a5ea6749023d2323db1c78355d75debdbe5d248eeda72376003c467106c71bbbdcc911e4d1c6f0a9c42b894b6"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "semver@7.8.6",
+      "type": "library",
+      "name": "semver",
+      "version": "7.8.6",
+      "scope": "required",
+      "author": "GitHub Inc.",
+      "description": "The semantic version parser used by npm.",
+      "purl": "pkg:npm/semver@7.8.6",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/semver"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/semver/-/semver-7.8.6.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/npm/node-semver.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/npm/node-semver#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/npm/node-semver/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "f65a52494e0c972de6aedaeec0bb3578b2bafa0cdbcea78117044d8c88c4fbd2ee0e959d61cb6b4254377a3d489608bb8249e9b134673e82cff03a421ea1c827"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "split2@4.2.0",
+      "type": "library",
+      "name": "split2",
+      "version": "4.2.0",
+      "scope": "required",
+      "author": "Matteo Collina",
+      "description": "split a Text Stream into a Line Stream, using Stream 3",
+      "purl": "pkg:npm/split2@4.2.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/split2"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/split2/-/split2-4.2.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/mcollina/split2.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/mcollina/split2#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "http://github.com/mcollina/split2/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "51c8dc24e5a49eb36417a3cb5fcdea70733a28781528d915eb663c6b9b980d5bfdc9d19057000730aa877498ded554d6a658c6d1662908386b09d00e607e135a"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "ISC"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "sprintf-js@1.1.3",
+      "type": "library",
+      "name": "sprintf-js",
+      "version": "1.1.3",
+      "scope": "required",
+      "author": "Alexandru Mărășteanu",
+      "description": "JavaScript sprintf implementation",
+      "purl": "pkg:npm/sprintf-js@1.1.3",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/sprintf-js"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.1.3.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/alexei/sprintf.js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/alexei/sprintf.js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/alexei/sprintf.js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "3a8fb4444155e7dfebcf781f24d2908819707c7692112975a5c1b200142c9e721f58e16de89363e600a883653a30b67ffc81980fe9c0f2723e9934a144445e68"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "string_decoder@1.3.0",
+      "type": "library",
+      "name": "string_decoder",
+      "version": "1.3.0",
+      "scope": "required",
+      "description": "The string_decoder module from Node core",
+      "purl": "pkg:npm/string_decoder@1.3.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/string_decoder"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/nodejs/string_decoder.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/nodejs/string_decoder"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/nodejs/string_decoder/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "864457f14d568c915df0bb03276c90ff0596c5aa2912c0015355df90cf00fa3d3ef392401a9a6dd7a72bd56860e8a21b6f8a2453a32a97a04e8febaea7fc0a78"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tarn@3.1.2",
+      "type": "library",
+      "name": "tarn",
+      "version": "3.1.2",
+      "scope": "required",
+      "author": "Sami Koskimäki",
+      "description": "Simple and robust resource pool for node.js",
+      "purl": "pkg:npm/tarn@3.1.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/tarn"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tarn/-/tarn-3.1.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/knex/tarn.js.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/knex/tarn.js#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/knex/tarn.js/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "dd14efa8a65c2bfd7b8e727cacc2855dbc8da20cb04ecd73d2054f3f016c2465f8eab92650739d21a490fda54ed6b4bb9c7faca225e25a4eebbd45f19dd9bc0e"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tedious@18.6.2",
+      "type": "library",
+      "name": "tedious",
+      "version": "18.6.2",
+      "scope": "required",
+      "author": "Mike D Pilsbury",
+      "description": "A TDS driver, for connecting to MS SQLServer databases.",
+      "purl": "pkg:npm/tedious@18.6.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/tedious"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tedious/-/tedious-18.6.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/tediousjs/tedious.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/tediousjs/tedious"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/tediousjs/tedious/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "83b8c2e7aa373332e413794791a15ed9974e54505a86ae5bb01eb4fcce0d6146e8730fcc0ab4bcf4838441416bf9b6baa5bf191dccd9fd5a82c98798ab4c4102"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "tslib@2.9.1",
+      "type": "library",
+      "name": "tslib",
+      "version": "2.9.1",
+      "scope": "required",
+      "author": "Microsoft Corp.",
+      "description": "Runtime library for TypeScript helper functions",
+      "purl": "pkg:npm/tslib@2.9.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/tslib"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.9.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/Microsoft/tslib.git"
+        },
+        {
+          "type": "website",
+          "url": "https://www.typescriptlang.org/"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Microsoft/TypeScript/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "6b8531f552ae20c1ec392ec435b12aea12b66466084f6ed1b65d04e1e0fd2aac3184a89078c644ffdc5bdc8758c166923b220140b1318508170d3628882c6758"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "0BSD"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "undici-types@8.9.0",
+      "type": "library",
+      "name": "undici-types",
+      "version": "8.9.0",
+      "scope": "required",
+      "description": "A stand-alone types package for Undici",
+      "purl": "pkg:npm/undici-types@8.9.0",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/undici-types"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/undici-types/-/undici-types-8.9.0.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/nodejs/undici.git"
+        },
+        {
+          "type": "website",
+          "url": "https://undici.nodejs.org"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/nodejs/undici/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2930f2453617f2c5a629702290f1c74b273adc244f11331cb728ca16ea5c0ba3812d74f7c6c3747bd685ee6fa6217bad156a545ee79db68c06ee22cece9d2442"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "wsl-utils@1.0.1",
+      "type": "library",
+      "name": "wsl-utils",
+      "version": "1.0.1",
+      "scope": "required",
+      "author": "Sindre Sorhus",
+      "description": "Utilities for working with Windows Subsystem for Linux (WSL)",
+      "purl": "pkg:npm/wsl-utils@1.0.1",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/wsl-utils"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/wsl-utils/-/wsl-utils-1.0.1.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/sindresorhus/wsl-utils.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/sindresorhus/wsl-utils#readme"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/sindresorhus/wsl-utils/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "735e8f28b211c416294778d25ac752ed2169d023a6e5239076216363cd7c75814725b306b8b06cce9174ecb05698e4b5bb3ac76bd5467729ec120a1e2b2d2839"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    },
+    {
+      "bom-ref": "xtend@4.0.2",
+      "type": "library",
+      "name": "xtend",
+      "version": "4.0.2",
+      "scope": "required",
+      "author": "Raynos",
+      "description": "extend like a boss",
+      "purl": "pkg:npm/xtend@4.0.2",
+      "properties": [
+        {
+          "name": "cdx:npm:package:path",
+          "value": "node_modules/xtend"
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz"
+        },
+        {
+          "type": "vcs",
+          "url": "git://github.com/Raynos/xtend.git"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Raynos/xtend"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/Raynos/xtend/issues"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-512",
+          "content": "2ca614d620172575200179fd5118e2bbe3168725171ecbdfa7b99cb989bd75250a2b4fc28edad4c050310fcdbf98259bb4bb068c521a774c08b28778ceb4c011"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "acuitas-data-service@1.0.0",
+      "dependsOn": [
+        "@azure/functions@4.17.1",
+        "mssql@11.0.3",
+        "pg@8.23.1"
+      ]
+    },
+    {
+      "ref": "@azure-rest/core-client@2.9.0",
+      "dependsOn": [
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-auth@1.11.0",
+        "@azure/core-rest-pipeline@1.25.1",
+        "@azure/core-tracing@1.4.0",
+        "@typespec/ts-http-runtime@0.3.11",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/abort-controller@2.2.0",
+      "dependsOn": [
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/core-auth@1.11.0",
+      "dependsOn": [
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-util@1.14.0",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/core-client@1.11.2",
+      "dependsOn": [
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-auth@1.11.0",
+        "@azure/core-rest-pipeline@1.25.1",
+        "@azure/core-tracing@1.4.0",
+        "@azure/core-util@1.14.0",
+        "@azure/logger@1.4.0",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/core-lro@2.7.2",
+      "dependsOn": [
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-util@1.14.0",
+        "@azure/logger@1.4.0",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/core-paging@1.7.0",
+      "dependsOn": [
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/core-process@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@azure/core-rest-pipeline@1.25.1",
+      "dependsOn": [
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-auth@1.11.0",
+        "@azure/core-tracing@1.4.0",
+        "@azure/core-util@1.14.0",
+        "@azure/logger@1.4.0",
+        "@typespec/ts-http-runtime@0.3.11",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/core-tracing@1.4.0",
+      "dependsOn": [
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/core-util@1.14.0",
+      "dependsOn": [
+        "@azure/abort-controller@2.2.0",
+        "@typespec/ts-http-runtime@0.3.11",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/functions@4.17.1",
+      "dependsOn": [
+        "@azure/functions-extensions-base@0.3.0",
+        "cookie@0.7.2"
+      ]
+    },
+    {
+      "ref": "@azure/functions-extensions-base@0.3.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@azure/identity@4.14.1",
+      "dependsOn": [
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-auth@1.11.0",
+        "@azure/core-client@1.11.2",
+        "@azure/core-process@1.0.0",
+        "@azure/core-rest-pipeline@1.25.1",
+        "@azure/core-tracing@1.4.0",
+        "@azure/core-util@1.14.0",
+        "@azure/logger@1.4.0",
+        "@azure/msal-browser@5.30.0",
+        "@azure/msal-node@7.2.3",
+        "open@11.0.4",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/keyvault-common@2.1.1",
+      "dependsOn": [
+        "@azure-rest/core-client@2.9.0",
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-auth@1.11.0",
+        "@azure/core-rest-pipeline@1.25.1",
+        "@azure/core-tracing@1.4.0",
+        "@azure/core-util@1.14.0",
+        "@azure/logger@1.4.0",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/keyvault-keys@4.11.0",
+      "dependsOn": [
+        "@azure-rest/core-client@2.9.0",
+        "@azure/abort-controller@2.2.0",
+        "@azure/core-auth@1.11.0",
+        "@azure/core-lro@2.7.2",
+        "@azure/core-paging@1.7.0",
+        "@azure/core-rest-pipeline@1.25.1",
+        "@azure/core-tracing@1.4.0",
+        "@azure/core-util@1.14.0",
+        "@azure/keyvault-common@2.1.1",
+        "@azure/logger@1.4.0",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/logger@1.4.0",
+      "dependsOn": [
+        "@typespec/ts-http-runtime@0.3.11",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "@azure/msal-browser@5.30.0",
+      "dependsOn": [
+        "@azure/msal-common@16.17.0"
+      ]
+    },
+    {
+      "ref": "@azure/msal-common@16.17.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@azure/msal-node@7.2.3",
+      "dependsOn": [
+        "@azure/msal-common@16.17.0",
+        "jsonwebtoken@9.0.3"
+      ]
+    },
+    {
+      "ref": "@js-joda/core@5.7.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@tediousjs/connection-string@0.5.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "@types/node@26.6.11",
+      "dependsOn": [
+        "undici-types@8.9.0"
+      ]
+    },
+    {
+      "ref": "@types/readable-stream@4.0.25",
+      "dependsOn": [
+        "@types/node@26.6.11"
+      ]
+    },
+    {
+      "ref": "@typespec/ts-http-runtime@0.3.11",
+      "dependsOn": [
+        "http-proxy-agent@7.0.2",
+        "https-proxy-agent@7.0.6",
+        "tslib@2.9.1"
+      ]
+    },
+    {
+      "ref": "abort-controller@3.0.0",
+      "dependsOn": [
+        "event-target-shim@5.0.1"
+      ]
+    },
+    {
+      "ref": "agent-base@7.1.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "base64-js@1.5.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "bl@6.1.6",
+      "dependsOn": [
+        "@types/readable-stream@4.0.25",
+        "buffer@6.0.3",
+        "inherits@2.0.4",
+        "readable-stream@4.8.0"
+      ]
+    },
+    {
+      "ref": "buffer@6.0.3",
+      "dependsOn": [
+        "base64-js@1.5.1",
+        "ieee754@1.2.1"
+      ]
+    },
+    {
+      "ref": "buffer-equal-constant-time@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "bundle-name@4.1.1",
+      "dependsOn": [
+        "run-applescript@7.1.0"
+      ]
+    },
+    {
+      "ref": "commander@11.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "cookie@0.7.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "debug@4.4.3",
+      "dependsOn": [
+        "ms@2.1.3"
+      ]
+    },
+    {
+      "ref": "default-browser@5.5.1",
+      "dependsOn": [
+        "bundle-name@4.1.1",
+        "default-browser-id@5.0.1"
+      ]
+    },
+    {
+      "ref": "default-browser-id@5.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "define-lazy-prop@3.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "ecdsa-sig-formatter@1.0.11",
+      "dependsOn": [
+        "safe-buffer@5.2.1"
+      ]
+    },
+    {
+      "ref": "event-target-shim@5.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "events@3.3.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "http-proxy-agent@7.0.2",
+      "dependsOn": [
+        "agent-base@7.1.4",
+        "debug@4.4.3"
+      ]
+    },
+    {
+      "ref": "https-proxy-agent@7.0.6",
+      "dependsOn": [
+        "agent-base@7.1.4",
+        "debug@4.4.3"
+      ]
+    },
+    {
+      "ref": "iconv-lite@0.6.3",
+      "dependsOn": [
+        "safer-buffer@2.1.2"
+      ]
+    },
+    {
+      "ref": "ieee754@1.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "inherits@2.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "is-docker@3.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "is-in-ssh@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "is-inside-container@1.0.0",
+      "dependsOn": [
+        "is-docker@3.0.0"
+      ]
+    },
+    {
+      "ref": "is-wsl@3.1.1",
+      "dependsOn": [
+        "is-inside-container@1.0.0"
+      ]
+    },
+    {
+      "ref": "js-md4@0.3.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "jsonwebtoken@9.0.3",
+      "dependsOn": [
+        "jws@4.0.1",
+        "lodash.includes@4.3.0",
+        "lodash.isboolean@3.0.3",
+        "lodash.isinteger@4.0.4",
+        "lodash.isnumber@3.0.3",
+        "lodash.isplainobject@4.0.6",
+        "lodash.isstring@4.0.1",
+        "lodash.once@4.1.1",
+        "ms@2.1.3",
+        "semver@7.8.6"
+      ]
+    },
+    {
+      "ref": "jwa@2.0.1",
+      "dependsOn": [
+        "buffer-equal-constant-time@1.0.1",
+        "ecdsa-sig-formatter@1.0.11",
+        "safe-buffer@5.2.1"
+      ]
+    },
+    {
+      "ref": "jws@4.0.1",
+      "dependsOn": [
+        "jwa@2.0.1",
+        "safe-buffer@5.2.1"
+      ]
+    },
+    {
+      "ref": "lodash.includes@4.3.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "lodash.isboolean@3.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "lodash.isinteger@4.0.4",
+      "dependsOn": []
+    },
+    {
+      "ref": "lodash.isnumber@3.0.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "lodash.isplainobject@4.0.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "lodash.isstring@4.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "lodash.once@4.1.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "ms@2.1.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "mssql@11.0.3",
+      "dependsOn": [
+        "@tediousjs/connection-string@0.5.0",
+        "commander@11.1.0",
+        "debug@4.4.3",
+        "rfdc@1.4.1",
+        "tarn@3.1.2",
+        "tedious@18.6.2"
+      ]
+    },
+    {
+      "ref": "native-duplexpair@1.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "open@11.0.4",
+      "dependsOn": [
+        "default-browser@5.5.1",
+        "define-lazy-prop@3.0.0",
+        "is-in-ssh@1.0.0",
+        "is-inside-container@1.0.0",
+        "powershell-utils@0.2.1",
+        "wsl-utils@1.0.1"
+      ]
+    },
+    {
+      "ref": "pg@8.23.1",
+      "dependsOn": [
+        "pg-connection-string@2.14.1",
+        "pg-pool@3.14.0",
+        "pg-protocol@1.16.1",
+        "pg-types@2.2.0",
+        "pgpass@1.0.5",
+        "pg-cloudflare@1.4.1"
+      ]
+    },
+    {
+      "ref": "pg-cloudflare@1.4.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pg-connection-string@2.14.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pg-int8@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pg-pool@3.14.0",
+      "dependsOn": [
+        "pg@8.23.1"
+      ]
+    },
+    {
+      "ref": "pg-protocol@1.16.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "pg-types@2.2.0",
+      "dependsOn": [
+        "pg-int8@1.0.1",
+        "postgres-array@2.0.0",
+        "postgres-bytea@1.0.1",
+        "postgres-date@1.0.7",
+        "postgres-interval@1.2.0"
+      ]
+    },
+    {
+      "ref": "pgpass@1.0.5",
+      "dependsOn": [
+        "split2@4.2.0"
+      ]
+    },
+    {
+      "ref": "postgres-array@2.0.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "postgres-bytea@1.0.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "postgres-date@1.0.7",
+      "dependsOn": []
+    },
+    {
+      "ref": "postgres-interval@1.2.0",
+      "dependsOn": [
+        "xtend@4.0.2"
+      ]
+    },
+    {
+      "ref": "powershell-utils@0.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "process@0.11.10",
+      "dependsOn": []
+    },
+    {
+      "ref": "readable-stream@4.8.0",
+      "dependsOn": [
+        "abort-controller@3.0.0",
+        "buffer@6.0.3",
+        "events@3.3.0",
+        "process@0.11.10",
+        "string_decoder@1.3.0"
+      ]
+    },
+    {
+      "ref": "rfdc@1.4.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "run-applescript@7.1.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "safe-buffer@5.2.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "safer-buffer@2.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "semver@7.8.6",
+      "dependsOn": []
+    },
+    {
+      "ref": "split2@4.2.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "sprintf-js@1.1.3",
+      "dependsOn": []
+    },
+    {
+      "ref": "string_decoder@1.3.0",
+      "dependsOn": [
+        "safe-buffer@5.2.1"
+      ]
+    },
+    {
+      "ref": "tarn@3.1.2",
+      "dependsOn": []
+    },
+    {
+      "ref": "tedious@18.6.2",
+      "dependsOn": [
+        "@azure/core-auth@1.11.0",
+        "@azure/identity@4.14.1",
+        "@azure/keyvault-keys@4.11.0",
+        "@js-joda/core@5.7.0",
+        "@types/node@26.6.11",
+        "bl@6.1.6",
+        "iconv-lite@0.6.3",
+        "js-md4@0.3.2",
+        "native-duplexpair@1.0.0",
+        "sprintf-js@1.1.3"
+      ]
+    },
+    {
+      "ref": "tslib@2.9.1",
+      "dependsOn": []
+    },
+    {
+      "ref": "undici-types@8.9.0",
+      "dependsOn": []
+    },
+    {
+      "ref": "wsl-utils@1.0.1",
+      "dependsOn": [
+        "is-wsl@3.1.1",
+        "powershell-utils@0.2.1"
+      ]
+    },
+    {
+      "ref": "xtend@4.0.2",
+      "dependsOn": []
+    }
+  ]
+}

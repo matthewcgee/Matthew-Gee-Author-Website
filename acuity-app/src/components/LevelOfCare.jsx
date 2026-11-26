@@ -179,6 +179,7 @@ function RoutingPanel({ programs, recommendation, activeProgram, onSelect, progr
       ) : (
         <>
           <select
+            aria-label="Program"
             value={activeProgram}
             onChange={(e) => onSelect(e.target.value)}
             style={{ fontFamily: theme.display, fontSize: 19, fontWeight: 800, color: theme.accent, width: '100%', padding: '6px 8px', border: `1px solid ${theme.border}`, borderRadius: 8, background: theme.panel }}
@@ -1095,7 +1096,7 @@ export default function LevelOfCare({ role = 'admin', locations = [], identity =
           primary physician. Discharges are bridged into care and tracked against the 7- and 30-day follow-up windows,
           and PHQ-9 and GAD-7 scores flag patients who need a fresh screen. Outcomes feed back into the thresholds.
         </div>
-        <div role="tablist" aria-label="AcuiPath views" style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+        <div role="group" aria-label="AcuiPath views" style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
           {views.map((v) => (
             <Button key={v.id} variant={view === v.id ? 'primary' : 'ghost'} onClick={() => { setView(v.id); if (v.id !== 'screen') setRescreen(null) }}>
               {v.label}

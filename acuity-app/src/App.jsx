@@ -5,7 +5,7 @@ import { KEYS, readStorage, writeStorage, today, uid } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
 import { buildSampleData } from './lib/demoData.js'
 import {
-  BACKEND, LOCAL_MODE, deleteRecord, increment, listRecords, replaceCollection as replaceRemote,
+  BACKEND, LOCAL_MODE, SAVE_FAILED_EVENT, deleteRecord, increment, listRecords, replaceCollection as replaceRemote,
   setRecord, updateRecord, watchCollection, watchDoc,
 } from './lib/backend/index.js'
 import StatusBoard from './components/StatusBoard.jsx'
@@ -422,6 +422,22 @@ export default function App() {
     lastSynced.current.thresholds = thresholds
     setRecord('appState', 'main', { thresholds }, { merge: true }).catch((e) => console.error('sync thresholds', e))
   }, [thresholds])
+
+  // A save the shared database refused or could not receive is shown, so the
+  // person can re-enter it rather than assume it was kept.
+  useEffect(() => {
+    if (LOCAL_MODE) return undefined
+    const onFail = (e) => {
+      const { status } = e.detail || {}
+      setToast(status === 403
+        ? 'Not saved: your role does not allow that change.'
+        : status === 401
+          ? 'Not saved: your sign-in has expired. Reload the page to sign in again.'
+          : 'Not saved: the shared database could not be reached. Please try again.')
+    }
+    window.addEventListener(SAVE_FAILED_EVENT, onFail)
+    return () => window.removeEventListener(SAVE_FAILED_EVENT, onFail)
+  }, [])
 
   useEffect(() => {
     if (!toast) return

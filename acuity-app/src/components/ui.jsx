@@ -4,7 +4,7 @@ export const theme = {
   panelAlt: '#eef5f3',
   border: '#d9e6e2',
   text: '#15302b',
-  sub: '#5e7972',
+  sub: '#526c65', // WCAG 2.1 AA contrast on every panel background
   accent: '#00857C',
   accentSoft: 'rgba(0,133,124,0.10)',
   navy: '#0b2d4d',

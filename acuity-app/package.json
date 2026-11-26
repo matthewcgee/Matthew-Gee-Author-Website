@@ -13,7 +13,6 @@
     "@fontsource/inter": "^5.3.0",
     "@fontsource/nunito": "^5.3.0",
     "@fontsource/playfair-display": "^5.3.0",
-    "firebase": "^12.14.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.12.7"

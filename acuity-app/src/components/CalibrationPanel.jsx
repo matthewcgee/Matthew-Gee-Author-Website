@@ -32,7 +32,7 @@ export function CalibrationBadge({ calibration }) {
       data-calibration-version={calibration.version}
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 9px', borderRadius: 999,
-        fontSize: 11.5, fontWeight: 700, background: theme.accentSoft, color: theme.accent, whiteSpace: 'nowrap',
+        fontSize: 11.5, fontWeight: 700, background: theme.accentSoft, color: '#006b63', whiteSpace: 'nowrap',
       }}
     >
       {INSTRUMENT_NAME} calibration {versionLabel(calibration)}

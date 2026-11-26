@@ -7,10 +7,12 @@
 > ### Start here (IT / Innovations)
 > Three sections cover everything needed to bring Acuitas in-house:
 > 1. **[Moving Acuitas to your internal GitHub](#moving-acuitas-to-your-internal-github)** — one copy-paste block of commands.
-> 2. **[Going service-line wide: the shared database](#going-service-line-wide-the-shared-database)** — what to connect so every unit sees the same live data. **Google Cloud is not permitted at this health system**, so this section covers the approved-database path and the one piece of development it needs.
+> 2. **[Going service-line wide: the shared database](#going-service-line-wide-the-shared-database)** — what to connect so every unit sees the same live data. **Google Cloud is not permitted at this health system**, so this section covers the approved-database path: the **Acuitas data service**, built and tested on Microsoft SQL Server and PostgreSQL.
 > 3. **[Day-one checklist](#day-one-checklist)** — the whole job on one page, in order.
 >
-> Moving, building, hosting, evaluation and single sign-on need no source code changes; every setting lives in one file, `.env.production`, made from the commented template `.env.example`. The shared database is the exception: Acuitas's built-in connection is Google Cloud Firestore, so a non-Google database needs a data adapter first (see section 2).
+> Moving, building, hosting, evaluation, single sign-on and the shared database need no source code changes; every setting lives in `.env.production` (made from the commented template `.env.example`) and in the data service's application settings (`api/README.md`).
+>
+> For the security review, `docs/security/` holds the architecture, data inventory, access model, threat model, dependency scan, software bill of materials and accessibility results.
 
 ---
 
@@ -43,7 +45,7 @@ The application is a **React single-page app** that builds to plain static files
 | Frontend framework | React 18 + Vite 5 |
 | Language | JavaScript (ES2022) |
 | Styling | Inline styles (no CSS framework) |
-| Shared database | Optional. Built in: Google Cloud Firestore (not permitted at this health system). Approved alternative through a data adapter — see [the shared database](#going-service-line-wide-the-shared-database) |
+| Shared database | Optional. **Acuitas data service** (`api/`) on Microsoft SQL Server, Azure SQL or PostgreSQL — see [the shared database](#going-service-line-wide-the-shared-database). Google Cloud Firestore remains as a reference option only |
 | Build output | Static HTML/CSS/JS |
 | Node.js required | v18 or higher, v20 recommended (build-time only) |
 
@@ -59,7 +61,7 @@ npm install
 npm run dev
 # App available at http://localhost:5173/<base-path>/
 
-# 3. Run the test suite (414 tests: forecasting, optimization, screening, outcomes,
+# 3. Run the test suite (440 tests: forecasting, optimization, screening, outcomes,
 #    follow-up, cost, capacity, safety, roles, audit chain, FHIR, and UI rendering)
 npm test
 
@@ -147,7 +149,7 @@ git clone https://<your-internal-git>/<org>/acuitas.git
 cd acuitas
 cp .env.example .env.production    # leave it as-is for a first test build
 npm ci
-npm test                           # 414 tests should pass
+npm test                           # 440 tests should pass
 npm run build                      # the site is now in dist/
 ```
 
@@ -180,62 +182,58 @@ an application server or a data warehouse.
 
 ### Google Cloud is not permitted here
 
-Acuitas ships with one shared-database connection built in: **Google Cloud
+Acuitas originally shipped with one shared-database connection, **Google Cloud
 Firestore**. This health system does not allow Google products for storage, so
-service-line use will run on a database the organization approves. In practice:
+Acuitas now includes its own route to the organization's database:
 
 - **Evaluation and training need nothing.** Local mode keeps everything in the
   browser and opens no database connection.
-- **Single sign-on needs no Google.** Gateway mode works today with Microsoft
-  Entra ID, Okta or any identity provider, through an identity-aware proxy in
-  front of the web server (see [Sign-in, Roles & Audit](#sign-in-roles--audit)).
-- **Shared data needs a data adapter** for the approved database. Every database
-  call sits in three files (`src/lib/firebase.js`, `src/lib/store.js` and
-  `src/App.jsx`, about 30 calls in all), so this is a contained change to the
-  data layer, not a rebuild. It is the one development item between approval and
-  service-line go-live.
+- **Shared data uses the Acuitas data service** (`api/`). It is a small web API
+  in front of the organization's **Microsoft SQL Server, Azure SQL or
+  PostgreSQL** database. It runs as the API of an Azure Static Web App (with
+  Microsoft Entra ID sign-in), as an Azure Function App, or as a Node.js server
+  on-premises behind the organization's sign-in proxy.
+- **No Google service is contacted.** Data-service builds contain no Firebase
+  code, and the typefaces are bundled with the app instead of loading from
+  Google Fonts.
 
-### Choose the approved database
+### What the data service provides
 
-| | **Option 1 — Self-hosted Supabase** (recommended) | **Option 2 — Your standard database and a small data service** |
-|---|---|---|
-| What it is | Open-source PostgreSQL with live updates and row-level security, run on your own servers or in your Azure tenant | Microsoft SQL Server, Azure SQL or PostgreSQL, reached through a small Acuitas data service (for example Azure Functions or Azure App Service) |
-| Why choose it | Closest match to how Acuitas works today, so the least new code: changes appear on every screen live, and the access rules are enforced inside the database | Fits an all-Microsoft estate and uses the database team, backups and monitoring you already have |
-| Access rules | `firestore.rules` ported to PostgreSQL row-level security | The data service checks the signed-in user and role on every call |
-| Sign-in | Supabase Auth connected to Entra ID, or gateway SSO | Gateway SSO with Entra ID; the service validates each user's token |
-| Live updates | Built in (Supabase Realtime) | Short polling or server-sent events from the data service |
-| Runs on | Docker, on-premises or on an Azure virtual machine | The existing database server, plus the data service |
+| | |
+|---|---|
+| Database | Microsoft SQL Server 2016+, Azure SQL Database, or PostgreSQL 12+. Two tables and a sequence (`api/sql/`) |
+| Sign-in | Microsoft Entra ID through Azure Static Web Apps, or any identity-aware proxy. The service never handles passwords |
+| Roles | Directory groups map to Acuitas roles at sign-in. A signed-in user with no mapped group is a Viewer |
+| Access rules | `firestore.rules`, ported line for line and checked on the server on every read and write (`api/src/core/rules.js`) |
+| Audit log | Append-only in the service, in a database trigger and through least-privilege grants, and kept as one strict hash-chained sequence |
+| Calibration | AcuiCalc™ calibration versions are append-only: a save adds exactly one version and can never alter an earlier one |
+| Live updates | Each screen checks for changes every 4 seconds; your own saves appear at once |
+| Tested on | Microsoft SQL Server 2022 and PostgreSQL 16, with the same behavior suite that runs in `npm test`, plus two-user browser tests on each |
 
-Either way the data model does not change. Each collection listed under
-[Database / Backend](#database--backend) becomes a table holding a record `id`
-and the record itself as JSON, and every feature, test and the audit chain work
-as they do today.
+Each collection listed under [Database / Backend](#database--backend) is stored
+as rows of `(collection, id, JSON)`, so every feature, test and the audit chain
+work as they do in local mode.
 
-**Compliance.** Acuitas is designed to run without PHI: shift-level numbers,
-staffing and de-identified outpatient records. It is still confidential
-operational data, so place the database inside the organization's normal
-controls for confidential data, with encryption at rest, TLS in transit and the
-organization's standard backup policy.
+**Compliance.** The inpatient board holds only shift-level numbers (points,
+staff, census) and no patient-level data. The outpatient modules (AcuiPath and
+AcuiStep) hold screening scores, discharge dates and outcomes for each case,
+labelled with a case or referral number, never a name or MRN. Because a referral
+number can be traced back to a patient, have the privacy office decide how to
+classify that data. The simplest course is to place the database inside the
+controls the organization uses for PHI: encryption at rest, TLS in transit, the
+standard backup policy, and an Azure subscription covered by the organization's
+BAA with Microsoft. See `docs/security/`.
 
-### What the adapter work includes
+### Steps
 
-1. Replace the Firestore calls in the three data files with calls to the
-   approved database (Option 1: the Supabase client; Option 2: the data
-   service's API). The rest of the application calls those three files and does
-   not change.
-2. Create one table per collection, as above.
-3. Port `firestore.rules` (about 110 lines) to row-level security policies or
-   data-service checks, including the append-only audit log and the rule that a
-   recorded actor must be the signed-in user.
-4. Remove the Firebase library from the build, and self-host the typefaces
-   (today they load from Google Fonts), so the browser contacts no Google
-   service at all.
-5. Run the 414 automated tests, then the "Confirm it works" checks in the
-   day-one checklist.
+Follow `api/README.md`:
+1. Run the schema script and create a least-privilege login.
+2. Choose hosting (Static Web Apps with Entra ID, or your own server behind a
+   sign-in proxy).
+3. Set the application settings.
+4. Build the app with `VITE_BACKEND=api`.
 
-The input is IT's choice of database; the developer sizes and schedules the
-adapter from there. Until it is in place, Acuitas runs for evaluation and
-training in local mode.
+Then run the "Confirm it works" checks in the day-one checklist.
 
 ### How big does it get?
 
@@ -341,12 +339,11 @@ security rules check the signed-in Firebase user, so the other sign-in modes
 - [ ] Copy `dist/` to an internal web server and open it (local mode, demo data)
 
 **Make it service-line wide** (the approved shared database)
-- [ ] IT chooses the database: Option 1 (self-hosted Supabase) or Option 2 (standard database and data service); compliance confirms coverage
-- [ ] Developer builds the data adapter for it, removes the Firebase library and self-hosts the fonts; 414 tests pass
-- [ ] Database created on the organization's infrastructure; one table per collection; backups and point-in-time recovery on
-- [ ] Access rules in place (row-level security, or data-service checks), including the append-only audit log
-- [ ] Single sign-on: gateway mode with Entra ID (or Supabase Auth with Entra ID); directory groups mapped to Acuitas roles
-- [ ] `.env.production` filled in for the chosen database and sign-in, and saved as the `ACUITAS_ENV` repository secret
+- [ ] IT chooses the database (SQL Server / Azure SQL, or PostgreSQL) and hosting (Static Web Apps with Entra ID, or own server behind a sign-in proxy); the privacy office confirms the data classification (`docs/security/`)
+- [ ] Database created on the organization's infrastructure from `api/sql/`; least-privilege service login; backups and point-in-time recovery on; `npm run check-db` reports ready
+- [ ] Single sign-on: Entra ID groups mapped to Acuitas roles in `ACUITAS_ROLE_MAP`
+- [ ] Data service deployed with its application settings (`api/README.md`)
+- [ ] `.env.production` filled in (`VITE_BACKEND=api`, gateway sign-in), and saved as the `ACUITAS_ENV` repository secret
 - [ ] Rebuilt with the real settings and redeployed
 
 **Confirm it works**
@@ -394,11 +391,11 @@ Rebuild and redeploy.
 | Mode | Set with | Who is signed in | Is it access control? |
 |---|---|---|---|
 | **local** (default) | nothing | After the access password, each person enters a name and picks a role | **No** — self-asserted. Shapes the interface and attributes the audit log. For evaluation and training. |
-| **gateway** | `VITE_AUTH_MODE=gateway`, `VITE_IDENTITY_ENDPOINT=/.auth/me` | Your single sign-on in front of the static host (e.g. Microsoft Entra ID via Azure Static Web Apps built-in auth, or Okta / any IdP via an identity-aware proxy such as oauth2-proxy) | **Yes, at the door** — the gateway blocks unauthenticated users; roles come from IdP groups. |
+| **gateway** | `VITE_AUTH_MODE=gateway`, `VITE_IDENTITY_ENDPOINT=/.auth/me` | Your single sign-on in front of the static host (e.g. Microsoft Entra ID via Azure Static Web Apps built-in auth, or Okta / any IdP via an identity-aware proxy such as oauth2-proxy) | **Yes, end to end with the data service** — the gateway blocks unauthenticated users, roles come from IdP groups, and the data service enforces every role on the server. |
 | **firebase** (Google; not permitted here) | `VITE_AUTH_MODE=firebase`, `VITE_AUTH_PROVIDER_ID=oidc.<name>` or `saml.<name>` | Firebase Authentication with your OIDC or SAML provider; role = custom claim `acuitasRole` | **Yes, end to end** — `firestore.rules` enforces every role on the server. |
 
-At this health system, use **gateway** mode (or, with Option 1, Supabase Auth
-connected to Entra ID once the adapter is in place). In gateway and firebase
+At this health system, use **gateway** mode with the Acuitas data service
+(`api/README.md`). In gateway and firebase
 modes the shared access password is skipped (SSO replaces it).
 The Firebase sign-in code is loaded only in firebase-mode builds; the public build
 contains none of it (verified at build time).
@@ -473,10 +470,9 @@ strict sequence should append server-side (e.g. a Cloud Function).
 
 `firestore.rules` (in this folder) is the access-control template:
 per-collection read and write by role, an append-only audit log, and everything
-else closed. It is written for Firestore. On the approved database the same rules
-are ported to row-level security (Option 1) or data-service checks (Option 2),
-and with gateway sign-in each person's role comes from their directory groups
-(`VITE_ROLE_MAP`), so no role script is needed.
+else closed. The Acuitas data service enforces the same rules on the server
+(`api/src/core/rules.js`, tested role by role), and with gateway sign-in each
+person's role comes from their directory groups, so no role script is needed.
 
 For reference, on Firestore the rules deploy with
 `firebase deploy --only firestore:rules` (the included `firebase.json` points at
@@ -835,16 +831,17 @@ and disappears when toggled off. Every synthetic record is stamped `demo: true`.
 
 ### Connection is supplied at build time
 
-Nothing is hardcoded. The app reads its database config from a single build-time
-environment variable, `VITE_FIREBASE_CONFIG`, holding the Firebase config object
-as JSON:
+Nothing is hardcoded. A build chooses its backend with one setting:
 
 ```bash
-VITE_FIREBASE_CONFIG='{"apiKey":"…","authDomain":"…","projectId":"…","storageBucket":"…","messagingSenderId":"…","appId":"…"}' npm run build
+VITE_BACKEND=api npm run build        # the Acuitas data service (approved databases)
+npm run build                         # local mode (demonstration)
 ```
 
-This is the built-in Firestore connection. The adapter for the approved database
-reads its own connection setting the same way, from `.env.production`.
+The data service reads its database connection from its own application
+settings (`ACUITAS_DB`, `ACUITAS_DB_CONNECTION`; see `api/README.md`), never
+from the browser build. The Firestore reference option still reads
+`VITE_FIREBASE_CONFIG`.
 
 This matters for two reasons. A build carries no credentials and no project
 identifier, so the compiled bundle never reveals which institution it belongs
@@ -853,7 +850,7 @@ with no source edit.
 
 ### Local mode — what happens with no config
 
-**With `VITE_FIREBASE_CONFIG` unset the app runs entirely in the browser.** Every
+**With no backend configured the app runs entirely in the browser.** Every
 shift entry, deployment and census cap is kept in that browser's local storage
 and nothing is transmitted anywhere. No database connection is opened at all.
 
@@ -865,24 +862,14 @@ across a unit, because nothing is shared between browsers or devices.
 The mode is decided in:
 
 ```
-src/lib/firebase.js
+src/lib/backend/index.js
 ```
-
-**Firebase is not required.** It can be replaced with any backend that supports:
-1. Document/record storage (JSON objects)
-2. Real-time change notifications (WebSockets or Server-Sent Events)
 
 ### The data, for any backend
 
-[Supabase](https://supabase.com) (Option 1 above) is an open-source alternative to Firestore that can be self-hosted on your own infrastructure. It provides:
-- PostgreSQL database
-- Real-time subscriptions (matches how the app works today)
-- REST and WebSocket APIs
-- HIPAA-capable when self-hosted with proper configuration
+**Collections** (each stored as rows of `collection`, `id` and the record as JSON):
 
-**Data structure to replicate** (one table per collection, `id` plus the record as JSON):
-
-| Firestore Collection | What it stores |
+| Collection | What it stores |
 |---|---|
 | `appState/main` | Locations list + acuity thresholds (single document) |
 | `entries` | One document per shift entry (ED entries may carry `bhArrivals`, `boarders`, `boardingHours`) |
@@ -902,17 +889,17 @@ browser under `bhai:`-prefixed keys.
 
 ### Swapping the Backend
 
-This is the adapter work described under
-[What the adapter work includes](#what-the-adapter-work-includes). All Firebase calls are isolated in three files:
-- `src/lib/firebase.js` — connection config
-- `src/App.jsx` — read/write calls for locations, entries, deployments and caps
-- `src/lib/store.js` — one generic synced-collection layer used by every newer feature
+Every database call in the app goes through one module, `src/lib/backend/`:
+- `index.js` chooses the backend at build time and is the only interface the
+  rest of the app uses;
+- `apiBackend.js` is the Acuitas data service client;
+- `firebaseBackend.js` is the Firestore reference option. Builds that do not use
+  Firebase swap it for a stub (`vite.config.js`), so they neither contain nor
+  need the Firebase library. To build the Firestore option, first run
+  `npm install firebase@^12.14.0`.
 
-Replacing those calls with your chosen backend, and porting `firestore.rules`
-to that backend's access rules (for PostgreSQL, row-level security), is a
-contained development task: three files and one rules file, not a rebuild. The
-test suite does not touch the database, so it confirms the rest of the app
-still works after the swap.
+A different backend means one new file beside these, implementing the same
+eight functions. Nothing else in the app changes.
 
 ---
 
@@ -945,7 +932,7 @@ live. New installations deploy the 1.1 rules as part of set-up.
 ```
 acuitas/
 ├── src/
-│   ├── App.jsx                  # Main app shell, routing, Firebase sync
+│   ├── App.jsx                  # Main app shell, routing, shared-data sync
 │   ├── components/
 │   │   ├── AcuityCalculator.jsx # AcuiCalc™ two-step scoring tool
 │   │   ├── AcuitasLogo.jsx      # Brand logo component
@@ -973,14 +960,14 @@ acuitas/
 │   │   ├── __tests__/           # Screen rendering tests
 │   │   └── ui.jsx               # Shared UI components & theme
 │   └── lib/
-│       ├── __tests__/           # Engine tests (414 tests in all, 21 files)
+│       ├── __tests__/           # Engine tests (440 tests in all, 23 files, including the data service)
 │       ├── audit.js             # Hash-chained audit log
 │       ├── calibration.js       # AcuiCalc™ governed calibration: limits, zones, versions
 │       ├── capacity.js          # ED boarding vs open-bed outlook
 │       ├── cost.js              # Cost rates, spend, plan value, realized value
 │       ├── demoData.js          # Synthetic demo region and de-identified samples
 │       ├── fhir.js              # FHIR R4 census import
-│       ├── firebase.js          # Firebase connection (swap this for your backend)
+│       ├── backend/             # The only path to shared data: local, data service, or Firestore
 │       ├── firebaseAuth.js      # Firebase sign-in (firebase-mode builds only)
 │       ├── fuh.js               # Discharge bridge, 7/30-day follow-up
 │       ├── identity.js          # Sign-in mode and identity loading
@@ -995,7 +982,7 @@ acuitas/
 │       ├── risk.js              # Breach probability, drift, attribution
 │       ├── roles.js             # Roles, permissions, IdP role mapping
 │       ├── safety.js            # Safety events, rates by stage, next-shift risk
-│       ├── store.js             # Synced collections (local or Firestore) + audit sink
+│       ├── store.js             # Synced collections (local or shared backend) + audit sink
 │       ├── tier1.js             # AcuiPath Tier 1 chart-review triage
 │       ├── loc.js               # AcuiPath level-of-care screen & operational outputs
 │       ├── opmatch.js           # AcuiPath assignment & load balancing
@@ -1003,6 +990,13 @@ acuitas/
 │       ├── stateShapes.js       # US state SVG map shapes
 │       ├── storage.js           # localStorage helpers
 │       └── whatif.js            # Scenario projection and re-optimization
+├── api/                         # Acuitas data service (shared database): see api/README.md
+│   ├── sql/                     # Schema for SQL Server / Azure SQL and PostgreSQL
+│   ├── src/core/                # Access rules, identity, request handling
+│   ├── src/repo/                # SQL Server, PostgreSQL and in-memory stores
+│   └── test/                    # Behavior suite, run against every store
+├── docs/security/               # Security & architecture packet for IT review
+├── staticwebapp.config.json     # Azure Static Web Apps: Entra ID sign-in, roles, headers
 ├── public/
 │   └── assets/                  # Logo SVGs, OG image
 ├── .github/workflows/build.yml  # CI: test + build (runs once this is its own repository)

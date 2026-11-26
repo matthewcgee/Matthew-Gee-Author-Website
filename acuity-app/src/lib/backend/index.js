@@ -67,17 +67,33 @@ export function watchDoc(collection, id, onData, onError) {
   return subscribe((b) => b.watchDoc(collection, id, onData, onError || ((e) => console.error(`sync ${collection}/${id}`, e))))
 }
 
+// A write that fails (network, permissions, outage) is announced to the app
+// shell, which tells the person on screen, so nothing is lost silently.
+// Audit-log conflicts are part of normal sequencing and are retried, so they
+// are not announced.
+export const SAVE_FAILED_EVENT = 'acuitas:save-failed'
+function announced(collection, promise) {
+  return promise.catch((e) => {
+    if (!(collection === 'auditLog' && e?.status === 409) && typeof window !== 'undefined' && window.dispatchEvent) {
+      try {
+        window.dispatchEvent(new CustomEvent(SAVE_FAILED_EVENT, { detail: { collection, status: e?.status ?? null, message: e?.message || String(e) } }))
+      } catch { /* no DOM events available */ }
+    }
+    throw e
+  })
+}
+
 export async function setRecord(collection, id, data, { merge = false } = {}) {
-  return (await impl()).setRecord(collection, id, data, { merge })
+  return announced(collection, (async () => (await impl()).setRecord(collection, id, data, { merge }))())
 }
 
 /** patch: { field: value } and/or { field: increment(n) }. The record must exist. */
 export async function updateRecord(collection, id, patch) {
-  return (await impl()).updateRecord(collection, id, patch)
+  return announced(collection, (async () => (await impl()).updateRecord(collection, id, patch))())
 }
 
 export async function deleteRecord(collection, id) {
-  return (await impl()).deleteRecord(collection, id)
+  return announced(collection, (async () => (await impl()).deleteRecord(collection, id))())
 }
 
 export async function listRecords(collection) {
@@ -86,7 +102,7 @@ export async function listRecords(collection) {
 
 /** items: [{ id, data }]. Deletes everything else in the collection. */
 export async function replaceCollection(collection, items) {
-  return (await impl()).replaceCollection(collection, items)
+  return announced(collection, (async () => (await impl()).replaceCollection(collection, items))())
 }
 
 /** Add n to a numeric field atomically, inside updateRecord. */

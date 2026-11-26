@@ -41,6 +41,40 @@ evidence (section 3) confirms or adjusts them.
   health staffing is known, allowing for the higher totals that pediatric
   modifiers add, and then confirmed by evidence.
 
+### Reference unit check (face validity)
+
+Before any cutoff is used, the staffing committee checks it against a real
+unit that nurses know well. The reference is a typical adult unit: average
+census 18, normally staffed with 4–5, so 3.6–4.5 patients per staff member
+before any acuity is counted.
+
+| Staff on shift | GREEN | YELLOW | RED |
+|---|---|---|---|
+| 4 | 6 points or less | 6.5–10 | above 10 |
+| 5 | 7.5 or less | 8–12.5 | above 12.5 |
+
+| Shift on the reference unit | Points | 4 staff | 5 staff |
+|---|---|---|---|
+| Two patients on detox | 4 | GREEN | GREEN |
+| One 1:1 | 5 | GREEN | GREEN |
+| One 1:1 + one restraint | 9 | YELLOW | YELLOW |
+| Two 1:1s | 10 | YELLOW | YELLOW |
+| Two 1:1s + an aggression | 14 | RED | RED |
+| Every patient on Q15 | 54 | RED | RED |
+
+Questions this raises, to settle before day 1:
+
+- **A 1:1 uses a whole staff member.** Two 1:1s on 4 staff leave 2 people
+  for 16 patients, yet the zone is YELLOW. Either the cutoffs or the 1:1 weight
+  are too lenient for that case, or a 1:1 should count as a staff member
+  removed from the denominator.
+- **Baseline observation.** If Q15 checks are routine for every patient on a
+  unit, counting them as acuity puts the unit in RED every shift. Score Q15
+  only when it is above the unit's routine observation level.
+- **Census is not in the zone.** The zone moves with acuity and staff, not
+  with headcount: 22 patients score the same as 18 if the points are the same.
+  Headcount is tracked separately against the unit's nursing census cap.
+
 ## 3. Evidence: the contrasting-groups method
 
 A starting point is a hypothesis. Local evidence decides whether to keep it.

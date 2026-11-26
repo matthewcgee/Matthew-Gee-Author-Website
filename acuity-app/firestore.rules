@@ -102,7 +102,10 @@ service cloud.firestore {
       allow create: if hasRole(['admin']) && request.resource.data.value.versions.size() >= 1;
       allow update: if hasRole(['admin'])
         && request.resource.data.value.versions.size() == resource.data.value.versions.size() + 1
-        && request.resource.data.value.versions[0:resource.data.value.versions.size()] == resource.data.value.versions;
+        && request.resource.data.value.versions[0:resource.data.value.versions.size()] == resource.data.value.versions
+        && request.resource.data.value.versions[resource.data.value.versions.size()].reason.size() >= 10
+        && request.resource.data.value.versions[resource.data.value.versions.size()].reviewers.size() > 0
+        && request.resource.data.value.versions[resource.data.value.versions.size()].actor == request.auth.token.email;
       allow delete: if false;
     }
     match /appConfig/{key} {

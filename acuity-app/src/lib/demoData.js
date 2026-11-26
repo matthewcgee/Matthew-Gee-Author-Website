@@ -107,8 +107,9 @@ const DEMO_UNITS = [
     type: 'ed',
     censusCap: null,
     staff: null,
-    // ED behavioral health points: Monday and Friday evenings run hot.
-    pattern: { edBase: 17, drift: 0.03, mondayAm: 1.2, fridayPm: 5.5, weekendDip: -1.5, noise: 2.4 },
+    // ED behavioral health points, on the scale of the 24 / 40 ED cutoffs:
+    // usually GREEN, Monday mornings and Friday evenings run hot.
+    pattern: { edBase: 20, drift: 0.06, mondayAm: 4, fridayPm: 18, weekendDip: -3, noise: 5.5 },
   },
 ]
 
@@ -123,6 +124,11 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
   // A separate stream for the ED capacity fields, so adding them never shifts
   // the random sequence that produces every other value in the scenario.
   const nextCap = rng(seed ^ 0x5bd1e995)
+  // And one more for the charge nurses' shift ratings (synthetic): each rates
+  // the shift from how it felt, which tracks the acuity per staff (or ED
+  // points) with some disagreement near the boundaries, as real ratings do.
+  const nextRating = rng(seed ^ 0x27d4eb2d)
+  const rate = (felt, greenMax, yellowMax) => (felt <= greenMax ? 'manageable' : felt <= yellowMax ? 'strained' : 'unsafe')
   const totalShifts = weeks * 7 * SHIFTS.length
   const endDay = dayIndex(today())
   // The newest reading is today's PM shift, so forecasts start from now.
@@ -177,7 +183,7 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
         if (weekday === 5 && shift === 'PM') boarders += 2.9
         if (isWeekend) boarders -= 0.6
         boarders = Math.max(0, Math.round(boarders + gauss(nextCap) * 0.8))
-        const bhArrivals = Math.max(0, Math.round(Math.max(0, points) / 2.6 + gauss(nextCap) * 1.1))
+        const bhArrivals = Math.max(0, Math.round(Math.max(0, points) / 3.1 + gauss(nextCap) * 1.1))
         const boardingHours = boarders === 0 ? 0 : Math.max(1, Math.round(boarders * (6.5 + gauss(nextCap) * 1.6)))
         entries.push({
           id: `demo_${unit.id}_${age}`,
@@ -190,6 +196,7 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
           bhArrivals,
           boarders,
           boardingHours,
+          nurseRating: rate(Math.max(0, Math.round(points)) + gauss(nextRating) * 3, 26, 38),
           capInPlace: false,
           notes: '',
           pilot: false,
@@ -230,6 +237,7 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
         points,
         staff,
         capInPlace: unit.censusCap != null && census > unit.censusCap,
+        nurseRating: rate(points / staff + gauss(nextRating) * 0.2, 1.6, 2.6),
         notes: '',
         pilot: false,
         demo: true,

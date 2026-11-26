@@ -6,6 +6,8 @@ import { postgresSchema, sqlServerBatches } from '../src/config.js'
 import { principalConfig, principalFrom, rolesForSignIn, DEFAULT_ROLE_MAP, ROLE_ORDER } from '../src/core/principal.js'
 import { allowed } from '../src/core/rules.js'
 import * as clientRoles from '../../src/lib/roles.js'
+import * as clientCal from '../../src/lib/calibration.js'
+import * as serverCal from '../src/core/acuicalc.js'
 
 conformance('the in-memory store', async () => createMemoryRepo())
 
@@ -59,5 +61,25 @@ describe('who is calling', () => {
     for (const role of ROLE_ORDER) {
       expect(allowed(role, 'update', 'appConfig', 'acuiCalibration')).toBe(clientRoles.can(role, 'calibrate'))
     }
+  })
+})
+
+describe('server and app agree on the AcuiCalc™ rules', () => {
+  it('uses the same shipped points, limit, zone sets and minimum reason length', () => {
+    expect(serverCal.SHIPPED_POINTS).toEqual(clientCal.SHIPPED_POINTS)
+    expect(serverCal.WEIGHT_LIMIT_PCT).toBe(clientCal.WEIGHT_LIMIT_PCT)
+    expect(serverCal.MIN_REASON_LENGTH).toBe(clientCal.MIN_REASON_LENGTH)
+    expect(serverCal.ZONE_SET_IDS).toEqual([...clientCal.ZONE_SET_IDS])
+  })
+
+  it('accepts every version the app itself produces', () => {
+    let state = clientCal.calibrationState(null)
+    const meta = { actor: 'admin@example.org', role: 'admin', reason: 'Agreed at the staffing committee', reviewers: ['Charge RN'], at: 1 }
+    const r1 = clientCal.proposeCalibration(state, { points: { ...clientCal.SHIPPED_POINTS, obs_1to1: 6.25 } }, meta)
+    state = r1.state
+    const r2 = clientCal.resetCalibration(state, meta)
+    expect(serverCal.versionProblems(state.versions[0])).toEqual([])
+    expect(serverCal.appendedVersionProblem(state.versions.slice(0, 1), r1.version, { name: 'admin@example.org' })).toBe(null)
+    expect(serverCal.appendedVersionProblem(state.versions, r2.version, { name: 'admin@example.org' })).toBe(null)
   })
 })

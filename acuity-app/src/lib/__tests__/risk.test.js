@@ -165,8 +165,8 @@ describe('assessForecast', () => {
     const series = buildSeries(entries, ED, DEFAULT_THRESHOLDS)
     const a = assessForecast(forecastSeries(series), ED, DEFAULT_THRESHOLDS)
     expect(a.thresholds).toEqual(thresholdsFor(ED, DEFAULT_THRESHOLDS))
-    expect(a.thresholds.greenMax).toBe(21)
-    // 25 points is above green (21) but at or below yellow (27).
+    expect(a.thresholds.greenMax).toBe(24)
+    // 25 points is above green (24) but at or below yellow (40).
     expect(a.next.stage).toBe('YELLOW')
   })
 

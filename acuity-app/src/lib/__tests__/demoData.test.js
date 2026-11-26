@@ -116,7 +116,7 @@ describe('engine behavior across the scenario', () => {
     expect(f.ok).toBe(true)
     expect(f.points[0].p50).toBeGreaterThan(5)
     const a = assessForecast(f, loc, DEFAULT_THRESHOLDS)
-    expect(a.thresholds.greenMax).toBe(21)
+    expect(a.thresholds.greenMax).toBe(24)
   })
 
   it('produces a deployment plan that reduces system risk', () => {

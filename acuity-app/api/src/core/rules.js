@@ -4,6 +4,8 @@
 // handles is checked here against the signed-in user's Acuitas role, on the
 // server, before the database is touched. Anything not listed is closed.
 
+import { appendedVersionProblem, versionProblems } from './acuicalc.js'
+
 export const ALL_ROLES = ['admin', 'supervisor', 'charge', 'screener', 'analyst', 'viewer']
 const OP_READERS = ['admin', 'supervisor', 'screener', 'analyst']
 
@@ -76,12 +78,25 @@ export function contentRule({ principal, collection, id, before, after }) {
   if (collection === 'appConfig' && id === 'acuiCalibration') {
     const next = after?.value?.versions
     if (!Array.isArray(next) || next.length < 1) return 'The calibration must hold at least one version.'
+    const prev = before ? (before?.value?.versions || []) : []
     if (before) {
-      const prev = before?.value?.versions || []
       if (next.length !== prev.length + 1) return 'Each calibration save must add exactly one version.'
       for (let i = 0; i < prev.length; i++) {
         if (canonical(prev[i]) !== canonical(next[i])) return 'Earlier calibration versions cannot be changed.'
       }
+    }
+    // The first save also carries v1 (shipped or carried-forward values).
+    const base = before ? prev : next.slice(0, 1)
+    if (!before) {
+      const v1 = next[0]
+      if (v1.version !== 1 || !['shipped', 'migrated'].includes(v1.kind)) return 'The first calibration version must be v1.'
+      const p = versionProblems(v1)
+      if (p.length) return p[0]
+      if (next.length > 2) return 'Each calibration save must add exactly one version.'
+    }
+    if (before || next.length === 2) {
+      const problem = appendedVersionProblem(base, next.at(-1), principal)
+      if (problem) return problem
     }
   }
   return null

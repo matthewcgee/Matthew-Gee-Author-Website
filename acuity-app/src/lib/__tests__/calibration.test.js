@@ -32,6 +32,7 @@ import {
   validatePoints,
   validateZones,
   withLegacyStamps,
+  locationChanges,
   zoneBands,
   zoneResponse,
 } from '../calibration.js'
@@ -67,7 +68,7 @@ describe('shipped calibration reproduces current scoring', () => {
 
   it('keeps the production zone cutoffs as the shipped defaults', () => {
     expect(SHIPPED_ZONES.inpatient).toEqual({ greenMax: 1.5, yellowMax: 2.5 })
-    expect(SHIPPED_ZONES.ed).toEqual({ greenMax: 21, yellowMax: 27 })
+    expect(SHIPPED_ZONES.ed).toEqual({ greenMax: 24, yellowMax: 40 })
     expect(SHIPPED_ZONES.pedsEd).toEqual({ greenMax: PEDIATRIC_ED_THRESHOLDS.greenMax, yellowMax: PEDIATRIC_ED_THRESHOLDS.yellowMax })
   })
 
@@ -94,7 +95,7 @@ describe('shipped calibration reproduces current scoring', () => {
   })
 
   it('carries forward region thresholds that were already changed before calibration existed', () => {
-    const v1 = initialCalibration({ inpatient: { greenMax: 1.4, yellowMax: 2.4 }, ed: { greenMax: 21, yellowMax: 27 } })
+    const v1 = initialCalibration({ inpatient: { greenMax: 1.4, yellowMax: 2.4 }, ed: { greenMax: 24, yellowMax: 40 } })
     expect(v1.kind).toBe('migrated')
     expect(v1.zones.inpatient).toEqual({ greenMax: 1.4, yellowMax: 2.4 })
     expect(v1.zones.ed).toEqual(SHIPPED_ZONES.ed)
@@ -272,6 +273,19 @@ describe('4. one calibration for the whole health system', () => {
     for (const loc of eds) expect(thresholdsFor(loc, th)).toMatchObject({ greenMax: 20, yellowMax: 26 })
   })
 
+  it('audits every change to the cutoffs a unit is scored against', () => {
+    const before = [IP, ED, { id: 'x', name: 'Old unit', type: 'inpatient' }]
+    const after = [{ ...IP, type: 'ed' }, { ...ED, zoneSet: 'pedsEd' }, { id: 'n', name: 'New unit', type: 'inpatient' }]
+    const d = locationChanges(before, after)
+    expect(d.count).toBe(3)
+    expect(d.changed).toEqual([
+      { id: 'ip1', name: '4 West', type: { from: 'inpatient', to: 'ed' }, zoneSet: { from: 'inpatient', to: 'ed' } },
+      { id: 'ed1', name: 'Main ED', zoneSet: { from: 'ed', to: 'pedsEd' } },
+    ])
+    expect(d.added).toEqual([{ id: 'n', name: 'New unit', type: 'inpatient', zoneSet: 'inpatient' }])
+    expect(d.removed).toEqual([{ id: 'x', name: 'Old unit' }])
+  })
+
   it('rejects zone sets keyed to a single unit', () => {
     const r = propose(fresh(), { zones: { ...SHIPPED_ZONES, ip1: { greenMax: 1, yellowMax: 2 } } })
     expect(r.ok).toBe(false)
@@ -341,7 +355,7 @@ describe('5. change control', () => {
       expect(entry.actor).toBe('Admin One')
       expect(entry.role).toBe('admin')
       expect(entry.at).toBe(2000)
-      expect(entry.detail.old.zones.ed).toEqual({ greenMax: 21, yellowMax: 27 })
+      expect(entry.detail.old.zones.ed).toEqual({ greenMax: 24, yellowMax: 40 })
       expect(entry.detail.new.zones.ed).toEqual({ greenMax: 20, yellowMax: 26 })
       expect(entry.detail.reason).toBe(ADMIN.reason)
       expect((await verifyAuditChain([first, entry])).ok).toBe(true)
@@ -410,7 +424,7 @@ describe('6. versioning and historical scores', () => {
   it('reads scores saved before calibration existed as v1, whatever is active now', () => {
     const legacy = [
       { id: 'a', locId: 'ip1', date: '2026-10-19', shift: 'AM', points: 20, staff: 10 },
-      { id: 'b', locId: 'ed1', date: '2026-10-19', shift: 'AM', points: 24 },
+      { id: 'b', locId: 'ed1', date: '2026-10-19', shift: 'AM', points: 30 },
       { id: 'c', locId: 'ed2', date: '2026-10-19', shift: 'AM', points: 60 },
     ]
     const state = propose(fresh(), { zones: { inpatient: { greenMax: 1, yellowMax: 1.875 }, ed: { greenMax: 10, yellowMax: 15 }, pedsEd: { greenMax: 40, yellowMax: 50 } } }).state

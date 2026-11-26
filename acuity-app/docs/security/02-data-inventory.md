@@ -7,7 +7,7 @@ it refuses any other.
 | Collection | Contents | Patient-level? | Notes |
 |---|---|---|---|
 | `appState` | Location list (unit name, type, census cap, zone set) and legacy thresholds | No | |
-| `entries` | Per unit per shift: date, shift, census, acuity points, staff on shift, cap flag, ED arrivals / boarders / boarding hours, calibration version, free-text notes | No | Notes are free text (see below) |
+| `entries` | Per unit per shift: date, shift, census, acuity points, staff on shift, cap flag, ED arrivals / boarders / boarding hours, calibration version, the charge nurse's shift rating (Manageable / Strained / Unsafe), free-text notes | No | Notes are free text (see below) |
 | `deployments` | Date, shift, staff member's name and role, from/to unit, hours, source (float / overtime / agency / internal), notes | No | **Staff names** (workforce information) |
 | `locationCaps` | Census cap per unit | No | |
 | `safetyEvents` | Unit, date, shift, event type, severity | No | No patient identifiers |

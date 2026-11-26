@@ -5,9 +5,22 @@ import { uid } from './storage'
 // Inpatient units score as acuity points per staff member; ED and pediatric ED
 // score as a raw point total, because neither carries a staffing denominator.
 // Both are AcuiScale scores, read against the same GREEN / YELLOW / RED bands.
+//
+// One standard sets every starting cutoff: acuity workload per caregiver.
+// Inpatient units measure it directly (points ÷ staff on shift). The ED score
+// is not divided by staff, so its starting cutoffs are the same per-staff
+// limits multiplied by the staff who typically care for behavioral health
+// patients in the ED on a shift (RNs, techs and sitters combined):
+//   GREEN ≤ 1.5 × 16 = 24 points, YELLOW ≤ 2.5 × 16 = 40 points.
+// These are starting points. Each system then confirms or adjusts them with
+// its own evidence through the governed AcuiCalc™ calibration
+// (docs/cutoff-standard.md).
+export const PER_STAFF_CUTOFFS = Object.freeze({ greenMax: 1.5, yellowMax: 2.5 })
+export const ED_REFERENCE_STAFF = 16
+
 export const DEFAULT_THRESHOLDS = {
-  inpatient: { greenMax: 1.5, yellowMax: 2.5, unit: 'AcuiScale — acuity per staff' },
-  ed: { greenMax: 21, yellowMax: 27, unit: 'AcuiScale — total ED points' },
+  inpatient: { greenMax: PER_STAFF_CUTOFFS.greenMax, yellowMax: PER_STAFF_CUTOFFS.yellowMax, unit: 'AcuiScale — acuity per staff' },
+  ed: { greenMax: PER_STAFF_CUTOFFS.greenMax * ED_REFERENCE_STAFF, yellowMax: PER_STAFF_CUTOFFS.yellowMax * ED_REFERENCE_STAFF, unit: 'AcuiScale — total ED points' },
 }
 
 export const STAGE_COLORS = {

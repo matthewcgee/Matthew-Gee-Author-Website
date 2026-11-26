@@ -485,3 +485,25 @@ export function withLegacyStamps(entries, locations, baselineCal) {
   })
   return changed ? out : entries
 }
+
+/**
+ * What a locations edit changed, for the audit log. A unit's type and zone set
+ * decide which cutoffs it is scored against, so every change to either is
+ * recorded unit by unit, with the value before and after.
+ */
+export function locationChanges(prev, next) {
+  const before = new Map((prev || []).map((l) => [l.id, l]))
+  const after = new Map((next || []).map((l) => [l.id, l]))
+  const out = { count: (next || []).length, added: [], removed: [], changed: [] }
+  for (const [id, l] of after) {
+    const b = before.get(id)
+    if (!b) { out.added.push({ id, name: l.name || '', type: l.type, zoneSet: zoneSetFor(l) }); continue }
+    const c = {}
+    if (b.type !== l.type) c.type = { from: b.type, to: l.type }
+    if (zoneSetFor(b) !== zoneSetFor(l)) c.zoneSet = { from: zoneSetFor(b), to: zoneSetFor(l) }
+    if ((b.name || '') !== (l.name || '')) c.name = { from: b.name || '', to: l.name || '' }
+    if (Object.keys(c).length) out.changed.push({ id, name: l.name || '', ...c })
+  }
+  for (const [id, b] of before) if (!after.has(id)) out.removed.push({ id, name: b.name || '' })
+  return out
+}

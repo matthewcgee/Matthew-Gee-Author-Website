@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createService } from '../src/core/service.js'
 import { principalConfig } from '../src/core/principal.js'
+import { SHIPPED_POINTS } from '../src/core/acuicalc.js'
 
 const ROLES = ['admin', 'supervisor', 'charge', 'screener', 'analyst', 'viewer']
 
@@ -134,22 +135,59 @@ export function conformance(label, makeRepo) {
       expect(await repo.get('auditLog', id)).toEqual({ id, actor: 'x' })
     })
 
+    const zonesOk = { inpatient: { greenMax: 1.5, yellowMax: 2.5 }, ed: { greenMax: 24, yellowMax: 40 }, pedsEd: { greenMax: 53, yellowMax: 71 } }
+    const respOk = { GREEN: 'At target', YELLOW: 'Deploy staff', RED: 'Deploy staff now' }
+    const cal = (n, extra = {}) => ({
+      version: n, kind: n === 1 ? 'shipped' : 'update', points: { ...SHIPPED_POINTS }, zones: zonesOk, responses: respOk,
+      reason: n === 1 ? 'Shipped defaults' : `Change number ${n} agreed by the staffing committee`,
+      reviewers: n === 1 ? [] : ['Night charge RN'], actor: n === 1 ? null : 'admin@example.org', role: n === 1 ? null : 'admin', at: n === 1 ? null : 1000 + n, ...extra,
+    })
+
     it('keeps AcuiCalc™ calibration versions append-only and administrator-only', async () => {
-      const v = (n) => ({ version: n, points: { obs_1to1: 5 }, zones: {}, responses: {}, reason: `v${n}` })
       const url = '/api/data/appConfig/acuiCalibration'
-      expect((await as('supervisor')('PUT', url, { data: { value: { versions: [v(1), v(2)] } } })).status).toBe(403)
+      expect((await as('supervisor')('PUT', url, { data: { value: { versions: [cal(1), cal(2)] } } })).status).toBe(403)
       const existing = (await viewer('GET', url)).body?.data?.value?.versions || []
-      const base = existing.length ? existing : [v(1)]
-      if (!existing.length) expect((await admin('PUT', url, { data: { value: { versions: base } } })).status).toBe(200)
+      const base = existing.length ? existing : [cal(1)]
       const n = base.length
-      expect((await admin('PUT', url, { data: { value: { versions: [...base, v(n + 1)] } } })).status).toBe(200)
-      const now = [...base, v(n + 1)]
+      if (!existing.length) expect((await admin('PUT', url, { data: { value: { versions: [...base, cal(2)] } } })).status).toBe(200)
+      const now = existing.length ? base : [...base, cal(2)]
+      const m = now.length
+      if (existing.length) expect((await admin('PUT', url, { data: { value: { versions: [...now, cal(m + 1)] } } })).status).toBe(200)
+      const cur = existing.length ? [...now, cal(m + 1)] : now
+      const k = cur.length
       // Rewriting an earlier version, skipping ahead, or deleting: refused.
-      expect((await admin('PUT', url, { data: { value: { versions: [{ ...now[0], reason: 'edited' }, ...now.slice(1), v(n + 2)] } } })).status).toBe(403)
-      expect((await admin('PUT', url, { data: { value: { versions: [...now, v(n + 2), v(n + 3)] } } })).status).toBe(403)
-      expect((await admin('PUT', url, { data: { value: { versions: now.slice(0, -1) } } })).status).toBe(403)
+      expect((await admin('PUT', url, { data: { value: { versions: [{ ...cur[0], reason: 'edited' }, ...cur.slice(1), cal(k + 1)] } } })).status).toBe(403)
+      expect((await admin('PUT', url, { data: { value: { versions: [...cur, cal(k + 1), cal(k + 2)] } } })).status).toBe(403)
+      expect((await admin('PUT', url, { data: { value: { versions: cur.slice(0, -1) } } })).status).toBe(403)
       expect((await admin('DELETE', url)).status).toBe(403)
-      expect((await viewer('GET', url)).body.data.value.versions).toHaveLength(n + 1)
+      expect((await viewer('GET', url)).body.data.value.versions).toHaveLength(k)
+      void n
+    })
+
+    it('refuses a calibration change that skips change control, even from an Administrator', async () => {
+      const url = '/api/data/appConfig/acuiCalibration'
+      const cur = (await viewer('GET', url)).body.data.value.versions
+      const next = cur.length + 1
+      const tryIt = async (v) => admin('PUT', url, { data: { value: { versions: [...cur, v] } } })
+      const cases = [
+        [cal(next, { reason: 'short' }), /written reason/],
+        [cal(next, { reviewers: [] }), /frontline nurses/],
+        [cal(next, { reviewers: ['  '] }), /frontline nurses/],
+        [cal(next, { actor: 'someone.else@example.org' }), /signed-in Administrator/],
+        [cal(next + 1), /must be v/],
+        [cal(next, { points: { ...SHIPPED_POINTS, obs_1to1: 9 } }), /outside/],
+        [cal(next, { points: { ...SHIPPED_POINTS, new_item: 2 } }), /core is locked/],
+        [cal(next, { zones: { ...zonesOk, ed: { greenMax: 40, yellowMax: 24 } } }), /0 < GREEN < YELLOW/],
+        [cal(next, { zones: { ...zonesOk, unit7: { greenMax: 1, yellowMax: 2 } } }), /not a zone set/],
+        [cal(next, { responses: { ...respOk, RED: '' } }), /RED zone response/],
+        [cal(next, { kind: 'shipped' }), /change or a reset/],
+      ]
+      for (const [v, why] of cases) {
+        const r = await tryIt(v)
+        expect([r.status, r.body.error]).toEqual([403, expect.stringMatching(why)])
+      }
+      expect((await viewer('GET', url)).body.data.value.versions).toHaveLength(cur.length)
+      expect((await tryIt(cal(next))).status).toBe(200)
     })
 
     it('replaces a whole collection in one step', async () => {

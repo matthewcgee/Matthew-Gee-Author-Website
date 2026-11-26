@@ -36,7 +36,7 @@ describe('downtime zone card', () => {
   it('matches the shipped defaults on v1', () => {
     const t = text(zoneCardHtml(v1))
     expect(t).toContain('calibration v1')
-    expect(t).toContain('Emergency departments 21 or less above 21 to 27 above 27')
+    expect(t).toContain('Emergency departments 24 or less above 24 to 40 above 40')
     expect(t).toMatch(/Constant Observation \(1:1\) 5 /)
     expect(t).toContain('shipped defaults')
   })

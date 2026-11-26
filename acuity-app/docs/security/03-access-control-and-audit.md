@@ -71,10 +71,18 @@ Additional rules, also enforced on the server:
   - Each new entry must extend the latest one: same next sequence number, and a
     link to the latest hash. A writer that raced someone else is told where the
     chain now ends and rebuilds its entry, so the log is one strict sequence.
-- **AcuiCalc™ calibration.** Only an Administrator can save it. A save must add
-  exactly one version and leave every earlier version byte-for-byte unchanged.
-  It can never be deleted. A save also requires a written reason and the
-  reviewing frontline nurses, which the app records.
+- **AcuiCalc™ calibration (the GREEN/YELLOW/RED cutoffs and point values).**
+  Only an Administrator can save it. On the server, a save must:
+  - add exactly one version, with the next version number;
+  - leave every earlier version byte-for-byte unchanged;
+  - name the signed-in Administrator as its author;
+  - carry a written reason and the reviewing frontline nurses;
+  - keep point values within ±25% of the shipped defaults and the locked items;
+  - keep every zone set in order (0 < GREEN < YELLOW).
+
+  It can never be deleted. Moving a unit between the ED and pediatric ED zone
+  sets, or changing its type, is audited unit by unit with before and after
+  values. How cutoffs are set and tested is in `docs/cutoff-standard.md`.
 - **Input.** Only known collections are accepted, record ids are validated,
   request bodies are limited to 5 MB, and all SQL is parameterized.
 

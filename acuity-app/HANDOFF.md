@@ -440,14 +440,23 @@ edited under Settings → AcuiCalc™ calibration):
 - **Zone cutoffs and responses.** GREEN/YELLOW cutoffs for inpatient units, EDs
   and pediatric EDs, and the action each zone triggers. Zones must stay in order
   with no gaps or overlaps. Shipped defaults are the production values
-  (1.5/2.5, 21/27, 53/71).
+  (1.5/2.5, 24/40, 53/71). The ED starting point is the inpatient per-staff limits × 16 behavioral health staff (see `docs/cutoff-standard.md`).
 - **One calibration per health system.** Every unit and ED uses it; per-unit
   overrides are gone. An ED only chooses which system zone set it reads
   (ED or Pediatric ED).
 - **Change control.** Administrator only (`calibrate` permission), with a
   written reason and the frontline nurses who reviewed it. Each change is a new
-  version (v1, v2, …) and an audit entry with the old and new values. On
-  Firestore, `appConfig/acuiCalibration` is admin-only and append-only.
+  version (v1, v2, …) and an audit entry with the old and new values. The data
+  service enforces all of this on the server, so it cannot be skipped by calling
+  the API directly: only an Administrator, version numbers in order, the author
+  is the signed-in person, a reason and reviewers are present, points within
+  the limit, zones in order. Moving a unit between zone sets is audited unit by
+  unit. On Firestore, `appConfig/acuiCalibration` is admin-only and append-only.
+- **Cutoff evidence.** Charge nurses rate each shift Manageable, Strained or
+  Unsafe before the zone is shown. Outcomes & ROI → Cutoff evidence tests each
+  cutoff against those ratings by the contrasting-groups method (95% bootstrap
+  intervals, AUC, weighted kappa). The full standard, with decision rules, is
+  `docs/cutoff-standard.md`.
 - **Versioned scores.** Each saved shift score stores `calibrationVersion` and
   the zones it was scored under; a later calibration never re-scores history.
   Scores saved before calibration existed are read as v1.

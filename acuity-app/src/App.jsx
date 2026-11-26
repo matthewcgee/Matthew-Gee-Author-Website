@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { theme, Icon, Toast } from './components/ui.jsx'
 import AcuitasLogo from './components/AcuitasLogo.jsx'
 import { KEYS, readStorage, writeStorage, today, uid } from './lib/storage.js'
-import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
+import { normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
 import { buildSampleData } from './lib/demoData.js'
 import {
   BACKEND, LOCAL_MODE, SAVE_FAILED_EVENT, deleteRecord, increment, listRecords, replaceCollection as replaceRemote,
@@ -26,8 +26,9 @@ import CapacitySafety from './components/CapacitySafety.jsx'
 import { AccessPanel, AuditLogPanel, FhirImport } from './components/Governance.jsx'
 import CalibrationPanel from './components/CalibrationPanel.jsx'
 import DowntimeKit from './components/DowntimeKit.jsx'
+import CutoffEvidence from './components/CutoffEvidence.jsx'
 import {
-  activeCalibration, calibrationByVersion, calibrationState, calibratedThresholds,
+  activeCalibration, calibrationByVersion, calibrationState, calibratedThresholds, locationChanges,
   orgScopedLocation, proposeCalibration, resetCalibration, stampEntry, withLegacyStamps,
 } from './lib/calibration.js'
 import { IdentityPicker, SignInScreen } from './components/IdentityGate.jsx'
@@ -90,7 +91,11 @@ export default function App() {
   // AcuiCalc™ calibration: one per health system, versioned. Writes go through
   // saveCalibration below, which records its own detailed audit entry.
   const [storedCalibration, setStoredCalibration] = useConfigValue('acuiCalibration', { localKey: 'acuitas:calibration', initial: null, audited: false })
-  const calState = useMemo(() => calibrationState(storedCalibration, thresholds), [storedCalibration, thresholds])
+  // Thresholds saved by builds older than calibration only seed v1 in this
+  // browser (local mode) or the original Firestore pilot. A data-service
+  // deployment always starts from the shipped defaults, so nothing outside the
+  // governed calibration can move a cutoff.
+  const calState = useMemo(() => calibrationState(storedCalibration, BACKEND === 'api' ? null : thresholds), [storedCalibration, thresholds])
   const calibration = useMemo(() => activeCalibration(calState), [calState])
   const baselineCalibration = useMemo(() => calibrationByVersion(calState, 1) || calibration, [calState, calibration])
   const scoringThresholds = useMemo(() => calibratedThresholds(calibration), [calibration])
@@ -461,7 +466,7 @@ export default function App() {
   // persist that state to the browser, so the data survives a reload.
   const addEntry = (raw) => {
     const entry = stampEntry(raw, (locations || []).find((l) => l.id === raw.locId), calibration)
-    audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, census: entry.census, calibrationVersion: entry.calibrationVersion })
+    audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, census: entry.census, calibrationVersion: entry.calibrationVersion, nurseRating: entry.nurseRating ?? null })
     if (LOCAL_MODE) return setEntries((prev) => [...(prev || []), entry])
     setRecord('entries', entry.id, entry).catch((e) => console.error('add entry', e))
   }
@@ -704,7 +709,10 @@ export default function App() {
               <CommandCenter locations={orgLocations} entries={scoredEntries} thresholds={scoringThresholds} caps={caps} role={role} identity={identity} />
             )}
             {activeTab === 'outcomes' && (
-              <Outcomes locations={orgLocations} entries={scoredEntries} deployments={deployments} thresholds={scoringThresholds} role={role} />
+              <>
+                <Outcomes locations={orgLocations} entries={scoredEntries} deployments={deployments} thresholds={scoringThresholds} role={role} />
+                <CutoffEvidence entries={scoredEntries} locations={orgLocations} thresholds={scoringThresholds} calibration={calibration} />
+              </>
             )}
             {activeTab === 'capacity' && (
               <CapacitySafety locations={orgLocations} entries={scoredEntries} thresholds={scoringThresholds} caps={caps} role={role} />
@@ -778,7 +786,7 @@ export default function App() {
               <Settings
                 locations={locations}
                 onChangeLocations={(next) => {
-                  audit('locations.update', null, { count: next.length })
+                  audit('locations.update', null, locationChanges(locations || [], next))
                   setLocations(next)
                   setToast('Locations updated')
                 }}
@@ -808,7 +816,6 @@ export default function App() {
                   audit('data.clear', null, null)
                   const freshLocations = seedLocations()
                   setLocations(freshLocations)
-                  setThresholds(DEFAULT_THRESHOLDS)
                   setCaps({})
                   await replaceCollection('entries', [])
                   await replaceCollection('deployments', [])
@@ -823,7 +830,6 @@ export default function App() {
                   audit('data.sample', 'region', null)
                   const sample = buildSampleData()
                   setLocations(sample.locations)
-                  setThresholds(DEFAULT_THRESHOLDS)
                   setCaps(sample.caps)
                   await replaceCollection('entries', sample.entries)
                   await replaceCollection('deployments', sample.deployments)
@@ -851,6 +857,7 @@ export default function App() {
                   onReset={(meta) => saveCalibration(resetCalibration(calState, changeMeta(meta)))}
                 />
               )}
+              {can(role, 'calibrate') && <CutoffEvidence entries={scoredEntries} locations={orgLocations} thresholds={scoringThresholds} calibration={calibration} />}
               {can(role, 'settings') && <DowntimeKit locations={locations || []} calibration={calibration} />}
               {can(role, 'import') && <FhirImport locations={locations} entries={entries} onApply={applyFhirCensus} />}
               <AccessPanel identity={identity} authMode={AUTH_MODE} onSwitch={AUTH_MODE === 'local' ? chooseIdentity : null} />

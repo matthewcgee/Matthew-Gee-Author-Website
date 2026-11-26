@@ -3,6 +3,7 @@ import { Card, Field, Button, Badge, theme } from './ui.jsx'
 import { uid, today } from '../lib/storage.js'
 import { computeEntryValue, computeStage, thresholdsFor, STAGE_COLORS } from '../lib/model.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
+import { SHIFT_RATINGS } from '../lib/cutoffEvidence.js'
 
 const emptyForm = (locId) => ({
   locId,
@@ -16,6 +17,7 @@ const emptyForm = (locId) => ({
   boarders: '',
   boardingHours: '',
   notes: '',
+  nurseRating: '',
 })
 
 const optNum = (v) => (v === '' || v == null ? null : Number(v))
@@ -23,6 +25,7 @@ const optNum = (v) => (v === '' || v == null ? null : Number(v))
 export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPrefill = {}, onConsumePrefill }) {
   const [form, setForm] = useState(() => emptyForm(locations[0]?.id || ''))
   const [prefilled, setPrefilled] = useState(false)
+  const [needRating, setNeedRating] = useState(false)
 
   // A census imported from the EHR (Settings → FHIR census import) for this
   // unit, date and shift fills the census field until the nurse changes it.
@@ -52,6 +55,7 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
   const submit = (e) => {
     e.preventDefault()
     if (!loc) return
+    if (!form.nurseRating) { setNeedRating(true); return }
     const entry = {
       id: uid(),
       locId: form.locId,
@@ -63,12 +67,16 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
       capInPlace: !isEd && form.capInPlace,
       ...(isEd ? { bhArrivals: optNum(form.bhArrivals), boarders: optNum(form.boarders), boardingHours: optNum(form.boardingHours) } : {}),
       notes: form.notes,
+      // The charge nurse's own judgment, given before the zone was shown: the
+      // independent anchor the cutoffs are tested against (Cutoff evidence).
+      nurseRating: form.nurseRating,
       pilot: false,
       createdAt: Date.now(),
     }
     onAdd(entry)
     if (prefilled && onConsumePrefill) onConsumePrefill(form.locId)
     setPrefilled(false)
+    setNeedRating(false)
     setForm((f) => emptyForm(f.locId))
   }
 
@@ -107,6 +115,38 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
                 </select>
               </Field>
             </div>
+
+            <fieldset style={{ border: `1px solid ${needRating && !form.nurseRating ? STAGE_COLORS.RED : theme.border}`, borderRadius: 10, padding: '10px 12px', margin: '0 0 12px' }}>
+              <legend style={{ fontSize: 12.5, fontWeight: 700, padding: '0 4px' }}>Your judgment of this shift</legend>
+              <div style={{ fontSize: 11.5, color: theme.sub, marginBottom: 8 }}>
+                Answer first, before Acuitas shows its zone. Your rating is how the GREEN / YELLOW / RED cutoffs are tested.
+              </div>
+              <div role="radiogroup" aria-label="Your judgment of this shift" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {SHIFT_RATINGS.map((r) => {
+                  const on = form.nurseRating === r.id
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => { setForm((f) => ({ ...f, nurseRating: r.id })); setNeedRating(false) }}
+                      className="btn-press"
+                      style={{
+                        padding: '8px 12px', borderRadius: 9, cursor: 'pointer', textAlign: 'left', minWidth: 150,
+                        border: `1.5px solid ${on ? theme.accent : theme.border}`, background: on ? theme.accentSoft : theme.panel, color: theme.text,
+                      }}
+                    >
+                      <div style={{ fontWeight: 700, fontSize: 13 }}>{r.label}</div>
+                      <div style={{ fontSize: 11.5, color: theme.sub }}>{r.help}</div>
+                    </button>
+                  )
+                })}
+              </div>
+              {needRating && !form.nurseRating && (
+                <div role="alert" style={{ fontSize: 12, color: '#9b2c22', marginTop: 6 }}>Rate the shift before saving.</div>
+              )}
+            </fieldset>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, marginBottom: 12 }}>
               {!isEd && (
@@ -160,7 +200,12 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
               <textarea rows={2} value={form.notes} onChange={set('notes')} />
             </Field>
 
-            {loc && (
+            {loc && !form.nurseRating && (
+              <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 14, marginBottom: 4 }}>
+                Rate the shift above to see Acuitas&rsquo;s zone.
+              </div>
+            )}
+            {loc && form.nurseRating && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14, marginBottom: 4 }}>
                 <span style={{ fontSize: 12.5, color: theme.sub }}>Computed:</span>
                 <span style={{ fontWeight: 700 }}>{previewValue.toFixed(isEd ? 0 : 2)}</span>

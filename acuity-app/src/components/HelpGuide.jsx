@@ -533,25 +533,31 @@ export default function HelpGuide({ locations = null, calibration = null } = {})
           <Step n="1"><b>Location</b> — choose your unit from the dropdown.</Step>
           <Step n="2"><b>Date &amp; Shift</b> — defaults to today; choose AM or PM.</Step>
           <Step n="3">
+            <b>Your judgment of this shift</b> — Manageable, Strained or Unsafe, in your own view. Answer it
+            before Acuitas shows its zone; the zone appears only once you have. Your ratings are how the GREEN /
+            YELLOW / RED cutoffs are tested (Outcomes &amp; ROI → Cutoff evidence), so answer honestly, not to
+            match the board.
+          </Step>
+          <Step n="4">
             <b>Census</b> — how many patients are currently on the unit (not shown for the ED). If a nursing
             census cap is set, it's shown as a hint under this field.
           </Step>
-          <Step n="4">
+          <Step n="5">
             <b>Acuity Points / Behavioral Health Points</b> — total points from your unit's acuity scoring
             (you can also build this number with <b>AcuiCalc™</b> on its dedicated sidebar tab).
           </Step>
-          <Step n="5">
+          <Step n="6">
             <b>Staff on Shift</b> — number of RNs/MHTs staffed (not shown for the ED, since ED status is based
             on total points only).
           </Step>
-          <Step n="6">
+          <Step n="7">
             <b>Notes</b> — optional free text for anything worth flagging.
           </Step>
-          <Step n="7">
-            Check the <b>Computed</b> preview at the bottom — it shows the resulting value and status color
-            before you save, so you can confirm it looks right.
-          </Step>
           <Step n="8">
+            Check the <b>Computed</b> preview at the bottom — once you have rated the shift, it shows the
+            resulting value and status color before you save, so you can confirm it looks right.
+          </Step>
+          <Step n="9">
             Click <b>Save Entry</b>. The Status Board updates immediately for everyone.
           </Step>
           <div style={{ fontSize: 12.5, color: theme.sub, marginTop: 8, lineHeight: 1.55 }}>
@@ -865,8 +871,8 @@ export default function HelpGuide({ locations = null, calibration = null } = {})
             YELLOW cutoffs for inpatient units, EDs and pediatric EDs, and the action each zone triggers. The four
             domains and the wording of every score level are locked. Every change needs a written reason and the
             frontline nurses who reviewed it, becomes a new version (v1, v2, …), and is written to the audit log.
-            Shipped defaults: Inpatient GREEN ≤ 1.5 / YELLOW ≤ 2.5 acuity per staff; ED GREEN ≤ 21 / YELLOW ≤ 27
-            total points; Pediatric ED GREEN ≤ {PEDIATRIC_ED_THRESHOLDS.greenMax} / YELLOW ≤ {PEDIATRIC_ED_THRESHOLDS.yellowMax} total points.
+            Shipped defaults: Inpatient GREEN ≤ 1.5 / YELLOW ≤ 2.5 acuity per staff; ED GREEN ≤ 24 / YELLOW ≤ 40
+            total points (the same per-staff limits × 16 behavioral health staff, since the ED score is not divided by staff); Pediatric ED GREEN ≤ {PEDIATRIC_ED_THRESHOLDS.greenMax} / YELLOW ≤ {PEDIATRIC_ED_THRESHOLDS.yellowMax} total points.
           </Step>
           <Step n="4">
             <b>Versions and history</b> — each saved shift score keeps the calibration version it was calculated

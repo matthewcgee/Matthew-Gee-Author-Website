@@ -47,7 +47,9 @@ A starting point is a hypothesis. Local evidence decides whether to keep it.
 
 1. **Independent anchor.** On every shift entry, the charge nurse rates the
    shift **Manageable**, **Strained** or **Unsafe** in their own judgment,
-   before Acuitas shows its zone.
+   before Acuitas shows its zone. The rating never changes that shift's zone
+   or any cutoff. Zones are fixed system-wide; ratings are only evidence for
+   the scheduled reviews below.
 2. **Two boundaries.**
    - GREEN / YELLOW separates Manageable from Strained or Unsafe.
    - YELLOW / RED separates Manageable or Strained from Unsafe.

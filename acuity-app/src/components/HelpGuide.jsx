@@ -534,9 +534,10 @@ export default function HelpGuide({ locations = null, calibration = null } = {})
           <Step n="2"><b>Date &amp; Shift</b> — defaults to today; choose AM or PM.</Step>
           <Step n="3">
             <b>Your judgment of this shift</b> — Manageable, Strained or Unsafe, in your own view. Answer it
-            before Acuitas shows its zone; the zone appears only once you have. Your ratings are how the GREEN /
-            YELLOW / RED cutoffs are tested (Outcomes &amp; ROI → Cutoff evidence), so answer honestly, not to
-            match the board.
+            before Acuitas shows its zone; the zone appears only once you have. Your rating never changes the
+            zone: GREEN / YELLOW / RED cutoffs are set for the whole system and stay fixed. Ratings are saved
+            for the periodic review of those cutoffs (Outcomes &amp; ROI → Cutoff evidence), so answer honestly,
+            not to match the board.
           </Step>
           <Step n="4">
             <b>Census</b> — how many patients are currently on the unit (not shown for the ED). If a nursing

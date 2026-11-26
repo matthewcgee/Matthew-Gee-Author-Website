@@ -119,7 +119,8 @@ export default function ShiftEntryForm({ locations, thresholds, onAdd, censusPre
             <fieldset style={{ border: `1px solid ${needRating && !form.nurseRating ? STAGE_COLORS.RED : theme.border}`, borderRadius: 10, padding: '10px 12px', margin: '0 0 12px' }}>
               <legend style={{ fontSize: 12.5, fontWeight: 700, padding: '0 4px' }}>Your judgment of this shift</legend>
               <div style={{ fontSize: 11.5, color: theme.sub, marginBottom: 8 }}>
-                Answer first, before Acuitas shows its zone. Your rating is how the GREEN / YELLOW / RED cutoffs are tested.
+                Answer first, before Acuitas shows its zone. Your rating does not change the zone: the zones are set
+                for the whole system and stay fixed. Ratings are saved for the periodic review of those cutoffs.
               </div>
               <div role="radiogroup" aria-label="Your judgment of this shift" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 {SHIFT_RATINGS.map((r) => {

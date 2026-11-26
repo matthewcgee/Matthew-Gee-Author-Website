@@ -25,6 +25,7 @@ import Outcomes from './components/Outcomes.jsx'
 import CapacitySafety from './components/CapacitySafety.jsx'
 import { AccessPanel, AuditLogPanel, FhirImport } from './components/Governance.jsx'
 import CalibrationPanel from './components/CalibrationPanel.jsx'
+import DowntimeKit from './components/DowntimeKit.jsx'
 import {
   activeCalibration, calibrationByVersion, calibrationState, calibratedThresholds,
   orgScopedLocation, proposeCalibration, resetCalibration, stampEntry, withLegacyStamps,
@@ -762,7 +763,7 @@ export default function App() {
                 }}
               />
             )}
-            {activeTab === 'help' && <HelpGuide />}
+            {activeTab === 'help' && <HelpGuide locations={locations || []} calibration={calibration} />}
             {activeTab === 'settings' && AUTH_MODE === 'local' && !settingsUnlocked && (
               <SettingsLock
                 onUnlock={() => {
@@ -850,6 +851,7 @@ export default function App() {
                   onReset={(meta) => saveCalibration(resetCalibration(calState, changeMeta(meta)))}
                 />
               )}
+              {can(role, 'settings') && <DowntimeKit locations={locations || []} calibration={calibration} />}
               {can(role, 'import') && <FhirImport locations={locations} entries={entries} onApply={applyFhirCensus} />}
               <AccessPanel identity={identity} authMode={AUTH_MODE} onSwitch={AUTH_MODE === 'local' ? chooseIdentity : null} />
               {can(role, 'audit-view') && <AuditLogPanel entries={auditEntries} />}

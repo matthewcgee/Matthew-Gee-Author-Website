@@ -1,4 +1,5 @@
 import React, { useRef } from 'react'
+import DowntimeKit from './DowntimeKit.jsx'
 import { Card, Badge, Button, Icon, theme, grid, ProgressBar } from './ui.jsx'
 import { STAGE_COLORS, PEDIATRIC_ED_THRESHOLDS } from '../lib/model.js'
 import AcuitasLogo from './AcuitasLogo.jsx'
@@ -141,7 +142,8 @@ function BrandMark() {
   )
 }
 
-export default function HelpGuide() {
+// `calibration` and `locations` feed the downtime kit's printable pages.
+export default function HelpGuide({ locations = null, calibration = null } = {}) {
   const refs = useRef({})
 
   const scrollTo = (id) => {
@@ -170,6 +172,8 @@ export default function HelpGuide() {
           ))}
         </div>
       </Card>
+
+      {calibration && <DowntimeKit locations={locations || []} calibration={calibration} />}
 
       {/* OVERVIEW */}
       <div ref={(el) => (refs.current.overview = el)}>

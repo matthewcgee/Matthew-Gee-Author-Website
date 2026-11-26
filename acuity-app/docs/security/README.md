@@ -53,7 +53,7 @@ open.
   classification. The recommendation is to host the database under the
   organization's PHI controls (see section 2).
 - **Testing:**
-  - 440 automated tests run on every build;
+  - 449 automated tests run on every build;
   - the data service's behavior suite also runs against real Microsoft SQL
     Server 2022 and PostgreSQL 16 databases;
   - two-user browser tests were run on each database.
@@ -69,7 +69,7 @@ open.
 | Upgrade the test-runner toolchain (dev-only findings) | Development | 5 |
 | Confirm managed-identity database access in the organization's Azure tenant | Azure team | 1 |
 | Load the organization's directory group IDs into `ACUITAS_ROLE_MAP` | Identity team | 3 |
-| Adopt the paper downtime worksheet and print the active calibration for each house supervisor | Nursing operations | 7 |
+| Print the downtime kit (worksheets and zone card) for every unit before go-live | Nursing operations | 7 |
 
 ## Regulatory positioning
 

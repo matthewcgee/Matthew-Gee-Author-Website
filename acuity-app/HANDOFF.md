@@ -61,7 +61,7 @@ npm install
 npm run dev
 # App available at http://localhost:5173/<base-path>/
 
-# 3. Run the test suite (440 tests: forecasting, optimization, screening, outcomes,
+# 3. Run the test suite (449 tests: forecasting, optimization, screening, outcomes,
 #    follow-up, cost, capacity, safety, roles, audit chain, FHIR, and UI rendering)
 npm test
 
@@ -149,7 +149,7 @@ git clone https://<your-internal-git>/<org>/acuitas.git
 cd acuitas
 cp .env.example .env.production    # leave it as-is for a first test build
 npm ci
-npm test                           # 440 tests should pass
+npm test                           # 449 tests should pass
 npm run build                      # the site is now in dist/
 ```
 
@@ -351,6 +351,7 @@ security rules check the signed-in Firebase user, so the other sign-in modes
 - [ ] A Viewer cannot save an entry; a Charge nurse can
 - [ ] Settings → Audit log → **Verify chain** reports the chain intact
 - [ ] Add every unit, the ED and the AcuiPath clinics in Settings
+- [ ] Print the downtime kit (Help & Training → Downtime kit): a Shift Acuity Worksheet for every unit and the AcuiCalc™ zone card
 - [ ] Set the IOP tracks, schedules and capacity in AcuiStep → Program setup (an administrator)
 - [ ] An AcuiPath screen that recommends IOP appears in the AcuiStep intake queue after saving
 
@@ -960,7 +961,7 @@ acuitas/
 │   │   ├── __tests__/           # Screen rendering tests
 │   │   └── ui.jsx               # Shared UI components & theme
 │   └── lib/
-│       ├── __tests__/           # Engine tests (440 tests in all, 23 files, including the data service)
+│       ├── __tests__/           # Engine tests (449 tests in all, 24 files, including the data service)
 │       ├── audit.js             # Hash-chained audit log
 │       ├── calibration.js       # AcuiCalc™ governed calibration: limits, zones, versions
 │       ├── capacity.js          # ED boarding vs open-bed outlook

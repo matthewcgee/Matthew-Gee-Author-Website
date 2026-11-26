@@ -21,12 +21,19 @@ Recovery objectives follow the tier the organization assigns. The data is small
 
 ## Downtime procedure
 
-Acuitas supports staffing decisions. It is not the record of care. Before
-go-live, each unit adopts a one-page paper worksheet with the same fields as the
-New Shift Entry form: unit, date, shift, census, acuity points, staff and notes.
-The house supervisor keeps a printed copy of the active AcuiCalc™ calibration,
-showing its version, GREEN/YELLOW cutoffs and zone responses, from Settings →
-AcuiCalc™ calibration. It is reprinted whenever the calibration changes.
+Acuitas supports staffing decisions. It is not the record of care. Its
+**Downtime kit** (Help & Training, and Settings for administrators) prints two
+pages to keep on every unit:
+
+- **Shift Acuity Worksheet.** One page per unit, with the same fields as New
+  Shift Entry and that unit's cutoffs printed on it.
+- **AcuiCalc™ zone card.** Shows the active calibration version, the
+  GREEN/YELLOW/RED cutoffs for every zone set and the zone responses, plus a
+  scoring sheet with the calibrated points so patients can be scored on paper.
+  Reprint it whenever the calibration changes.
+
+Neither page carries patient names, initials or MRNs. The scoring tally asks for
+bed numbers only.
 
 If Acuitas is unavailable:
 

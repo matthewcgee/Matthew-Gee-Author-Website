@@ -250,6 +250,9 @@ export default function StatusBoard({ locations, entries, thresholds, caps, onUp
                     <div style={{ fontSize: 12, color: theme.sub }}>
                       {latest.date} · {latest.shift} shift
                       {!isEd && <> · {latest.staff} staff, {latest.points} points</>}
+                      {!isEd && latest.oneToOne > 0 && (
+                        <span style={{ fontWeight: 700, color: theme.text }}> · {latest.oneToOne} on 1:1 ({Math.max(latest.staff - latest.oneToOne, 1)} staff free for the unit)</span>
+                      )}
                       {isEd && <> · {latest.points} points</>}
                       {latest.capInPlace && (
                         <span style={{ marginLeft: 6 }}>

@@ -128,6 +128,10 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
   // the shift from how it felt, which tracks the acuity per staff (or ED
   // points) with some disagreement near the boundaries, as real ratings do.
   const nextRating = rng(seed ^ 0x27d4eb2d)
+  // And one for patients on 1:1 (constant observation): now and then a unit
+  // has one, occasionally two. Each adds its 5 AcuiCalc™ points and takes one
+  // staff member out of the count (AcuiCalc™ instrument 2).
+  const nextObs = rng(seed ^ 0x165667b1)
   const rate = (felt, greenMax, yellowMax) => (felt <= greenMax ? 'manageable' : felt <= yellowMax ? 'strained' : 'unsafe')
   const totalShifts = weeks * 7 * SHIFTS.length
   const endDay = dayIndex(today())
@@ -226,7 +230,16 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
       // short-staffed shift shows up as higher acuity per staff — as it should —
       // and with census, so a fuller unit carries proportionally more load.
       const censusFactor = p.census > 0 ? census / p.census : 1
-      const points = Math.max(0, Math.round(Math.max(0.1, uai) * unit.staff * censusFactor * 10) / 10)
+      const basePoints = Math.max(0, Math.round(Math.max(0.1, uai) * unit.staff * censusFactor * 10) / 10)
+      // History only: today's board keeps its story, except 2 North, which has
+      // one patient on 1:1 on the latest shift. On census alone it looks fine;
+      // the 1:1 takes a staff member and the unit reads RED.
+      const roll = nextObs()
+      const recent = i >= count - 2
+      const oneToOne = recent
+        ? (unit.id === 'demo_2n' && i === count - 1 ? 1 : 0)
+        : unit.staff >= 4 && roll < 0.025 ? 2 : unit.staff >= 4 && roll < 0.13 ? 1 : 0
+      const points = Math.round((basePoints + 5 * oneToOne) * 10) / 10
 
       entries.push({
         id: `demo_${unit.id}_${age}`,
@@ -237,7 +250,8 @@ export function buildDemoScenario({ weeks = 9, seed = 20260913 } = {}) {
         points,
         staff,
         capInPlace: unit.censusCap != null && census > unit.censusCap,
-        nurseRating: rate(points / staff + gauss(nextRating) * 0.2, 1.6, 2.6),
+        oneToOne,
+        nurseRating: rate(points / Math.max(staff - oneToOne, 1) + gauss(nextRating) * 0.2, 1.6, 2.6),
         notes: '',
         pilot: false,
         demo: true,

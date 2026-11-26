@@ -161,7 +161,10 @@ describe('engine behavior across the scenario', () => {
       locations: scenario.locations,
       entries,
       thresholds: DEFAULT_THRESHOLDS,
-      floatStaff: 3,
+      // Five float staff: today's board also has 2 North in RED (a patient on
+      // 1:1) and three YELLOW units, where one more person changes the zone,
+      // so a pool of three is rightly spent there first.
+      floatStaff: 5,
     })
     expect(plan.moves.some((m) => m.toLocId === 'demo_new')).toBe(true)
   })

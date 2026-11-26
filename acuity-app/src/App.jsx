@@ -1,11 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { collection, deleteDoc, doc, getDocs, increment, onSnapshot, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import { theme, Icon, Toast } from './components/ui.jsx'
 import AcuitasLogo from './components/AcuitasLogo.jsx'
 import { KEYS, readStorage, writeStorage, today, uid } from './lib/storage.js'
 import { DEFAULT_THRESHOLDS, normalizeThresholds, seedLocations, seedEntries, seedDeployments } from './lib/model.js'
 import { buildSampleData } from './lib/demoData.js'
-import { db, LOCAL_MODE, STATE_DOC } from './lib/firebase.js'
+import {
+  BACKEND, LOCAL_MODE, deleteRecord, increment, listRecords, replaceCollection as replaceRemote,
+  setRecord, updateRecord, watchCollection, watchDoc,
+} from './lib/backend/index.js'
 import StatusBoard from './components/StatusBoard.jsx'
 import ShiftEntryForm from './components/ShiftEntryForm.jsx'
 import Deployments from './components/Deployments.jsx'
@@ -127,13 +129,30 @@ export default function App() {
   useEffect(() => {
     setAuditSink((action, target, detail) => {
       const a = auditRef.current
+      const at = Date.now()
       a.queue = a.queue.then(async () => {
         const fromStore = a.entries.reduce((m, e) => (!m || e.seq > m.seq ? e : m), null)
-        const prev = a.last && (!fromStore || a.last.seq >= fromStore.seq) ? a.last : fromStore
+        let prev = a.last && (!fromStore || a.last.seq >= fromStore.seq) ? a.last : fromStore
         const who = identityRef.current
-        const entry = await makeAuditEntry(prev, { actor: who?.name || 'unknown', role: who?.role || 'unknown', action, target, detail })
-        a.last = entry
-        await auditApi.add(entry)
+        for (let attempt = 0; ; attempt++) {
+          const entry = await makeAuditEntry(prev, { actor: who?.name || 'unknown', role: who?.role || 'unknown', action, target, detail, at })
+          if (BACKEND !== 'api') {
+            a.last = entry
+            await auditApi.add(entry)
+            return
+          }
+          // The data service keeps one strict sequence: if someone else's entry
+          // landed first, it returns the latest entry and this one is rebuilt
+          // on top of it.
+          try {
+            await setRecord('auditLog', entry.id, entry)
+            a.last = entry
+            return
+          } catch (e) {
+            if (e.status === 409 && e.payload?.head && attempt < 10) { prev = e.payload.head; continue }
+            throw e
+          }
+        }
       }).catch((e) => console.error('audit append', e))
     })
     return () => setAuditSink(null)
@@ -164,9 +183,11 @@ export default function App() {
   const scrubDone = useRef(false)
 
   // One-time move of legacy array-based entries/deployments into their own
-  // per-document collections, where concurrent edits can't clobber each other
+  // per-document collections, where concurrent edits can't clobber each other.
+  // Only for databases created by the original Firestore pilot; a new shared
+  // database (the data service) never had the old layout.
   function tryMigrateCollections() {
-    if (LOCAL_MODE) return
+    if (BACKEND !== 'firebase') return
     if (migrationDone.current) return
     if (entriesSnapRef.current == null || deploymentsSnapRef.current == null || !legacyRef.current.loaded) return
     migrationDone.current = true
@@ -178,10 +199,10 @@ export default function App() {
       const source = (legacyRef.current.entries && legacyRef.current.entries.length)
         ? legacyRef.current.entries
         : seedEntries()
-      source.forEach((e) => setDoc(doc(db, 'entries', e.id), e).catch((err) => console.error('migrate entry', err)))
+      source.forEach((e) => setRecord('entries', e.id, e).catch((err) => console.error('migrate entry', err)))
     }
     if (deploymentsSnapRef.current.length === 0 && legacyRef.current.deployments && legacyRef.current.deployments.length) {
-      legacyRef.current.deployments.forEach((d) => setDoc(doc(db, 'deployments', d.id), d).catch((err) => console.error('migrate deployment', err)))
+      legacyRef.current.deployments.forEach((d) => setRecord('deployments', d.id, d).catch((err) => console.error('migrate deployment', err)))
     }
   }
 
@@ -232,7 +253,10 @@ export default function App() {
   // Runs after Firestore locations have been loaded (remoteLoaded guard via
   // locations dependency), then writes cleaned locations back to state so the
   // existing locations-sync effect pushes them to Firestore automatically.
+  // Original Firestore pilot only: on a shared database run by the data
+  // service, location names are the organization's to keep.
   useEffect(() => {
+    if (BACKEND !== 'firebase') return
     if (!locations || !remoteLoaded.current) return
     if (scrubDone.current || readStorage(SCRUB_KEY, false)) {
       scrubDone.current = true
@@ -245,27 +269,18 @@ export default function App() {
     setLocations(locations.map((l) => ({ ...l, facility: '', market: '', region: '' })))
   }, [locations])
 
-  // One-time clear of all pilot/seed entries and deployments from Firestore.
+  // One-time clear of all pilot/seed entries and deployments from the original
+  // Firestore pilot. It runs once per browser, so it must never run against a
+  // database in real use: the data service backend skips it entirely.
   // Write the guard key SYNCHRONOUSLY first so tryMigrateCollections (which
   // runs concurrently) cannot race ahead and re-populate the empty collections.
   useEffect(() => {
-    if (LOCAL_MODE) return
+    if (BACKEND !== 'firebase') return
     if (readStorage(DATA_CLEAR_KEY, false)) return
     writeStorage(DATA_CLEAR_KEY, true)
-    Promise.all([
-      getDocs(collection(db, 'entries')).then((snap) => {
-        if (snap.empty) return
-        const batch = writeBatch(db)
-        snap.docs.forEach((d) => batch.delete(d.ref))
-        return batch.commit()
-      }),
-      getDocs(collection(db, 'deployments')).then((snap) => {
-        if (snap.empty) return
-        const batch = writeBatch(db)
-        snap.docs.forEach((d) => batch.delete(d.ref))
-        return batch.commit()
-      }),
-    ]).catch((e) => console.error('data clear failed', e))
+    Promise.all(['entries', 'deployments'].map((name) =>
+      listRecords(name).then((items) => (items.length ? replaceRemote(name, []) : undefined))
+    )).catch((e) => console.error('data clear failed', e))
   }, [])
 
   useEffect(() => {
@@ -293,20 +308,20 @@ export default function App() {
   // Live sync of locations & thresholds via a single shared document
   useEffect(() => {
     if (LOCAL_MODE) return
-    const unsub = onSnapshot(
-      doc(db, ...STATE_DOC),
-      (snap) => {
-        if (!snap.exists()) {
+    const unsub = watchDoc(
+      'appState',
+      'main',
+      (data) => {
+        if (!data) {
           const { locations, thresholds } = stateRef.current
           if (locations != null && thresholds != null) {
             lastSynced.current.locations = locations
             lastSynced.current.thresholds = thresholds
-            setDoc(doc(db, ...STATE_DOC), { locations, thresholds })
+            setRecord('appState', 'main', { locations, thresholds }).catch((e) => console.error('create shared state', e))
           }
           legacyRef.current.entries = null
           legacyRef.current.deployments = null
         } else {
-          const data = snap.data()
           if (data.locations && JSON.stringify(data.locations) !== JSON.stringify(lastSynced.current.locations)) {
             lastSynced.current.locations = data.locations
             setLocations(data.locations)
@@ -326,7 +341,7 @@ export default function App() {
         tryMigrateCollections()
       },
       (err) => {
-        console.error('Firestore sync error', err)
+        console.error('Shared state sync error', err)
         remoteLoaded.current = true
         legacyRef.current.loaded = true
         tryMigrateCollections()
@@ -339,16 +354,16 @@ export default function App() {
   // units submitting at the same time never overwrite each other
   useEffect(() => {
     if (LOCAL_MODE) return
-    const unsub = onSnapshot(
-      collection(db, 'entries'),
-      (snap) => {
-        const arr = snap.docs.map((d) => d.data())
+    const unsub = watchCollection(
+      'entries',
+      (items) => {
+        const arr = items.map((it) => it.data)
         entriesSnapRef.current = arr
         setEntries(arr)
         tryMigrateCollections()
       },
       (err) => {
-        console.error('Firestore entries sync error', err)
+        console.error('Entries sync error', err)
         entriesSnapRef.current = []
         tryMigrateCollections()
       }
@@ -359,16 +374,16 @@ export default function App() {
   // Live sync of staff deployments, same per-document approach as entries
   useEffect(() => {
     if (LOCAL_MODE) return
-    const unsub = onSnapshot(
-      collection(db, 'deployments'),
-      (snap) => {
-        const arr = snap.docs.map((d) => d.data())
+    const unsub = watchCollection(
+      'deployments',
+      (items) => {
+        const arr = items.map((it) => it.data)
         deploymentsSnapRef.current = arr
         setDeployments(arr)
         tryMigrateCollections()
       },
       (err) => {
-        console.error('Firestore deployments sync error', err)
+        console.error('Deployments sync error', err)
         deploymentsSnapRef.current = []
         tryMigrateCollections()
       }
@@ -380,16 +395,16 @@ export default function App() {
   // charge nurses on different units can update their cap independently
   useEffect(() => {
     if (LOCAL_MODE) return
-    const unsub = onSnapshot(
-      collection(db, 'locationCaps'),
-      (snap) => {
+    const unsub = watchCollection(
+      'locationCaps',
+      (items) => {
         const next = {}
-        snap.docs.forEach((d) => {
-          next[d.id] = d.data().censusCap
+        items.forEach((it) => {
+          next[it.id] = it.data.censusCap
         })
         setCaps(next)
       },
-      (err) => console.error('Firestore caps sync error', err)
+      (err) => console.error('Caps sync error', err)
     )
     return unsub
   }, [])
@@ -398,14 +413,14 @@ export default function App() {
     if (LOCAL_MODE || locations == null || !remoteLoaded.current) return
     if (JSON.stringify(locations) === JSON.stringify(lastSynced.current.locations)) return
     lastSynced.current.locations = locations
-    setDoc(doc(db, ...STATE_DOC), { locations }, { merge: true }).catch((e) => console.error('sync locations', e))
+    setRecord('appState', 'main', { locations }, { merge: true }).catch((e) => console.error('sync locations', e))
   }, [locations])
 
   useEffect(() => {
     if (LOCAL_MODE || thresholds == null || !remoteLoaded.current) return
     if (JSON.stringify(thresholds) === JSON.stringify(lastSynced.current.thresholds)) return
     lastSynced.current.thresholds = thresholds
-    setDoc(doc(db, ...STATE_DOC), { thresholds }, { merge: true }).catch((e) => console.error('sync thresholds', e))
+    setRecord('appState', 'main', { thresholds }, { merge: true }).catch((e) => console.error('sync thresholds', e))
   }, [thresholds])
 
   useEffect(() => {
@@ -422,7 +437,7 @@ export default function App() {
   const updateCap = (locId, censusCap) => {
     audit('cap.update', locId, { censusCap })
     if (LOCAL_MODE) return setCaps((prev) => ({ ...prev, [locId]: censusCap }))
-    setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('update cap', e))
+    setRecord('locationCaps', locId, { censusCap }).catch((e) => console.error('update cap', e))
   }
 
   // In local mode these update React state directly; the existing effects
@@ -431,22 +446,22 @@ export default function App() {
     const entry = stampEntry(raw, (locations || []).find((l) => l.id === raw.locId), calibration)
     audit('entry.add', entry.id, { locId: entry.locId, date: entry.date, shift: entry.shift, points: entry.points, staff: entry.staff, census: entry.census, calibrationVersion: entry.calibrationVersion })
     if (LOCAL_MODE) return setEntries((prev) => [...(prev || []), entry])
-    setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('add entry', e))
+    setRecord('entries', entry.id, entry).catch((e) => console.error('add entry', e))
   }
   const removeEntry = (id) => {
     audit('entry.remove', id)
     if (LOCAL_MODE) return setEntries((prev) => (prev || []).filter((e) => e.id !== id))
-    deleteDoc(doc(db, 'entries', id)).catch((e) => console.error('remove entry', e))
+    deleteRecord('entries', id).catch((e) => console.error('remove entry', e))
   }
   const addDeployment = (dep) => {
     audit('deployment.add', dep.id, { toLocId: dep.toLocId, fromLocId: dep.fromLocId, date: dep.date, shift: dep.shift, hours: dep.hours, source: dep.source })
     if (LOCAL_MODE) return setDeployments((prev) => [...(prev || []), dep])
-    setDoc(doc(db, 'deployments', dep.id), dep).catch((e) => console.error('add deployment', e))
+    setRecord('deployments', dep.id, dep).catch((e) => console.error('add deployment', e))
   }
   const removeDeployment = (id) => {
     audit('deployment.remove', id)
     if (LOCAL_MODE) return setDeployments((prev) => (prev || []).filter((d) => d.id !== id))
-    deleteDoc(doc(db, 'deployments', id)).catch((e) => console.error('remove deployment', e))
+    deleteRecord('deployments', id).catch((e) => console.error('remove deployment', e))
   }
 
   // Saving a calibration change or reset. Validation and the Administrator
@@ -484,7 +499,7 @@ export default function App() {
       ])
     }
     if (existing) {
-      await updateDoc(doc(db, 'entries', existing.id), { points: increment(points) }).catch((e) => console.error('push acuity', e))
+      await updateRecord('entries', existing.id, { points: increment(points) }).catch((e) => console.error('push acuity', e))
     } else {
       const entry = stampEntry({
         id: uid(),
@@ -498,7 +513,7 @@ export default function App() {
         pilot: false,
         createdAt: Date.now(),
       }, loc, calibration)
-      await setDoc(doc(db, 'entries', entry.id), entry).catch((e) => console.error('push acuity', e))
+      await setRecord('entries', entry.id, entry).catch((e) => console.error('push acuity', e))
     }
   }
 
@@ -512,7 +527,7 @@ export default function App() {
       return
     }
     Object.entries(capMap).forEach(([locId, censusCap]) =>
-      setDoc(doc(db, 'locationCaps', locId), { censusCap }).catch((e) => console.error('restore cap', e))
+      setRecord('locationCaps', locId, { censusCap }).catch((e) => console.error('restore cap', e))
     )
   }
 
@@ -525,7 +540,7 @@ export default function App() {
         const byId = new Map(plan.updates.map((u) => [u.entryId, u.census]))
         setEntries((prev) => (prev || []).map((e) => (byId.has(e.id) ? { ...e, census: byId.get(e.id) } : e)))
       } else {
-        plan.updates.forEach((u) => updateDoc(doc(db, 'entries', u.entryId), { census: u.census }).catch((e) => console.error('fhir census', e)))
+        plan.updates.forEach((u) => updateRecord('entries', u.entryId, { census: u.census }).catch((e) => console.error('fhir census', e)))
       }
     }
     if (Object.keys(plan.prefills).length) setCensusPrefill({ ...(censusPrefill || {}), ...plan.prefills })
@@ -538,11 +553,7 @@ export default function App() {
       if (name === 'deployments') setDeployments(items)
       return
     }
-    const snap = await getDocs(collection(db, name))
-    const batch = writeBatch(db)
-    snap.docs.forEach((d) => batch.delete(d.ref))
-    items.forEach((item) => batch.set(doc(db, name, item.id), item))
-    await batch.commit()
+    await replaceRemote(name, items.map((item) => ({ id: item.id, data: item })))
   }
 
   if (!authed) {

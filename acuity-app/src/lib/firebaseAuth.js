@@ -11,10 +11,10 @@
 // administrator. The shipped firestore.rules enforce them on the server.
 
 import { getAuth, onAuthStateChanged, signInWithPopup, signOut, OAuthProvider, SAMLAuthProvider } from 'firebase/auth'
-import { app } from './firebase.js'
+import { firebaseApp } from './backend/firebaseBackend.js'
 
 export function startFirebaseAuth(onIdentity) {
-  const auth = getAuth(app)
+  const auth = getAuth(firebaseApp())
   return onAuthStateChanged(auth, async (user) => {
     if (!user) return onIdentity(null)
     const token = await user.getIdTokenResult()
@@ -30,11 +30,11 @@ export function startFirebaseAuth(onIdentity) {
 }
 
 export function firebaseSignIn(providerId) {
-  const auth = getAuth(app)
+  const auth = getAuth(firebaseApp())
   const provider = String(providerId || '').startsWith('saml.') ? new SAMLAuthProvider(providerId) : new OAuthProvider(providerId)
   return signInWithPopup(auth, provider)
 }
 
 export function firebaseSignOut() {
-  return signOut(getAuth(app))
+  return signOut(getAuth(firebaseApp()))
 }

@@ -107,6 +107,19 @@ describe('hash-chained audit log', () => {
     expect(r.reason).not.toBe('tampered')
   })
 
+  it('keeps verifying both branches after two people sign in at once', async () => {
+    // Two first entries (both seq 1), then each person carries on their branch.
+    const a1 = await makeAuditEntry(null, { actor: 'A', role: 'admin', action: 'identity.signin', at: 1 })
+    const b1 = await makeAuditEntry(null, { actor: 'B', role: 'charge', action: 'identity.signin', at: 2 })
+    const b2 = await makeAuditEntry(b1, { actor: 'B', role: 'charge', action: 'entry.add', at: 3 })
+    const a3 = await makeAuditEntry(b2, { actor: 'A', role: 'admin', action: 'calibration.update', at: 4 })
+    expect(await verifyAuditChain([a1, b1, b2, a3])).toMatchObject({ ok: true, forks: 1 })
+    // Deleting the branch entry that later entries depend on is still caught.
+    expect(await verifyAuditChain([a1, b2, a3])).toMatchObject({ ok: false, brokenAt: 2, reason: 'broken' })
+    // So is editing it.
+    expect(await verifyAuditChain([a1, { ...b1, actor: 'Z' }, b2, a3])).toMatchObject({ ok: false, reason: 'tampered' })
+  })
+
   it('labels actions in plain words', () => {
     expect(actionLabel('entry.add')).toBe('Logged a shift entry')
     expect(actionLabel('opPatients.remove')).toBe('Removed op patients')

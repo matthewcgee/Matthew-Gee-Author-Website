@@ -1,0 +1,18 @@
+{
+  "name": "acuitas-data-service",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Acuitas data service: the shared-database API for Azure Static Web Apps, Azure Functions, App Service or an on-premises Node server.",
+  "type": "module",
+  "main": "src/functions/*.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "check-db": "node scripts/check-db.js"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.5.0",
+    "mssql": "^11.0.1",
+    "pg": "^8.13.1"
+  }
+}

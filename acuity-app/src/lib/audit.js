@@ -11,8 +11,9 @@
 // changed or deleted. The hash chain then makes any tampering that bypassed
 // the rules detectable. When several people work at once, two entries can
 // claim the same position in the chain. The verifier reports that as a fork,
-// not as tampering. A deployment that needs a single strict sequence should
-// append entries server-side.
+// not as tampering. The Acuitas data service goes further and keeps a single
+// strict sequence: it refuses an entry that does not extend the latest one,
+// and the app retries against the latest (see appendAudit in App.jsx).
 
 export function canonical(value) {
   if (value === null || typeof value !== 'object') return JSON.stringify(value ?? null)
@@ -48,23 +49,26 @@ export function sortAudit(entries) {
 /**
  * Walk the chain in sequence order and report the first problem:
  *   'tampered' — an entry's content no longer matches its own hash
- *   'broken'   — an entry does not point at the hash of the one before it
+ *   'broken'   — an entry does not point at the hash of an entry one position
+ *                before it (an entry was edited away, deleted or inserted)
  *   'fork'     — two entries claim the same sequence number (concurrent writers)
+ *
+ * A fork is counted, not treated as damage: each branch must still link to a
+ * real entry before it, so editing or deleting an entry on either branch is
+ * still caught.
  */
 export async function verifyAuditChain(entries) {
   const list = sortAudit(entries)
-  let prev = null
+  const hashesAt = new Map() // seq -> Set of hashes recorded at that position
   let forks = 0
   for (const e of list) {
     const expected = await sha256Hex(`${e.prevHash}|${canonical(body(e))}`)
     if (expected !== e.hash) return { ok: false, checked: list.length, brokenAt: e.seq, reason: 'tampered', forks }
-    if (prev && e.seq === prev.seq) {
-      forks += 1
-      continue
-    }
-    const want = prev ? prev.hash : GENESIS
-    if (e.prevHash !== want) return { ok: false, checked: list.length, brokenAt: e.seq, reason: 'broken', forks }
-    prev = e
+    const linked = e.seq === 1 ? e.prevHash === GENESIS : !!hashesAt.get(e.seq - 1)?.has(e.prevHash)
+    if (!linked) return { ok: false, checked: list.length, brokenAt: e.seq, reason: 'broken', forks }
+    if (hashesAt.has(e.seq)) forks += 1
+    else hashesAt.set(e.seq, new Set())
+    hashesAt.get(e.seq).add(e.hash)
   }
   return { ok: true, checked: list.length, brokenAt: null, reason: null, forks }
 }

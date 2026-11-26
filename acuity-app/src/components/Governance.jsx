@@ -5,18 +5,21 @@ import { verifyAuditChain, sortAudit, actionLabel } from '../lib/audit.js'
 import { parseFhirCensus, planCensusApply, exampleFhirBundle } from '../lib/fhir.js'
 import { useConfigValue } from '../lib/store.js'
 import { today } from '../lib/storage.js'
+import { BACKEND } from '../lib/backend/index.js'
 
 /* ------------------------------------------------------------- people & access */
 
 const MODE_TEXT = {
   local: {
     title: 'Local sign-in',
-    body: 'Each person enters their name and role after the access password. Roles shape what the interface offers, and every change is attributed in the audit log. Because the role is self-chosen, this is not access control. For production, put Acuitas behind your single sign-on (gateway mode) or the Firebase sign-in (firebase mode).',
+    body: 'Each person enters their name and role after the access password. Roles shape what the interface offers, and every change is attributed in the audit log. Because the role is self-chosen, this is not access control. For production, put Acuitas behind your single sign-on (gateway mode).',
     color: '#8a6a10',
   },
   gateway: {
     title: 'Single sign-on (gateway)',
-    body: 'Acuitas sits behind your organization’s sign-in. The gateway blocks anyone who has not authenticated, and roles come from your identity provider’s groups.',
+    body: BACKEND === 'api'
+      ? 'Acuitas sits behind your organization’s sign-in, and roles come from your identity provider’s groups. Shared data lives in your organization’s database, and the Acuitas data service checks each person’s role on the server before every read and write.'
+      : 'Acuitas sits behind your organization’s sign-in. The gateway blocks anyone who has not authenticated, and roles come from your identity provider’s groups.',
     color: '#1f7a54',
   },
   firebase: {

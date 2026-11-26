@@ -4,9 +4,10 @@
 // way the shift entries always have:
 //
 //   local mode    — records live in this browser's storage
-//   backend mode  — each record is its own Firestore document, synced live to
-//                   everyone, so outpatient caseloads, discharges, plans and
-//                   safety events are shared across users and devices
+//   backend mode  — each record is its own record in the shared database
+//                   (see ./backend), synced to everyone, so outpatient
+//                   caseloads, discharges, plans and safety events are shared
+//                   across users and devices
 //
 // Every component that reads a collection shares one store, so two views of
 // the same data can never drift apart. Writes made through a store are also
@@ -14,8 +15,7 @@
 // recorded wherever they happen.
 
 import { useSyncExternalStore, useMemo } from 'react'
-import { collection, deleteDoc, doc, getDocs, onSnapshot, setDoc, writeBatch } from 'firebase/firestore'
-import { db, LOCAL_MODE } from './firebase.js'
+import { LOCAL_MODE, deleteRecord, replaceCollection, setRecord, watchCollection, watchDoc } from './backend/index.js'
 import { readStorage, writeStorage } from './storage.js'
 
 const stores = new Map()
@@ -46,15 +46,16 @@ function makeStore(key, initial, { remote, kind }) {
 function attachRemote(s, name, kind) {
   if (s.unsub || LOCAL_MODE) return
   if (kind === 'collection') {
-    s.unsub = onSnapshot(
-      collection(db, name),
-      (snap) => s.set(snap.docs.map((d) => d.data())),
+    s.unsub = watchCollection(
+      name,
+      (items) => s.set(items.map((it) => it.data)),
       (err) => console.error(`sync ${name}`, err)
     )
   } else {
-    s.unsub = onSnapshot(
-      doc(db, 'appConfig', name),
-      (snap) => { if (snap.exists()) s.set(snap.data().value) },
+    s.unsub = watchDoc(
+      'appConfig',
+      name,
+      (data) => { if (data) s.set(data.value) },
       (err) => console.error(`sync config ${name}`, err)
     )
   }
@@ -106,7 +107,7 @@ export function collectionApi(name, localKey, store, { auditAs = name, audited =
     add(item) {
       log('add', item.id, summarize(item))
       if (LOCAL_MODE) return persistLocal([...store.value, item])
-      return setDoc(doc(db, name, item.id), clean(item)).catch((e) => console.error(`add ${name}`, e))
+      return setRecord(name, item.id, clean(item)).catch((e) => console.error(`add ${name}`, e))
     },
     upsert(item) {
       const exists = store.value.some((x) => x.id === item.id)
@@ -114,7 +115,7 @@ export function collectionApi(name, localKey, store, { auditAs = name, audited =
       if (LOCAL_MODE) {
         return persistLocal(exists ? store.value.map((x) => (x.id === item.id ? item : x)) : [...store.value, item])
       }
-      return setDoc(doc(db, name, item.id), clean(item)).catch((e) => console.error(`upsert ${name}`, e))
+      return setRecord(name, item.id, clean(item)).catch((e) => console.error(`upsert ${name}`, e))
     },
     update(id, patch) {
       log('update', id, summarize(patch))
@@ -122,21 +123,17 @@ export function collectionApi(name, localKey, store, { auditAs = name, audited =
       if (!current) return undefined
       const next = { ...current, ...patch }
       if (LOCAL_MODE) return persistLocal(store.value.map((x) => (x.id === id ? next : x)))
-      return setDoc(doc(db, name, id), clean(next)).catch((e) => console.error(`update ${name}`, e))
+      return setRecord(name, id, clean(next)).catch((e) => console.error(`update ${name}`, e))
     },
     remove(id) {
       log('remove', id, null)
       if (LOCAL_MODE) return persistLocal(store.value.filter((x) => x.id !== id))
-      return deleteDoc(doc(db, name, id)).catch((e) => console.error(`remove ${name}`, e))
+      return deleteRecord(name, id).catch((e) => console.error(`remove ${name}`, e))
     },
     async replace(items) {
       log('replace', null, { count: items.length })
       if (LOCAL_MODE) return persistLocal(items)
-      const snap = await getDocs(collection(db, name))
-      const batch = writeBatch(db)
-      snap.docs.forEach((d) => batch.delete(d.ref))
-      items.forEach((it) => batch.set(doc(db, name, it.id), clean(it)))
-      await batch.commit()
+      await replaceCollection(name, items.map((it) => ({ id: it.id, data: clean(it) })))
     },
   }
 }
@@ -153,12 +150,12 @@ export function useConfigValue(name, { localKey, initial, auditAs = name, audite
     if (audited) audit(`${auditAs}.update`, null, summarize(next))
     store.set(next)
     if (LOCAL_MODE) writeStorage(localKey, next)
-    else setDoc(doc(db, 'appConfig', name), { value: clean(next) }).catch((e) => console.error(`config ${name}`, e))
+    else setRecord('appConfig', name, { value: clean(next) }).catch((e) => console.error(`config ${name}`, e))
   }, [store, localKey, name, auditAs, audited])
   return [value, set]
 }
 
-// Firestore rejects `undefined`; JSON round-tripping drops it cleanly.
+// Databases reject `undefined`; JSON round-tripping drops it cleanly.
 function clean(v) {
   return JSON.parse(JSON.stringify(v ?? null))
 }
